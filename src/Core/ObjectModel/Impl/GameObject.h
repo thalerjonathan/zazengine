@@ -24,6 +24,8 @@ class GameObject : public IGameObject
 
 		bool sendEvent(const Event&);
 
+		IGameObject* clone() { return 0; };
+
 	private:
 		static GameObjectID nextID;
 

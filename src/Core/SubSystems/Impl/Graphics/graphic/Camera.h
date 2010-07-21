@@ -1,8 +1,8 @@
 #ifndef CAMERA_H_
 #define CAMERA_H_
 
-#include "../../../Utils/Math/Vector.h"
-#include "../../../Utils/Math/Matrix.h"
+#include "../../../../Utils/Math/Vector.h"
+#include "../../../../Utils/Math/Matrix.h"
 
 enum CullResult {
 	INSIDE = 0,

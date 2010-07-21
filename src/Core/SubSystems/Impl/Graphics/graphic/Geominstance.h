@@ -3,7 +3,7 @@
 
 #include "geom/GeomType.h"
 #include "Material.h"
-#include "../../../Utils/Math/Transform.h"
+#include "../../../../Utils/Math/Transform.h"
 
 class GeomInstance
 {

@@ -20,6 +20,18 @@
 #include <map>
 #include <vector>
 
+#include "Utils/XML/tinyxml.h"
+
+extern "C"
+{
+	#include <lua/lua.h>
+}
+
+/* BIG TARGET: Discrete Realtime Autonomus Entity Simulation
+ *
+ * Next Step: integrate LUA
+ *
+ */
 class Core
 {
 	public:
@@ -42,6 +54,8 @@ class Core
 	private:
 		static Core* instance;
 
+		lua_State* globalLuaState;
+
 		bool runCore;
 
 		IAi* ai;
@@ -59,6 +73,9 @@ class Core
 		Core();
 		~Core();
 
+		bool loadConfig();
+		ISubSystem* loadSubSystem( const std::string& );
+		IGameObject* loadObject( TiXmlElement* );
 };
 
 #endif /* CORE_H_ */
