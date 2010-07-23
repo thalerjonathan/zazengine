@@ -15,12 +15,11 @@
 #include "SubSystems/Impl/Graphics/PlayGroundGraphics.h"
 #include "SubSystems/Impl/Input/PlayGroundInput.h"
 
-extern "C"
-{
-	#include <lua/lauxlib.h>
-}
+#include "Utils/XML/rapidxml.hpp"
+#include "Utils/XML/rapidxml_print.hpp"
 
-#include <luabind/lua_include.hpp>
+#include <lua/lua.hpp>
+#include <luabind/luabind.hpp>
 
 #include <sys/time.h>
 
@@ -28,6 +27,8 @@ extern "C"
 #include <sstream>
 
 using namespace std;
+using namespace luabind;
+using namespace rapidxml;
 
 Core* Core::instance = 0;
 
@@ -40,6 +41,8 @@ Core::initalize()
 	cout << "Initializing Core..." << endl;
 
 	Core::instance->globalLuaState = luaL_newstate();
+	open ( Core::instance->globalLuaState );
+	luaL_openlibs ( Core::instance->globalLuaState );
 
 	if ( false == Core::instance->loadConfig() )
 	{
@@ -125,11 +128,27 @@ Core::start()
 		this->subSysEventManager->processQueue();
 		this->objectsEventManager->processQueue();
 
+		try {
+			call_function<int>( this->globalLuaState, "beginFrame", boost::ref( iterationFactor ) );
+		} catch ( luabind::error e ) {
+			cout << "Exception calling beginFrame: " << e.what() << endl;
+			this->runCore = false;
+			break;
+		}
+
 		subSysIter = this->subSystems.begin();
 		while ( subSysIter != this->subSystems.end() )
 		{
 			(*subSysIter)->process( iterationFactor );
 			subSysIter++;
+		}
+
+		try {
+			call_function<int>( this->globalLuaState, "endFrame" );
+		} catch ( luabind::error e ) {
+			cout << "Exception calling endFrame: " << e.what() << endl;
+			this->runCore = false;
+			break;
 		}
 
 		subSysIter = this->subSystems.begin();
@@ -172,7 +191,8 @@ Core::loadConfig()
 		return false;
 	}
 
-	TiXmlElement* coreScriptNode = doc.FirstChildElement("coreScript");
+	TiXmlElement* configNode = doc.FirstChildElement("config");
+	TiXmlElement* coreScriptNode = configNode->FirstChildElement("coreScript");
 	if ( 0 == coreScriptNode )
 	{
 		cout << "ERROR ... root-node \"coreScript\" in " << fullFileName << " not found" << endl;
@@ -181,7 +201,18 @@ Core::loadConfig()
 
 	string coreScriptFileName = coreScriptNode->Attribute("file");
 
-	// TODO: load script
+	if ( 1 == luaL_dofile( this->globalLuaState, coreScriptFileName.c_str() ) )
+	{
+		cout << "ERROR ... failed loading script file \"" << coreScriptFileName << "\" - exit" << endl;
+		return false;
+	}
+
+	try {
+		call_function<int>( this->globalLuaState, "onStartup" );
+	} catch ( luabind::error e ) {
+		cout << "Exception calling onStartup: " << e.what() << endl;
+		return false;
+	}
 
 	TiXmlElement* subSystemListNode = doc.FirstChildElement("subSystemList");
 
@@ -362,7 +393,8 @@ Core::loadObject( TiXmlElement* objectNode )
 	}
 
 	IGameObject* object = new GameObject( objectID );
-	// TODO: load script
+
+	luaL_dofile( this->globalLuaState, scriptFile.c_str() );
 
 	return object;
 }
