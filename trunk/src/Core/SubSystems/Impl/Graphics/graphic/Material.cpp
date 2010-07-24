@@ -388,7 +388,7 @@ GLuint Material::createProgram(const string& vertexSourceFile, const string& fra
 
 bool Material::readShaderSource(const string& file, string& shaderSource)
 {
-	string fullFileName = "resources/materials/shaders/" + file;
+	string fullFileName = "media/graphics/materials/shaders/" + file;
 
 	FILE* shaderSourceFile = fopen(fullFileName.c_str(), "r");
 	if (shaderSourceFile == 0) {

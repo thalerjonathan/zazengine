@@ -1,3 +1,5 @@
+frameCount = 0
+
 function onStartup()
 	print( "lua got called: onStartup" );
 end
@@ -10,6 +12,7 @@ end
 
 function onShutdown()
 	print( "lua got called: onShutdown" )
+	print( frameCount )
 end
 
 
@@ -25,9 +28,10 @@ end
 
 
 function beginFrame( factor )
-	print( "lua got called: beginFrame" )
+	frameCount = frameCount + 1
+	-- print( "lua got called: beginFrame" )
 end
 
 function endFrame()
-	print( "lua got called: endFrame" )
+	-- print( "lua got called: endFrame" )
 end

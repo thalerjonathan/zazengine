@@ -13,8 +13,46 @@
 	</subSystemList>
 	
 	<objectList>
-		<object id="objA" script="media/scripts/objA/objA.lua"/>
-		<object id="objB" script="media/scripts/objB/objB.lua"/>
-		<object id="objC" script="media/scripts/objC/objC.lua"/>
+		<object name="objA" script="media/scripts/objA/objA.lua">
+			<audio>
+				<sound file="media/audio/bell.wav" loop="TRUE"/>
+			</audio>
+			
+			<graphics>
+				<instance class="Sphere" x="0" y="10" z="0"/>
+			</graphics>
+			
+			<physics>
+				<type id="SPHERE" r="1"/>
+			</physics>
+		</object>
+		
+		<object name="objB" script="media/scripts/objB/objB.lua">
+			<audio>
+				<sound file="media/audio/bell.wav" loop="TRUE"/>
+			</audio>
+			
+			<graphics>
+				<instance class="Sphere" x="10" y="10" z="0"/>
+			</graphics>
+			
+			<physics>
+				<type id="SPHERE" r="1"/>
+			</physics>
+		</object>
+		
+		<object name="objC" script="media/scripts/objC/objC.lua">
+			<audio>
+				<sound file="media/audio/bell.wav" loop="TRUE"/>
+			</audio>
+			
+			<graphics>
+				<instance class="Sphere" x="0" y="10" z="10"/>
+			</graphics>
+			
+			<physics>
+				<type id="SPHERE" r="1"/>
+			</physics>
+		</object>
 	</objectList>
 </config>

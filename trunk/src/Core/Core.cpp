@@ -65,6 +65,8 @@ Core::shutdown()
 {
 	if ( Core::instance )
 	{
+		ScriptSystem::getInstance().callFunc( "onShutdown" );
+
 		list<ISubSystem*>::iterator iter;
 
 		iter = Core::instance->subSystems.begin();
@@ -121,7 +123,7 @@ Core::start()
 	}
 
 	timeval t;
-	double iterationFactor = 0;
+	double itFact = 0;
 	long long startTicks = 0;
 	long long endTicks = 0;
 	
@@ -145,7 +147,7 @@ Core::start()
 		subSysIter = this->subSystems.begin();
 		while ( subSysIter != this->subSystems.end() )
 		{
-			(*subSysIter)->process( iterationFactor );
+			(*subSysIter)->process( itFact );
 			subSysIter++;
 		}
 
@@ -165,7 +167,7 @@ Core::start()
 		gettimeofday( &t, NULL );
 		endTicks = t.tv_usec + 1000000 * t.tv_sec;
 		
-		iterationFactor = (double)(endTicks - startTicks) / (double) 1000;
+		itFact = (double)(endTicks - startTicks) / (double) 1000;
 	};
 
 	subSysIter = this->subSystems.begin();
@@ -253,7 +255,7 @@ Core::loadConfig()
 		}
 	}
 
-	TiXmlElement* objectListNode = doc.FirstChildElement("objectList");
+	TiXmlElement* objectListNode = rootNode->FirstChildElement("objectList");
 	if ( 0 == objectListNode )
 	{
 		cout << "ERROR ... node \"objectList\" in " << fullFileName << " not found" << endl;
@@ -310,7 +312,7 @@ Core::loadSubSystem( const std::string& fileName )
 
 	ISubSystem* subSystem = 0;
 
-	if ( "AI" == subSystemType )
+	if ( "ai" == subSystemType )
 	{
 		subSystem = new PlayGroundAI();
 		if ( false == subSystem->initialize( ) )
@@ -323,7 +325,7 @@ Core::loadSubSystem( const std::string& fileName )
 			Core::instance->ai = (IAi*) subSystem;
 		}
 	}
-	else if ( "AUDIO" == subSystemType )
+	else if ( "audio" == subSystemType )
 	{
 		subSystem = new PlayGroundAudio();
 		if ( false == subSystem->initialize( ) )
@@ -337,7 +339,7 @@ Core::loadSubSystem( const std::string& fileName )
 			Core::instance->audio = (IAudio*) subSystem;
 		}
 	}
-	else if ( "GRAPHICS" == subSystemType )
+	else if ( "graphics" == subSystemType )
 	{
 		subSystem = new PlayGroundGraphics();
 		if ( false == subSystem->initialize( ) )
@@ -351,7 +353,7 @@ Core::loadSubSystem( const std::string& fileName )
 			Core::instance->graphics = (IGraphics*) subSystem;
 		}
 	}
-	else if ( "INPUT" == subSystemType )
+	else if ( "input" == subSystemType )
 	{
 		subSystem = new PlayGroundInput();
 		if ( false == subSystem->initialize( ) )
@@ -365,7 +367,7 @@ Core::loadSubSystem( const std::string& fileName )
 			Core::instance->input = (IInput*) subSystem;
 		}
 	}
-	else if ( "PHYSICS" == subSystemType )
+	else if ( "physics" == subSystemType )
 	{
 		subSystem = new PlayGroundPhysics();
 		if ( false == subSystem->initialize( ) )
@@ -390,10 +392,10 @@ Core::loadSubSystem( const std::string& fileName )
 IGameObject*
 Core::loadObject( TiXmlElement* objectNode )
 {
-	string objectID;
+	string objectName;
 	string scriptFile;
 
-	const char* str = objectNode->Attribute( "id" );
+	const char* str = objectNode->Attribute( "name" );
 	if ( 0 == str )
 	{
 		cout << "WARNING: no id defined for object - will be ignored" << endl;
@@ -401,25 +403,62 @@ Core::loadObject( TiXmlElement* objectNode )
 	}
 	else
 	{
-		objectID = str;
+		objectName = str;
 	}
 
 	str = objectNode->Attribute( "script" );
 	if ( 0 == str )
 	{
-		cout << "INFO: no script defined for object " << objectID << endl;
-		return 0;
+		cout << "INFO: no script defined for object " << objectName << endl;
 	}
 	else
 	{
 		scriptFile = str;
 	}
 
-	IGameObject* object = new GameObject( objectID );
+	IGameObject* object = new GameObject( objectName );
 
-	if ( false == ScriptSystem::getInstance().loadFile( scriptFile ) )
+	if ( false == scriptFile.empty() )
 	{
-		return false;
+		if ( false == ScriptSystem::getInstance().loadFile( scriptFile ) )
+		{
+			delete object;
+			return 0;
+		}
+	}
+
+	for (TiXmlElement* subSystemEntityNode = objectNode->FirstChildElement(); subSystemEntityNode != 0; subSystemEntityNode = subSystemEntityNode->NextSiblingElement())
+	{
+		const char* str = subSystemEntityNode->Value();
+		if ( 0 == str )
+			continue;
+
+		ISubSystemEntity* subSystemEntity = 0;
+
+		list<ISubSystem*>::iterator iter = this->subSystems.begin();
+		while ( iter != this->subSystems.end() )
+		{
+			ISubSystem* subSys = *iter++;
+			if ( subSys->getType() == str )
+			{
+				subSystemEntity = subSys->createEntity( subSystemEntityNode );
+				if ( 0 == subSystemEntity )
+				{
+					cout << "ERROR ... failed creating instance for subsystem \"" << str << "\"" << endl;
+					delete object;
+					return 0;
+				}
+
+				break;
+			}
+		}
+
+		if ( 0 == subSystemEntity )
+		{
+			cout << "ERROR ... no according SubSystem for definition \"" << str << "\" found - object will be ignored" << endl;
+			delete object;
+			return 0;
+		}
 	}
 
 	return object;

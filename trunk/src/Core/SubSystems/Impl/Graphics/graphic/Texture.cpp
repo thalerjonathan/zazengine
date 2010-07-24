@@ -23,7 +23,7 @@ Texture* Texture::load(const std::string& file)
 	if (findIter != Texture::allTextures.end())
 		return findIter->second;
 	
-	string fullFileName = "resources/textures/" + file;
+	string fullFileName = "media/graphics/textures/" + file;
 	
 	GLuint textureID;
     SDL_Surface* surface = Texture::loadImage(fullFileName);

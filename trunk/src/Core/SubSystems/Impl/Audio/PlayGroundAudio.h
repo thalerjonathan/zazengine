@@ -39,7 +39,7 @@ class PlayGroundAudio : public IAudio
 
 		bool sendEvent(const Event& e);
 
-		PlayGroundAudioEntity* createEntity();
+		PlayGroundAudioEntity* createEntity( TiXmlElement* );
 
 	private:
 		std::string id;

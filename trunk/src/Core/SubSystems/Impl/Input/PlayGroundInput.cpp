@@ -70,7 +70,7 @@ PlayGroundInput::pause()
 bool
 PlayGroundInput::process(double factor)
 {
-	cout << "PlayGroundInput::process" << endl;
+	//cout << "PlayGroundInput::process" << endl;
 
 	SDL_Event event;
 	
@@ -143,6 +143,8 @@ PlayGroundInput::process(double factor)
 bool
 PlayGroundInput::finalizeProcess()
 {
+	//cout << "PlayGroundPhysics::finalizeProcess" << endl;
+
 	return true;
 }
 
@@ -153,7 +155,7 @@ PlayGroundInput::sendEvent(const Event& e)
 }
 
 ISubSystemEntity*
-PlayGroundInput::createEntity()
+PlayGroundInput::createEntity( TiXmlElement* cfgNode )
 {
 	return 0;
 }

@@ -40,7 +40,7 @@ class PlayGroundGraphics : public IGraphics
 
 		bool sendEvent(const Event& e);
 
-		PlayGroundGraphicsEntity* createEntity();
+		PlayGroundGraphicsEntity* createEntity( TiXmlElement* );
 
 	private:
 		std::string id;

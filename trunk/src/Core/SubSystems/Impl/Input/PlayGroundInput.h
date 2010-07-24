@@ -37,7 +37,7 @@ class PlayGroundInput : public IInput
 		
 		bool sendEvent(const Event&);
 		
-		ISubSystemEntity* createEntity();
+		ISubSystemEntity* createEntity( TiXmlElement* );
 		
 	private:
 		std::string id;

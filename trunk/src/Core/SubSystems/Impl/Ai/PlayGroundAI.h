@@ -35,7 +35,7 @@ class PlayGroundAI : public IAi
 
 		bool sendEvent(const Event& e);
 
-		PlayGroundAIEntity* createEntity();
+		PlayGroundAIEntity* createEntity( TiXmlElement* );
 
 	private:
 		std::string id;

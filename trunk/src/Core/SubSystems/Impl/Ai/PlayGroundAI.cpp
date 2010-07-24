@@ -64,9 +64,7 @@ PlayGroundAI::pause()
 bool
 PlayGroundAI::process(double factor)
 {
-	cout << "PlayGroundAI::process()" << endl;
-
-	usleep(100000);
+	//cout << "PlayGroundAI::process()" << endl;
 
 	return true;
 }
@@ -74,7 +72,7 @@ PlayGroundAI::process(double factor)
 bool
 PlayGroundAI::finalizeProcess()
 {
-	cout << "PlayGroundAI::finalizeProcess()" << endl;
+	//cout << "PlayGroundAI::finalizeProcess()" << endl;
 
 	return true;
 }
@@ -86,7 +84,9 @@ PlayGroundAI::sendEvent(const Event& e)
 }
 
 PlayGroundAIEntity*
-PlayGroundAI::createEntity()
+PlayGroundAI::createEntity( TiXmlElement* node )
 {
-	return 0;
+	PlayGroundAIEntity* entity = new PlayGroundAIEntity();
+
+	return entity;
 }

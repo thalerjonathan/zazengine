@@ -18,7 +18,7 @@ using namespace std;
 
 PlayGroundGraphics::PlayGroundGraphics()
 	: id ("PlayGroundGraphics"),
-	  type ("renderer")
+	  type ("graphics")
 {
 
 }
@@ -141,7 +141,7 @@ PlayGroundGraphics::pause()
 bool
 PlayGroundGraphics::process(double iterationFactor)
 {
-	cout << "PlayGroundGraphics::process" << endl;
+	//cout << "PlayGroundGraphics::process" << endl;
 
 	//this->activeScene->processFrame( iterationFactor );
 
@@ -151,7 +151,7 @@ PlayGroundGraphics::process(double iterationFactor)
 bool
 PlayGroundGraphics::finalizeProcess()
 {
-	cout << "PlayGroundGraphics::finalizeProcess()" << endl;
+	//cout << "PlayGroundGraphics::finalizeProcess()" << endl;
 
 	return true;
 }
@@ -163,7 +163,17 @@ PlayGroundGraphics::sendEvent(const Event& e)
 }
 
 PlayGroundGraphicsEntity*
-PlayGroundGraphics::createEntity()
+PlayGroundGraphics::createEntity( TiXmlElement* objectNode )
 {
-	return 0;
+	PlayGroundGraphicsEntity* entity = new PlayGroundGraphicsEntity();
+
+	TiXmlElement* instanceNode = objectNode->FirstChildElement( "instance" );
+	if ( 0 == instanceNode )
+	{
+		cout << "ERROR ... no instance-node found for graphicsinstance - ignoring object" << endl;
+		delete entity;
+		return 0;
+	}
+
+	return entity;
 }

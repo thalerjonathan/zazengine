@@ -13,13 +13,13 @@
 class PlayGroundAIEntity : public IAIEntity
 {
 	public:
-		PlayGroundAIEntity() {};
+		PlayGroundAIEntity() : type("ai") {};
 		virtual ~PlayGroundAIEntity() {};
 
-		const std::string& getID() const { return this->id; };
+		const std::string& getType() const { return this->type; };
 
 	private:
-		std::string id;
+		std::string type;
 };
 
 #endif /* PLAYGROUNDAIENTITY_H_ */
