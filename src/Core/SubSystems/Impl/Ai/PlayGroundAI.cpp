@@ -24,7 +24,7 @@ PlayGroundAI::~PlayGroundAI()
 }
 
 bool
-PlayGroundAI::initialize()
+PlayGroundAI::initialize( TiXmlElement* )
 {
 	cout << endl << "=============== PlayGroundAI initializing... ===============" << endl;
 

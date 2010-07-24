@@ -27,7 +27,7 @@ PlayGroundAudio::~PlayGroundAudio()
 }
 
 bool
-PlayGroundAudio::initialize()
+PlayGroundAudio::initialize( TiXmlElement* )
 {
 	cout << endl << "=============== PlayGroundAudio initializing... ===============" << endl;
 

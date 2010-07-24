@@ -16,7 +16,7 @@
 class GameObject : public IGameObject
 {
 	public:
-		GameObject(const std::string&);
+		GameObject();
 		virtual ~GameObject();
 
 		GameObjectID getID() const { return id; };
@@ -26,11 +26,15 @@ class GameObject : public IGameObject
 
 		IGameObject* clone() { return 0; };
 
+		bool initialize( TiXmlElement* );
+
 	private:
 		static GameObjectID nextID;
 
 		GameObjectID id;
 		std::string name;
+
+		std::map<std::string, ISubSystemEntity*> subSystemEntities;
 };
 
 #endif /* EVENTCONTEXT_H_ */

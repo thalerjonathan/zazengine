@@ -36,7 +36,7 @@ PlayGroundPhysics::~PlayGroundPhysics()
 }
 
 bool
-PlayGroundPhysics::initialize()
+PlayGroundPhysics::initialize( TiXmlElement* )
 {
 	cout << endl << "=============== PlayGroundPhysics initializing... ===============" << endl;
 

@@ -28,17 +28,17 @@ class PlayGroundGraphics : public IGraphics
 
 		bool isAsync() const { return false; };
 
-		bool initialize();
+		bool initialize( TiXmlElement* );
 		bool shutdown();
 
 		bool start();
 		bool stop();
 		bool pause();
 
-		bool process(double);
+		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent(const Event& e);
+		bool sendEvent( const Event& e );
 
 		PlayGroundGraphicsEntity* createEntity( TiXmlElement* );
 

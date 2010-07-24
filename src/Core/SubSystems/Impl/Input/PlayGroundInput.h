@@ -25,17 +25,17 @@ class PlayGroundInput : public IInput
 		
 		bool isAsync() const { return false; };
 		
-		bool initialize();
+		bool initialize( TiXmlElement* );
 		bool shutdown();
 		
 		bool start();
 		bool stop();
 		bool pause();
 		
-		bool process(double);
+		bool process( double );
 		bool finalizeProcess();
 		
-		bool sendEvent(const Event&);
+		bool sendEvent( const Event& );
 		
 		ISubSystemEntity* createEntity( TiXmlElement* );
 		
