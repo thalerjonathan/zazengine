@@ -9,15 +9,18 @@
 
 int main(int argc, char** args)
 {
+	int ret = 0;
+
 	if ( Core::initalize() )
 	{
 		Core::getInstance().start();
-		Core::shutdown();
 	}
 	else
 	{
-		return 1;
+		ret = 1;
 	}
 
-	return 0;
+	Core::shutdown();
+
+	return ret;
 }

@@ -4,16 +4,17 @@
 	<coreScript file="media/scripts/core/core.lua"/>
 
 	<subSystemList>
+		<!-- order is important! physics first because of async -->
+		<subSystem file="media/physics/config.xml"/>
 		<subSystem file="media/ai/config.xml"/>
 		<subSystem file="media/audio/config.xml"/>
 		<subSystem file="media/graphics/config.xml"/>
-		<subSystem file="media/physics/config.xml"/>
 		<subSystem file="media/input/config.xml"/>
 	</subSystemList>
 	
 	<objectList>
-		<object id="objA" script="scripts/objA/objA.lua"/>
-		<object id="objB" script="scripts/objB/objB.lua"/>
-		<object id="objC" script="scripts/objC/objC.lua"/>
+		<object id="objA" script="media/scripts/objA/objA.lua"/>
+		<object id="objB" script="media/scripts/objB/objB.lua"/>
+		<object id="objC" script="media/scripts/objC/objC.lua"/>
 	</objectList>
 </config>

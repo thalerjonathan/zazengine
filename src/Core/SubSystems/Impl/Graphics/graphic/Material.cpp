@@ -52,7 +52,7 @@ map<std::string, Material*> Material::allMaterials;
 
 bool Material::loadMaterials()
 {
-	string fullFileName = "resources/materials/materials.xml";
+	string fullFileName = "media/graphics/materials/materials.xml";
 	
 	TiXmlDocument doc(fullFileName.c_str());
 		
