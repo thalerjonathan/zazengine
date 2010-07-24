@@ -9,8 +9,8 @@
 
 #include "ScriptSystem/ScriptSystem.h"
 
-#include "ObjectModel/Impl/ZazenGameObjectFactory.h"
-#include "SubSystems/Impl/ZazenSubSystemFactory.h"
+#include "../GameObjects/ZazenGameObjectFactory.h"
+#include "../SubSystems/ZazenSubSystemFactory.h"
 
 #include <sys/time.h>
 
