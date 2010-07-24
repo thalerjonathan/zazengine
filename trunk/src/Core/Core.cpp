@@ -7,6 +7,8 @@
 
 #include "Core.h"
 
+#include "ScriptSystem/ScriptSystem.h"
+
 #include "ObjectModel/Impl/GameObject.h"
 
 #include "SubSystems/Impl/Ai/PlayGroundAI.h"
@@ -15,42 +17,45 @@
 #include "SubSystems/Impl/Graphics/PlayGroundGraphics.h"
 #include "SubSystems/Impl/Input/PlayGroundInput.h"
 
-#include "Utils/XML/rapidxml.hpp"
-#include "Utils/XML/rapidxml_print.hpp"
-
-#include <lua/lua.hpp>
-#include <luabind/luabind.hpp>
-
 #include <sys/time.h>
 
 #include <iostream>
 #include <sstream>
 
 using namespace std;
-using namespace luabind;
-using namespace rapidxml;
 
 Core* Core::instance = 0;
 
 bool
 Core::initalize()
 {
-	if (Core::instance == 0)
+	if ( 0 == Core::instance )
+	{
 		new Core();
 
-	cout << "Initializing Core..." << endl;
+		cout << "********************************************************" << endl;
+		cout << "***************** Initializing Core... *****************" << endl;
+		cout << "********************************************************" << endl;
 
-	Core::instance->globalLuaState = luaL_newstate();
-	open ( Core::instance->globalLuaState );
-	luaL_openlibs ( Core::instance->globalLuaState );
+		if ( false == ScriptSystem::initialize() )
+		{
+			cout << "ERROR ... failed initializing ScriptSystem - exit" << endl;
+			return false;
+		}
 
-	if ( false == Core::instance->loadConfig() )
-	{
-		return false;
+		if ( false == Core::instance->loadConfig() )
+		{
+			cout << "ERROR ... failed initializing Core - exit" << endl;
+			return false;
+		}
+
+		Core::instance->subSysEventManager = new EventManager();
+		Core::instance->objectsEventManager = new EventManager();
+
+		cout << "********************************************************" << endl;
+		cout << "************** Core successfully initialized ***********" << endl;
+		cout << "********************************************************" << endl;
 	}
-
-	Core::instance->subSysEventManager = new EventManager();
-	Core::instance->objectsEventManager = new EventManager();
 
 	return true;
 }
@@ -58,23 +63,28 @@ Core::initalize()
 bool
 Core::shutdown()
 {
-	list<ISubSystem*>::iterator iter;
-
-	iter = Core::instance->subSystems.begin();
-	while ( iter != Core::instance->subSystems.end() )
+	if ( Core::instance )
 	{
-		ISubSystem* subSys = *iter++;
-		subSys->shutdown();
-		delete subSys;
-	}
+		list<ISubSystem*>::iterator iter;
 
-	delete Core::instance->subSysEventManager;
-	delete Core::instance->objectsEventManager;
+		iter = Core::instance->subSystems.begin();
+		while ( iter != Core::instance->subSystems.end() )
+		{
+			ISubSystem* subSys = *iter++;
+			subSys->shutdown();
+			delete subSys;
+		}
 
-	lua_close( Core::instance->globalLuaState );
+		if ( Core::instance->subSysEventManager )
+			delete Core::instance->subSysEventManager;
 
-	if (Core::instance != 0)
+		if ( Core::instance->objectsEventManager )
+			delete Core::instance->objectsEventManager;
+
+		ScriptSystem::shutdown();
+
 		delete Core::instance;
+	}
 
 	return true;
 }
@@ -82,8 +92,6 @@ Core::shutdown()
 Core::Core()
 {
 	Core::instance = this;
-
-	this->globalLuaState = 0;
 
 	this->runCore = false;
 
@@ -128,10 +136,8 @@ Core::start()
 		this->subSysEventManager->processQueue();
 		this->objectsEventManager->processQueue();
 
-		try {
-			call_function<int>( this->globalLuaState, "beginFrame", boost::ref( iterationFactor ) );
-		} catch ( luabind::error e ) {
-			cout << "Exception calling beginFrame: " << e.what() << endl;
+		if ( false == ScriptSystem::getInstance().callFunc( "beginFrame" ) )
+		{
 			this->runCore = false;
 			break;
 		}
@@ -143,10 +149,8 @@ Core::start()
 			subSysIter++;
 		}
 
-		try {
-			call_function<int>( this->globalLuaState, "endFrame" );
-		} catch ( luabind::error e ) {
-			cout << "Exception calling endFrame: " << e.what() << endl;
+		if ( false == ScriptSystem::getInstance().callFunc( "endFrame" ) )
+		{
 			this->runCore = false;
 			break;
 		}
@@ -183,7 +187,7 @@ Core::loadConfig()
 {
 	string fullFileName = "media/config.xml";
 
-	TiXmlDocument doc(fullFileName.c_str());
+	TiXmlDocument doc( fullFileName.c_str() );
 
 	if ( false == doc.LoadFile() )
 	{
@@ -191,32 +195,40 @@ Core::loadConfig()
 		return false;
 	}
 
-	TiXmlElement* configNode = doc.FirstChildElement("config");
-	TiXmlElement* coreScriptNode = configNode->FirstChildElement("coreScript");
+	TiXmlElement* rootNode = doc.FirstChildElement("config");
+	if ( 0 == rootNode )
+	{
+		cout << "ERROR ... root-node \"config\" in " << fullFileName << " not found" << endl;
+		return false;
+	}
+
+	TiXmlElement* coreScriptNode = rootNode->FirstChildElement("coreScript");
 	if ( 0 == coreScriptNode )
 	{
-		cout << "ERROR ... root-node \"coreScript\" in " << fullFileName << " not found" << endl;
+		cout << "ERROR ... node \"coreScript\" in " << fullFileName << " not found" << endl;
 		return false;
 	}
 
 	string coreScriptFileName = coreScriptNode->Attribute("file");
 
-	if ( 1 == luaL_dofile( this->globalLuaState, coreScriptFileName.c_str() ) )
+	if ( false == ScriptSystem::getInstance().loadFile( coreScriptFileName ) )
 	{
-		cout << "ERROR ... failed loading script file \"" << coreScriptFileName << "\" - exit" << endl;
 		return false;
 	}
 
-	try {
-		call_function<int>( this->globalLuaState, "onStartup" );
-	} catch ( luabind::error e ) {
-		cout << "Exception calling onStartup: " << e.what() << endl;
+	if ( false == ScriptSystem::getInstance().callFunc( "onStartup" ) )
+	{
 		return false;
 	}
 
-	TiXmlElement* subSystemListNode = doc.FirstChildElement("subSystemList");
+	TiXmlElement* subSystemListNode = rootNode->FirstChildElement("subSystemList");
+	if ( 0 == subSystemListNode )
+	{
+		cout << "ERROR ... node \"subSystemList\" in " << fullFileName << " not found" << endl;
+		return false;
+	}
 
-	for (TiXmlElement* subSystemNode = subSystemListNode->FirstChildElement(); subSystemNode != 0; subSystemNode = subSystemListNode->NextSiblingElement())
+	for (TiXmlElement* subSystemNode = subSystemListNode->FirstChildElement(); subSystemNode != 0; subSystemNode = subSystemNode->NextSiblingElement())
 	{
 		const char* str = subSystemNode->Value();
 		if (str == 0)
@@ -236,14 +248,19 @@ Core::loadConfig()
 				if ( subSystem )
 					this->subSystems.push_back( subSystem );
 				else
-					return 0;
+					return false;
 			}
 		}
 	}
 
 	TiXmlElement* objectListNode = doc.FirstChildElement("objectList");
+	if ( 0 == objectListNode )
+	{
+		cout << "ERROR ... node \"objectList\" in " << fullFileName << " not found" << endl;
+		return false;
+	}
 
-	for (TiXmlElement* objectNode = objectListNode->FirstChildElement(); objectNode != 0; objectNode = objectListNode->NextSiblingElement())
+	for (TiXmlElement* objectNode = objectListNode->FirstChildElement(); objectNode != 0; objectNode = objectNode->NextSiblingElement())
 	{
 		const char* str = objectNode->Value();
 		if ( 0 == str )
@@ -272,7 +289,13 @@ Core::loadSubSystem( const std::string& fileName )
 	}
 
 	string subSystemType;
-	TiXmlElement* subSystemNode = doc.FirstChildElement("subSystem");
+
+	TiXmlElement* subSystemNode = doc.FirstChildElement( "subSystem" );
+	if ( 0 == subSystemNode )
+	{
+		cout << "ERROR ... no root-node \"subSystem\" defined in " << fileName << " - exit " << endl;
+		return 0;
+	}
 
 	const char* str = subSystemNode->Attribute( "type" );
 	if ( 0 == str )
@@ -358,7 +381,7 @@ Core::loadSubSystem( const std::string& fileName )
 	}
 	else
 	{
-		cout << "Unknown SubSystem type \"" << subSystemType << "\"- will be ignored" << endl;
+		cout << "Unknown SubSystem type \"" << subSystemType << "\" - exit" << endl;
 	}
 
 	return subSystem;
@@ -394,7 +417,10 @@ Core::loadObject( TiXmlElement* objectNode )
 
 	IGameObject* object = new GameObject( objectID );
 
-	luaL_dofile( this->globalLuaState, scriptFile.c_str() );
+	if ( false == ScriptSystem::getInstance().loadFile( scriptFile ) )
+	{
+		return false;
+	}
 
 	return object;
 }

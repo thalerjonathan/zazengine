@@ -17,15 +17,9 @@
 #include "SubSystems/IFaces/IGraphics.h"
 #include "SubSystems/IFaces/IInput.h"
 
-#include <map>
-#include <vector>
-
 #include "Utils/XML/tinyxml.h"
 
-extern "C"
-{
-	#include <lua/lua.h>
-}
+#include <list>
 
 /* BIG TARGET: Discrete Realtime Autonomus Entity Simulation
  *
@@ -53,8 +47,6 @@ class Core
 
 	private:
 		static Core* instance;
-
-		lua_State* globalLuaState;
 
 		bool runCore;
 

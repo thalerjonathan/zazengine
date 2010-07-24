@@ -42,6 +42,10 @@ PlayGroundInput::initialize()
 bool
 PlayGroundInput::shutdown()
 {
+	cout << endl << "=============== PlayGroundInput shutting down... ===============" << endl;
+
+	cout << "================ PlayGroundInput shutdown =================" << endl;
+
 	return true;
 }
 

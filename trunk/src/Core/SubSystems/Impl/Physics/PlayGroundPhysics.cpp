@@ -59,6 +59,8 @@ PlayGroundPhysics::initialize()
 bool
 PlayGroundPhysics::shutdown()
 {
+	cout << endl << "=============== PlayGroundPhysics shutting down... ===============" << endl;
+
 	this->doProcessing = false;
 	this->runThread = false;
 	this->sem->release();
@@ -73,6 +75,8 @@ PlayGroundPhysics::shutdown()
 	dWorldDestroy(this->worldID);
 	dSpaceDestroy(this->spaceID);
 	dCloseODE();
+
+	cout << "================ PlayGroundPhysics shutdown =================" << endl;
 
 	return true;
 }

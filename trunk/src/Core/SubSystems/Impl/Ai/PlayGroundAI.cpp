@@ -36,6 +36,10 @@ PlayGroundAI::initialize()
 bool
 PlayGroundAI::shutdown()
 {
+	cout << endl << "=============== PlayGroundAI shutting down... ===============" << endl;
+
+	cout << "================ PlayGroundAI shutdown =================" << endl;
+
 	return true;
 }
 

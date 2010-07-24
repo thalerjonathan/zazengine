@@ -108,11 +108,15 @@ PlayGroundGraphics::initialize()
 bool
 PlayGroundGraphics::shutdown()
 {
+	cout << endl << "=============== PlayGroundGraphics shutting down... ===============" << endl;
+
 	SDL_Quit();
 	
 	Material::freeAll();
 	Texture::freeAll();
 	
+	cout << "================ PlayGroundGraphics shutdown =================" << endl;
+
 	return true;
 }
 

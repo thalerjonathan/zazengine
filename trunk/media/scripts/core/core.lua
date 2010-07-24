@@ -1,5 +1,3 @@
-print ( "loaded core.lua" );
-
 function onStartup()
 	print( "lua got called: onStartup" );
 end
