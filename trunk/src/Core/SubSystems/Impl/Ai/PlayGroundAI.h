@@ -27,13 +27,13 @@ class PlayGroundAI : public IAi
 		bool stop();
 		bool pause();
 
-		bool initialize();
+		bool initialize( TiXmlElement* );
 		bool shutdown();
 
-		bool process(double);
+		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent(const Event& e);
+		bool sendEvent( const Event& e );
 
 		PlayGroundAIEntity* createEntity( TiXmlElement* );
 

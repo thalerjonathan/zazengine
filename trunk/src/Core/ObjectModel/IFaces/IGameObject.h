@@ -10,6 +10,8 @@
 
 #include "../../EventSystem/IEventListener.h"
 
+#include "../../Utils/XML/tinyxml.h"
+
 class ISubSystemEntity;
 
 class IGameObject : public IEventListener
@@ -24,8 +26,7 @@ class IGameObject : public IEventListener
 
 		virtual IGameObject* clone() = 0;
 
-	private:
-		std::map<std::string, ISubSystemEntity*> subSystemEntities;
+		virtual bool initialize( TiXmlElement* ) = 0;
 };
 
 #endif /* IGAMEOBJECT_H_ */

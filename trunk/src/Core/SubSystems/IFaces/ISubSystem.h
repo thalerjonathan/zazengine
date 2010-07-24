@@ -29,7 +29,7 @@ class ISubSystem : public IEventListener
 		virtual bool stop() = 0;
 		virtual bool pause() = 0;
 
-		virtual bool initialize() = 0;
+		virtual bool initialize( TiXmlElement* ) = 0;
 		virtual bool shutdown() = 0;
 
 		virtual bool process(double) = 0;		// runs simulations/calculations for this frame: in this step all calculations are done either synced or threaded

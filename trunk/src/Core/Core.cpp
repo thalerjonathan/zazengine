@@ -9,13 +9,8 @@
 
 #include "ScriptSystem/ScriptSystem.h"
 
-#include "ObjectModel/Impl/GameObject.h"
-
-#include "SubSystems/Impl/Ai/PlayGroundAI.h"
-#include "SubSystems/Impl/Audio/PlayGroundAudio.h"
-#include "SubSystems/Impl/Physics/PlayGroundPhysics.h"
-#include "SubSystems/Impl/Graphics/PlayGroundGraphics.h"
-#include "SubSystems/Impl/Input/PlayGroundInput.h"
+#include "ObjectModel/Impl/ZazenGameObjectFactory.h"
+#include "SubSystems/Impl/ZazenSubSystemFactory.h"
 
 #include <sys/time.h>
 
@@ -36,6 +31,9 @@ Core::initalize()
 		cout << "********************************************************" << endl;
 		cout << "***************** Initializing Core... *****************" << endl;
 		cout << "********************************************************" << endl;
+
+		Core::instance->gameObjectFactory = new ZazenGameObjectFactory();
+		Core::instance->subSystemFactory = new ZazenSubSystemFactory();
 
 		if ( false == ScriptSystem::initialize() )
 		{
@@ -65,6 +63,9 @@ Core::shutdown()
 {
 	if ( Core::instance )
 	{
+		delete Core::instance->gameObjectFactory;
+		delete Core::instance->subSystemFactory;
+
 		ScriptSystem::getInstance().callFunc( "onShutdown" );
 
 		list<ISubSystem*>::iterator iter;
@@ -99,12 +100,6 @@ Core::Core()
 
 	this->subSysEventManager = 0;
 	this->objectsEventManager = 0;
-
-	this->ai = 0;
-	this->audio = 0;
-	this->physics = 0;
-	this->graphics = 0;
-	this->input = 0;
 }
 
 Core::~Core()
@@ -270,9 +265,11 @@ Core::loadConfig()
 
 		if ( 0 == strcmp( str, "object" ) )
 		{
-			IGameObject* object = this->loadObject( objectNode );
-			if ( object )
+			IGameObject* object = this->gameObjectFactory->createObject( "" );
+			if ( object->initialize( objectNode ) )
 				this->gameObjects.push_back( object );
+			else
+				delete object;
 		}
 	}
 
@@ -290,8 +287,6 @@ Core::loadSubSystem( const std::string& fileName )
 		return 0;
 	}
 
-	string subSystemType;
-
 	TiXmlElement* subSystemNode = doc.FirstChildElement( "subSystem" );
 	if ( 0 == subSystemNode )
 	{
@@ -299,6 +294,7 @@ Core::loadSubSystem( const std::string& fileName )
 		return 0;
 	}
 
+	string subSystemType;
 	const char* str = subSystemNode->Attribute( "type" );
 	if ( 0 == str )
 	{
@@ -310,156 +306,19 @@ Core::loadSubSystem( const std::string& fileName )
 		subSystemType = str;
 	}
 
-	ISubSystem* subSystem = 0;
-
-	if ( "ai" == subSystemType )
+	ISubSystem* subSystem = this->subSystemFactory->createSubSystem( subSystemType );
+	if ( 0 == subSystem )
 	{
-		subSystem = new PlayGroundAI();
-		if ( false == subSystem->initialize( ) )
-		{
-			delete subSystem;
-			return 0;
-		}
-		else
-		{
-			Core::instance->ai = (IAi*) subSystem;
-		}
-	}
-	else if ( "audio" == subSystemType )
-	{
-		subSystem = new PlayGroundAudio();
-		if ( false == subSystem->initialize( ) )
-		{
-			cout << "Initializing " << subSystemType << " Subsystem failed - exit" << endl;
-			delete subSystem;
-			return 0;
-		}
-		else
-		{
-			Core::instance->audio = (IAudio*) subSystem;
-		}
-	}
-	else if ( "graphics" == subSystemType )
-	{
-		subSystem = new PlayGroundGraphics();
-		if ( false == subSystem->initialize( ) )
-		{
-			cout << "Initializing " << subSystemType << " Subsystem failed - exit" << endl;
-			delete subSystem;
-			return 0;
-		}
-		else
-		{
-			Core::instance->graphics = (IGraphics*) subSystem;
-		}
-	}
-	else if ( "input" == subSystemType )
-	{
-		subSystem = new PlayGroundInput();
-		if ( false == subSystem->initialize( ) )
-		{
-			cout << "Initializing " << subSystemType << " Subsystem failed - exit" << endl;
-			delete subSystem;
-			return 0;
-		}
-		else
-		{
-			Core::instance->input = (IInput*) subSystem;
-		}
-	}
-	else if ( "physics" == subSystemType )
-	{
-		subSystem = new PlayGroundPhysics();
-		if ( false == subSystem->initialize( ) )
-		{
-			cout << "Initializing " << subSystemType << " Subsystem failed - exit" << endl;
-			delete subSystem;
-			return 0;
-		}
-		else
-		{
-			Core::instance->physics = (IPhysics*) subSystem;
-		}
-	}
-	else
-	{
-		cout << "Unknown SubSystem type \"" << subSystemType << "\" - exit" << endl;
-	}
-
-	return subSystem;
-}
-
-IGameObject*
-Core::loadObject( TiXmlElement* objectNode )
-{
-	string objectName;
-	string scriptFile;
-
-	const char* str = objectNode->Attribute( "name" );
-	if ( 0 == str )
-	{
-		cout << "WARNING: no id defined for object - will be ignored" << endl;
 		return 0;
 	}
-	else
+
+	if ( false == subSystem->initialize( subSystemNode ) )
 	{
-		objectName = str;
+		cout << "Initializing " << subSystemType << " Subsystem failed - exit" << endl;
+		delete subSystem;
+		return 0;
 	}
 
-	str = objectNode->Attribute( "script" );
-	if ( 0 == str )
-	{
-		cout << "INFO: no script defined for object " << objectName << endl;
-	}
-	else
-	{
-		scriptFile = str;
-	}
 
-	IGameObject* object = new GameObject( objectName );
-
-	if ( false == scriptFile.empty() )
-	{
-		if ( false == ScriptSystem::getInstance().loadFile( scriptFile ) )
-		{
-			delete object;
-			return 0;
-		}
-	}
-
-	for (TiXmlElement* subSystemEntityNode = objectNode->FirstChildElement(); subSystemEntityNode != 0; subSystemEntityNode = subSystemEntityNode->NextSiblingElement())
-	{
-		const char* str = subSystemEntityNode->Value();
-		if ( 0 == str )
-			continue;
-
-		ISubSystemEntity* subSystemEntity = 0;
-
-		list<ISubSystem*>::iterator iter = this->subSystems.begin();
-		while ( iter != this->subSystems.end() )
-		{
-			ISubSystem* subSys = *iter++;
-			if ( subSys->getType() == str )
-			{
-				subSystemEntity = subSys->createEntity( subSystemEntityNode );
-				if ( 0 == subSystemEntity )
-				{
-					cout << "ERROR ... failed creating instance for subsystem \"" << str << "\"" << endl;
-					delete object;
-					return 0;
-				}
-
-				break;
-			}
-		}
-
-		if ( 0 == subSystemEntity )
-		{
-			cout << "ERROR ... no according SubSystem for definition \"" << str << "\" found - object will be ignored" << endl;
-			delete object;
-			return 0;
-		}
-	}
-
-	return object;
+	return subSystem;
 }

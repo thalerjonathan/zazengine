@@ -30,7 +30,7 @@ PlayGroundInput::~PlayGroundInput()
 }
 
 bool
-PlayGroundInput::initialize()
+PlayGroundInput::initialize( TiXmlElement* )
 {
 	cout << endl << "=============== PlayGroundInput initializing... ===============" << endl;
 

@@ -29,7 +29,7 @@ PlayGroundGraphics::~PlayGroundGraphics()
 }
 
 bool
-PlayGroundGraphics::initialize()
+PlayGroundGraphics::initialize( TiXmlElement* )
 {
 	cout << endl << "=============== PlayGroundGraphics initializing... ===============" << endl;
 	
