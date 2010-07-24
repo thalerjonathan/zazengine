@@ -13,13 +13,13 @@
 class PlayGroundPhysicsEntity : public IPhysicsEntity
 {
 	public:
-		PlayGroundPhysicsEntity() {};
+		PlayGroundPhysicsEntity() : type ("physics") {};
 		virtual ~PlayGroundPhysicsEntity() {};
 
-		const std::string& getID() const { return this->id; };
+		const std::string& getType() const { return this->type; };
 
 	private:
-		std::string id;
+		std::string type;
 };
 
 #endif /* PLAYGROUNDPHYSICSENTITY_H_ */

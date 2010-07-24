@@ -40,7 +40,7 @@ class PlayGroundPhysics : public IPhysics
 
 		bool sendEvent(const Event& e);
 
-		PlayGroundPhysicsEntity* createEntity();
+		PlayGroundPhysicsEntity* createEntity( TiXmlElement* );
 
 	private:
 		std::string id;

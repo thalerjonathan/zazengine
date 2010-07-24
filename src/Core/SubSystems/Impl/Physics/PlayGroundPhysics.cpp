@@ -20,6 +20,8 @@
 using namespace std;
 
 PlayGroundPhysics::PlayGroundPhysics()
+	: id("PlayGroundPhysics"),
+	  type("physics")
 {
 	this->sem = 0;
 	this->thread = 0;
@@ -102,6 +104,8 @@ PlayGroundPhysics::pause()
 bool
 PlayGroundPhysics::process(double factor)
 {
+	//cout << "PlayGroundPhysics::process" << endl;
+
 	this->doProcessing = true;
 	this->sem->release();
 
@@ -111,6 +115,8 @@ PlayGroundPhysics::process(double factor)
 bool
 PlayGroundPhysics::finalizeProcess()
 {
+	//cout << "PlayGroundPhysics::finalizeProcess" << endl;
+
 	this->doProcessing = false;
 	this->sem->grab();
 
@@ -124,9 +130,19 @@ PlayGroundPhysics::sendEvent(const Event& e)
 }
 
 PlayGroundPhysicsEntity*
-PlayGroundPhysics::createEntity()
+PlayGroundPhysics::createEntity( TiXmlElement* objectNode )
 {
-	return 0;
+	PlayGroundPhysicsEntity* entity = new PlayGroundPhysicsEntity();
+
+	TiXmlElement* instanceNode = objectNode->FirstChildElement( "type" );
+	if ( 0 == instanceNode )
+	{
+		cout << "ERROR ... no type-node found for physics-instance - ignoring object" << endl;
+		delete entity;
+		return 0;
+	}
+
+	return entity;
 }
 
 void

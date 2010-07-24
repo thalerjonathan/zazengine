@@ -37,18 +37,18 @@ PlayGroundAudio::initialize()
 	result = FMOD::System_Create( &this->system );
     if (result != FMOD_OK)
     {
-        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result) );
+        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
        	return false;
     }
 
     result = this->system->getVersion( &version );
     if (result != FMOD_OK)
     {
-        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result) );
+        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
        	return false;
     }
 
-    if (version < FMOD_VERSION)
+    if ( FMOD_VERSION > version )
     {
         printf( "Error!  You are using an old version of FMOD %08x.  This program requires %08x\n", version, FMOD_VERSION );
         return false;
@@ -57,14 +57,15 @@ PlayGroundAudio::initialize()
     result = this->system->init( 10, FMOD_INIT_NORMAL, 0 );
     if (result != FMOD_OK)
     {
-        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result) );
+        printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
        	return false;
     }
 
-    result = system->createSound("media/audio/getout.ogg", FMOD_SOFTWARE | FMOD_2D, 0, &this->bgMusic);
+    result = system->createSound("media/audio/getout.ogg", FMOD_SOFTWARE | FMOD_2D, 0, &this->bgMusic );
     if (result != FMOD_OK)
     {
-    	printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result) );
+    	printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
+    	return false;
     }
 
 	cout << "================ PlayGroundAudio initialized =================" << endl;
@@ -84,7 +85,7 @@ PlayGroundAudio::shutdown()
 		result = this->bgMusic->release();
 		if (result != FMOD_OK)
 		{
-			printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+			printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
 		}
 	}
 
@@ -93,13 +94,13 @@ PlayGroundAudio::shutdown()
 		result = this->system->close();
 		if (result != FMOD_OK)
 		{
-			printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+			printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
 		}
 
 		result = this->system->release();
 		if (result != FMOD_OK)
 		{
-			printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+			printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
 		}
 	}
 
@@ -113,10 +114,10 @@ PlayGroundAudio::start()
 {
 	FMOD_RESULT result;
 
-    result = system->playSound(FMOD_CHANNEL_FREE, this->bgMusic, false, &this->bgMusicCh);
+    result = system->playSound( FMOD_CHANNEL_FREE, this->bgMusic, false, &this->bgMusicCh );
     if (result != FMOD_OK)
 	{
-    	printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result) );
+    	printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
     	return false;
     }
 
@@ -138,7 +139,7 @@ PlayGroundAudio::pause()
 bool
 PlayGroundAudio::process(double factor)
 {
-	cout << "PlayGroundAudio::process" << endl;
+	//cout << "PlayGroundAudio::process" << endl;
 
 	return true;
 }
@@ -146,7 +147,7 @@ PlayGroundAudio::process(double factor)
 bool
 PlayGroundAudio::finalizeProcess()
 {
-	cout << "PlayGroundAudio::finalizeProcess" << endl;
+	//cout << "PlayGroundAudio::finalizeProcess" << endl;
 
 	return true;
 }
@@ -158,7 +159,21 @@ PlayGroundAudio::sendEvent(const Event& e)
 }
 
 PlayGroundAudioEntity*
-PlayGroundAudio::createEntity()
+PlayGroundAudio::createEntity( TiXmlElement* objectNode )
 {
-	return new PlayGroundAudioEntity();
+	PlayGroundAudioEntity* entity = new PlayGroundAudioEntity();
+
+	for (TiXmlElement* soundNode = objectNode->FirstChildElement(); soundNode != 0; soundNode = soundNode->NextSiblingElement())
+	{
+		const char* str = soundNode->Value();
+		if ( 0 == str )
+			continue;
+
+		if ( 0 == strcmp( str, "sound" ) )
+		{
+
+		}
+	}
+
+	return entity;
 }

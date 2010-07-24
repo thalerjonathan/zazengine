@@ -14,7 +14,7 @@
 using namespace std;
 
 PlayGroundGraphicsEntity::PlayGroundGraphicsEntity()
-	: type( "audio" )
+	: type( "graphics" )
 {
 
 }

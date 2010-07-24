@@ -16,7 +16,7 @@ class IGraphics : public ISubSystem
 	public:
 		virtual ~IGraphics() {};
 
-		virtual IGraphicsEntity* createEntity() = 0;
+		virtual IGraphicsEntity* createEntity( TiXmlElement* ) = 0;
 
 };
 
