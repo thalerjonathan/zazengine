@@ -29,11 +29,13 @@ class Core
 		static bool shutdown();
 		static Core& getInstance() { return *Core::instance; };
 
-		EventManager& getSubSysEventManager() const { return *this->subSysEventManager; };
-		EventManager& getObjectsEventManager() const { return *this->objectsEventManager; };
-
 		void start();
 		void stop();
+
+		ISubSystem* getSubSystemByType( const std::string& );
+
+		EventManager& getSubSysEventManager() const { return *this->subSysEventManager; };
+		EventManager& getObjectsEventManager() const { return *this->objectsEventManager; };
 
 	private:
 		static Core* instance;

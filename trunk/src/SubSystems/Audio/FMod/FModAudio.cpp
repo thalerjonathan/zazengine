@@ -80,6 +80,22 @@ FModAudio::shutdown()
 
 	FMOD_RESULT result;
 
+	std::list<FModAudioEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		FModAudioEntity* entity = *iter++;
+
+		result = entity->sound->release();
+		if (result != FMOD_OK)
+		{
+			printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
+		}
+
+		delete entity;
+	}
+
+	this->entities.clear();
+
 	if ( this->bgMusic )
 	{
 		result = this->bgMusic->release();
@@ -114,12 +130,25 @@ FModAudio::start()
 {
 	FMOD_RESULT result;
 
-    result = system->playSound( FMOD_CHANNEL_FREE, this->bgMusic, false, &this->bgMusicCh );
+    result = this->system->playSound( FMOD_CHANNEL_FREE, this->bgMusic, false, &this->bgMusicCh );
     if (result != FMOD_OK)
 	{
     	printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
     	return false;
     }
+
+	std::list<FModAudioEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		FModAudioEntity* entity = *iter++;
+
+		result = this->system->playSound( FMOD_CHANNEL_FREE, entity->sound, false, &entity->channel );
+		if (result != FMOD_OK)
+		{
+			printf( "FMOD error! (%d) %s\n", result, FMOD_ErrorString( result ) );
+		    return false;
+		}
+	}
 
 	return true;
 }
@@ -171,9 +200,23 @@ FModAudio::createEntity( TiXmlElement* objectNode )
 
 		if ( 0 == strcmp( str, "sound" ) )
 		{
+			str = soundNode->Attribute( "file" );
+
+			FMOD::Sound* sound = 0;
+			FMOD_RESULT result = FMOD_OK;
+
+		    result = this->system->createSound( str, FMOD_SOFTWARE | FMOD_3D, 0, &sound );
+		    if (result != FMOD_OK)
+		    {
+		    	cout << "ERROR ... loading sound from file \"" << str << ": " << FMOD_ErrorString( result ) << endl;
+		    	delete entity;
+		    	return 0;
+		    }
 
 		}
 	}
+
+	this->entities.push_back( entity );
 
 	return entity;
 }

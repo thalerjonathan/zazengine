@@ -24,6 +24,15 @@ FModAudioEntity::~FModAudioEntity()
 
 }
 
+vector<string>
+FModAudioEntity::getDependencies() const
+{
+	vector<string> dep;
+	dep.push_back( "physics" );
+
+	return dep;
+}
+
 void
 FModAudioEntity::consume( ISubSystemEntity* producer )
 {
@@ -32,7 +41,21 @@ FModAudioEntity::consume( ISubSystemEntity* producer )
 		IPhysicsEntity* physics = dynamic_cast<IPhysicsEntity*>( producer );
 		if ( 0 != physics )
 		{
-			// TODO: do update of this
+			const double* physicsPos = physics->getPos();
+			const double* physicsVel = physics->getVel();
+
+			FMOD_VECTOR position;
+			FMOD_VECTOR velocity;
+
+			position.x = physicsPos[0];
+			position.y = physicsPos[1];
+			position.z = physicsPos[2];
+
+			velocity.x = physicsVel[0];
+			velocity.y = physicsVel[1];
+			velocity.z = physicsVel[2];
+
+			this->channel->set3DAttributes( &position, &velocity );
 		}
 		else
 		{

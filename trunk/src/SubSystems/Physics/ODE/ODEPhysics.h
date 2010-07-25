@@ -17,6 +17,8 @@
 
 #include <ode/ode.h>
 
+#include <list>
+
 class ODEPhysics : public IPhysics
 {
 	public:
@@ -55,6 +57,8 @@ class ODEPhysics : public IPhysics
 		dWorldID worldID;
 		dSpaceID spaceID;
 		dJointGroupID contactGroupID;
+
+		std::list<ODEPhysicsEntity*> entities;
 
 		void processInternal();
 

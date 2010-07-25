@@ -24,6 +24,15 @@ ZazenGraphicsEntity::~ZazenGraphicsEntity()
 
 }
 
+vector<string>
+ZazenGraphicsEntity::getDependencies() const
+{
+	vector<string> dep;
+	dep.push_back( "physics" );
+
+	return dep;
+}
+
 void
 ZazenGraphicsEntity::consume( ISubSystemEntity* producer )
 {

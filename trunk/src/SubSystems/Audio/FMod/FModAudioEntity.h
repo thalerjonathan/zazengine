@@ -9,20 +9,28 @@
 #define FMODAUDIOENTITY_H_
 
 #include "../../../Core/SubSystems/IFaces/IAudioEntity.h"
-#include "../../../Core/SubSystems/IFaces/IConsumer.h"
 
-class FModAudioEntity : public IAudioEntity, public IConsumer
+#include <fmod/fmod.hpp>
+
+class FModAudioEntity : public IAudioEntity
 {
 	public:
+		friend class FModAudio;
+
 		FModAudioEntity( );
 		virtual ~FModAudioEntity();
 
 		const std::string& getType() const { return this->type; };
 
+		std::vector<std::string> getDependencies() const;
+
 		void consume( ISubSystemEntity* );
 
 	private:
 		std::string type;
+
+		FMOD::Sound* sound;
+		FMOD::Channel* channel;
 };
 
 #endif /* FMODAUDIOENTITY_H_ */

@@ -36,8 +36,8 @@ class PhysicType
 	 bool staticFlag;
 	 float mass;
 	 
-	dBodyID bodyID;
-	dGeomID geomID;
+	 dBodyID bodyID;
+	 dGeomID geomID;
 
 };
 

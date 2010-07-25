@@ -400,6 +400,8 @@ bool Material::readShaderSource(const string& file, string& shaderSource)
 	while ((c = fgetc(shaderSourceFile)) != EOF)
 		shaderSource += c;
 
+	fclose( shaderSourceFile );
+
 	return true;
 }
 
