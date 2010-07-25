@@ -13,6 +13,8 @@ class Renderer
 
 	virtual void renderFrame(GeomInstance*) = 0;
 
+	void renderText( const std::string&, int x, int y );
+
 	void printInfo();
 
  protected:
