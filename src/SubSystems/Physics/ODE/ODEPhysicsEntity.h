@@ -10,16 +10,31 @@
 
 #include "../../../Core/SubSystems/IFaces/IPhysicsEntity.h"
 
+#include "types/PhysicType.h"
+
 class ODEPhysicsEntity : public IPhysicsEntity
 {
 	public:
-		ODEPhysicsEntity() : type ("physics") {};
+		friend class ODEPhysics;
+
+		ODEPhysicsEntity() : type ("physics") { this->physicType = 0; };
 		virtual ~ODEPhysicsEntity() {};
 
 		const std::string& getType() const { return this->type; };
 
+		const double* getPos() const { return pos; };
+		const double* getRot() const { return rot; };
+		const double* getVel() const { return vel; };
+
 	private:
 		std::string type;
+
+		double pos[3];
+		double rot[12];
+		double vel[3];
+
+		PhysicType* physicType;
+
 };
 
 #endif /* PLAYGROUNDPHYSICSENTITY_H_ */

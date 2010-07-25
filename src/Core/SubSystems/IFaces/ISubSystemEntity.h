@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "IConsumer.h"
-
 #include "../../ObjectModel/IFaces/IGameObject.h"
 
 class ISubSystemEntity
@@ -22,7 +20,11 @@ class ISubSystemEntity
 
 		virtual const std::string& getType() const = 0;
 
-		void addConsumer(IConsumer* c) { this->consumers.push_back( c ); };
+		std::vector<std::string> getDependencies() const { return std::vector<std::string>(); };
+
+		virtual void consume(ISubSystemEntity*) {};
+
+		void addConsumer(ISubSystemEntity* c) { this->consumers.push_back( c ); };
 
 		void processConsumers()
 		{
@@ -33,7 +35,7 @@ class ISubSystemEntity
 		}
 
 	private:
-		std::vector<IConsumer*> consumers;
+		std::vector<ISubSystemEntity*> consumers;
 };
 
 #endif /* ISUBSYSTEMENTITY_H_ */

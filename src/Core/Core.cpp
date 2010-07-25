@@ -179,6 +179,22 @@ Core::stop()
 	this->runCore = false;
 }
 
+ISubSystem*
+Core::getSubSystemByType( const std::string& type )
+{
+	list<ISubSystem*>::iterator iter = this->subSystems.begin();
+	while ( iter != this->subSystems.end() )
+	{
+		ISubSystem* subSys = *iter++;
+		if ( subSys->getType() == type )
+		{
+			return subSys;
+		}
+	}
+
+	return 0;
+}
+
 bool
 Core::loadConfig()
 {

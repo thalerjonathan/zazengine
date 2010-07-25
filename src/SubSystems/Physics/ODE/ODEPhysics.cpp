@@ -7,6 +7,10 @@
 
 #include "ODEPhysics.h"
 
+#include "types/PhysicPlane.h"
+#include "types/PhysicSphere.h"
+#include "types/PhysicBox.h"
+
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -74,6 +78,14 @@ ODEPhysics::shutdown()
 	delete this->sem;
 	this->sem = 0;
 
+	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ODEPhysicsEntity* entity = *iter++;
+
+		delete entity;
+	}
+
 	dWorldDestroy(this->worldID);
 	dSpaceDestroy(this->spaceID);
 	dCloseODE();
@@ -120,6 +132,29 @@ ODEPhysics::finalizeProcess()
 	this->doProcessing = false;
 	this->sem->grab();
 
+	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ODEPhysicsEntity* entity = *iter++;
+
+		const dReal* pos = dBodyGetPosition( entity->physicType->getBodyID() );
+		const dReal* rot = dBodyGetRotation( entity->physicType->getBodyID() );
+		const dReal* vel = dBodyGetLinearVel( entity->physicType->getBodyID() );
+
+		entity->pos[0] = pos[0];
+		entity->pos[1] = pos[1];
+		entity->pos[2] = pos[2];
+
+		for (int i = 0; i < 12; i++)
+			entity->rot[i] = rot[i];
+
+		entity->vel[0] = vel[0];
+		entity->vel[1] = vel[1];
+		entity->vel[2] = vel[2];
+
+		entity->processConsumers();
+	}
+
 	return true;
 }
 
@@ -132,15 +167,48 @@ ODEPhysics::sendEvent(const Event& e)
 ODEPhysicsEntity*
 ODEPhysics::createEntity( TiXmlElement* objectNode )
 {
-	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
-
-	TiXmlElement* instanceNode = objectNode->FirstChildElement( "type" );
-	if ( 0 == instanceNode )
+	TiXmlElement* typeNode = objectNode->FirstChildElement( "type" );
+	if ( 0 == typeNode )
 	{
 		cout << "ERROR ... no type-node found for physics-instance - ignoring object" << endl;
-		delete entity;
 		return 0;
 	}
+
+	string typeID;
+	const char* str = typeNode->Attribute( "id" );
+	if ( 0 == str)
+	{
+		cout << "ERROR ... no id attribute found in physic type - ignoring object" << endl;
+		return 0;
+	}
+	else
+	{
+		typeID = str;
+	}
+
+	PhysicType* type = 0;
+
+	if ( "SPHERE" == typeID )
+	{
+		type = new PhysicSphere( false, 1, 1 );
+	}
+	else if ( "BOX" == typeID )
+	{
+		type = new PhysicBox( false, 1, 1, 1, 1 );
+	}
+	else if ( "PLANE" == typeID )
+	{
+		type = new PhysicPlane( false, 1, 0, 0, 0, 1 );
+	}
+
+	type->create( this->worldID, this->spaceID );
+
+	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
+	entity->physicType = type;
+
+	memset( entity->pos, 0, sizeof( entity->pos ) );
+	memset( entity->rot, 0, sizeof( entity->rot ) );
+	memset( entity->vel, 0, sizeof( entity->vel ) );
 
 	return entity;
 }
@@ -159,13 +227,10 @@ ODEPhysics::processInternal()
 		}
 	}
 
-	/* TODO: update orientation matrices
-	const dReal* pPos = dBodyGetPosition(type->getBodyID());
-	const dReal* pRotMatrix = dBodyGetRotation(type->getBodyID());
-
+/*
 	memcpy(node->matrix.data, pRotMatrix, 11 * sizeof(float));
 	memcpy(&node->matrix.data[12], pPos, 3 * sizeof(float));
-	*/
+*/
 
 	this->sem->release();
 }
@@ -199,7 +264,6 @@ ODEPhysics::collisionCallback(void* data, dGeomID o1, dGeomID o2)
 		}
 	}
 }
-
 
 void*
 ODEPhysics::threadFunc(void* args)

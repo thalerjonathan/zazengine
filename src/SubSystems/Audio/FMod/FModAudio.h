@@ -16,6 +16,8 @@
 #include <fmod/fmod.hpp>
 #include <fmod/fmod_errors.h>
 
+#include <list>
+
 class FModAudio : public IAudio
 {
 	public:
@@ -48,6 +50,8 @@ class FModAudio : public IAudio
 		FMOD::System* system;
 		FMOD::Sound* bgMusic;
 		FMOD::Channel* bgMusicCh;
+
+		std::list<FModAudioEntity*> entities;
 
 };
 

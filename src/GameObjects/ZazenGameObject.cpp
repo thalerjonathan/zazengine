@@ -74,34 +74,45 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 		if ( 0 == str )
 			continue;
 
-		ISubSystemEntity* subSystemEntity = 0;
-
-		/*
-		list<ISubSystem*>::iterator iter = this->subSystems.begin();
-		while ( iter != this->subSystems.end() )
-		{
-			ISubSystem* subSys = *iter++;
-			if ( subSys->getType() == str )
-			{
-				subSystemEntity = subSys->createEntity( subSystemEntityNode );
-				if ( 0 == subSystemEntity )
-				{
-					cout << "ERROR ... failed creating instance for subsystem \"" << str << "\"" << endl;
-					return false;
-				}
-
-				break;
-			}
-		}
-		*/
-
-		if ( 0 == subSystemEntity )
+		ISubSystem* subSystem = Core::getInstance().getSubSystemByType( str );
+		if ( 0 == subSystem )
 		{
 			cout << "ERROR ... no according SubSystem for definition \"" << str << "\" found - object will be ignored" << endl;
 			return false;
 		}
+		else
+		{
+			ISubSystemEntity* subSystemEntity = subSystem->createEntity( subSystemEntityNode );
+			if ( 0 == subSystemEntity )
+			{
+				cout << "ERROR ... failed creating instance for subsystem \"" << str << "\"" << endl;
+				return false;
+			}
 
-		this->subSystemEntities.insert( make_pair( subSystemEntity->getType(), subSystemEntity ) );
+			this->subSystemEntities.insert( make_pair( subSystemEntity->getType(), subSystemEntity ) );
+		}
+	}
+
+	map<string, ISubSystemEntity*>::iterator iter = this->subSystemEntities.begin();
+	while ( iter != this->subSystemEntities.end() )
+	{
+		ISubSystemEntity* entity = iter->second;
+		iter++;
+
+		vector<string> dependencies = entity->getDependencies();
+		for ( unsigned int i = 0; i < dependencies.size(); i++ )
+		{
+			map<string, ISubSystemEntity*>::iterator findIter = this->subSystemEntities.find( dependencies[i] );
+			if ( findIter != this->subSystemEntities.end() )
+			{
+				entity->addConsumer( findIter->second );
+			}
+			else
+			{
+				cout << "ERROR ... failed resolving dependency \"" << dependencies[i] << "\"" << endl;
+				return false;
+			}
+		}
 	}
 
 	return true;
