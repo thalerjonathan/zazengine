@@ -1,5 +1,7 @@
 #include <GL/glew.h>
 #include <SDL/SDL.h>
+#include <GL/glut.h>
+#include <GL/glu.h>
 
 #include "Renderer.h"
 
@@ -47,7 +49,25 @@ Renderer::~Renderer()
 
 }
 
-void Renderer::printInfo()
+void
+Renderer::renderText( const std::string& text, int x, int y )
+{
+	this->camera.setupOrtho();
+
+	for ( unsigned int i = 0; i < text.size(); i++ )
+	{
+		glColor3f( 1.0, 1.0, 1.0 );
+		//glRasterPos2i( x + ( i * 10 ), y );
+
+		//glutStrokeCharacter( GLUT_STROKE_ROMAN, text[i] );
+		glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18, text[i] );
+	}
+
+	this->camera.setupPerspective();
+}
+
+void
+Renderer::printInfo()
 {
 	cout << "--------------------------------------- SCENE-INFO ---------------------------------------" << endl;
 	cout << "Rendered Faces:          " << this->renderedFaces << endl << endl;
