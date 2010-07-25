@@ -15,10 +15,6 @@
 
 #include "../../../../Core/Utils/Math/Transform.h"
 
-#ifdef USE_PHYSICS
-#include "physic/PhysicSphere.h"
-#endif
-
 #include <iostream>
 
 using namespace std;
@@ -83,12 +79,12 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 	}
 
 	for (unsigned int i = 0; i < this->instances.size(); i++) {
-		EntityInstance& instance = this->instances[i];
-		Entity& entity = this->entities[instance.entity];
+		EntityInstance* instance = this->instances[i];
+		Entity entity = this->entities[instance->entity];
 
-		GeomType* model = Model::get(instance.entity);
+		GeomType* model = Model::get(instance->entity);
 		if (model == 0) {
-			cout << "ERROR ... instance " << instance.entity << " has no model - ignoring instance" << endl;
+			cout << "ERROR ... instance " << instance->entity << " has no model - ignoring instance" << endl;
 			continue;
 		}
 
@@ -114,26 +110,8 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		if (model->getBBMax()[2] > this->sceneBBMax[2])
 			this->sceneBBMax.data[2] = model->getBBMax()[2];
 */
-		Transform* instancePosition = new Transform();
-		instancePosition->setPosition(instance.position);
 
-#ifdef USE_PHYSICS
-		if (entity.physic) {
-			Transform* instancePhysic = this->world->addPhysicEntity(entity.physic);
-			if (instancePhysic) {
-				geomInstance->transforms.push_back(instancePosition);
-				geomInstance->transforms.push_back(instancePhysic);
-				
-				this->world->setPosition(instancePhysic, instance.position);
-			} else {
-				geomInstance->transforms.push_back(instancePosition);
-			}
-		} else {
-			geomInstance->transforms.push_back(instancePosition);
-		}
-#else
-		geomInstance->transforms.push_back(instancePosition);
-#endif
+		geomInstance->transforms.push_back(instance->transform);
 
 		geomInstance->parent = this->sceneRoot;
 		this->sceneRoot->children.push_back(geomInstance);
@@ -141,15 +119,6 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 	
 	if (randomizeInstances)
 		this->randomizeInstances(rows, columns, density);
-
-#ifdef USE_PHYSICS
-	for (unsigned int i = 0; i < this->additionalPhysics.size(); i++)
-		this->world->addPhysicEntity(this->additionalPhysics[i]);
-	
-#ifdef PHYSIC_THREADED
-	this->world->startPhysicThread();
-#endif
-#endif
 		
 	this->sceneMeasures.data[0] = this->sceneBBMax[0] - this->sceneBBMin[0];
 	this->sceneMeasures.data[1] = this->sceneBBMax[1] - this->sceneBBMin[1];
@@ -170,46 +139,6 @@ void Scene::setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax)
 
 void Scene::processFrame(double loopFactor)
 {	
-#ifdef USE_PHYSICS
-	if (this->rainFlag) {
-		if (SDL_GetTicks() - this->lastRainTick > 10) {
-			Vector position;
-			srand(SDL_GetTicks());
-			position.data[0] = rand() % (int) this->sceneMeasures[0];
-			position.data[1] = this->sceneMeasures[1] + 50;
-			position.data[2] = rand() % (int) this->sceneMeasures[2];
-			
-			position.data[0] += this->sceneBBMin[0];
-			position.data[1] += this->sceneBBMin[1];
-			position.data[2] += this->sceneBBMin[2];
-			
-			GeomSphere* sphere = new GeomSphere(1);
-			GeomInstance* sphereInstance = new GeomInstance(sphere);
-			
-			PhysicSphere* physicSphere = new PhysicSphere(false, 10, 1);
-			Transform* instancePhysic = this->world->addPhysicEntity(physicSphere);
-			if (instancePhysic) {
-				sphereInstance->transforms.push_back(instancePhysic);
-				this->world->setPosition(instancePhysic, position);
-			} else {
-				delete physicSphere;
-				
-				Transform* instancePosition = new Transform();
-				sphereInstance->transforms.push_back(instancePosition);
-			}
-			
-			sphereInstance->parent = this->sceneRoot;
-			this->sceneRoot->children.push_back(sphereInstance);
-
-			this->lastRainTick = SDL_GetTicks();
-		}
-	}
-	
-#ifndef PHYSIC_THREADED
-	this->world->process(loopFactor);
-#endif
-#endif
-	
 	this->sceneRoot->transform = this->camera->modelView;
 	this->processTransforms(this->sceneRoot);
 	
@@ -269,25 +198,6 @@ void Scene::randomizeInstances(int rows, int columns, int density)
 			Transform* instancePosition = new Transform();
 			instancePosition->setPosition(position);
 
-#ifdef USE_PHYSICS
-			/*
-			if (entity.physic) {
-				Transform* instancePhysic = this->world->addPhysicEntity(entity.physic);
-				if (instancePhysic) {
-					geomInstance->transforms.push_back(instancePosition);
-					geomInstance->transforms.push_back(instancePhysic);
-
-					this->world->setPosition(instancePhysic, instance.position);
-				} else {
-					geomInstance->transforms.push_back(instancePosition);
-				}
-			} else {
-				geomInstance->transforms.push_back(instancePosition);
-			}
-			*/
-#else
-			geomInstance->transforms.push_back(instancePosition);
-#endif
 			geomInstance->transforms.push_back(instancePosition);
 
 			geomInstance->parent = this->sceneRoot;

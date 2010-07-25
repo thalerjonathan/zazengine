@@ -15,9 +15,11 @@ class IPhysicsEntity : public ISubSystemEntity
 	public:
 		virtual ~IPhysicsEntity() {};
 
-		virtual const double* getPos() const = 0;
-		virtual const double* getRot() const = 0;
-		virtual const double* getVel() const = 0;
+		virtual const bool isStatic() const = 0;
+
+		virtual const float* getPos() const = 0;
+		virtual const float* getRot() const = 0;
+		virtual const float* getVel() const = 0;
 };
 
 #endif /* IPHYSICSENTITY_H_ */

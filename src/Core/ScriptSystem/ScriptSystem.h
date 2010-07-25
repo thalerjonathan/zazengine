@@ -13,6 +13,9 @@ extern "C"
 	#include <lua/lua.h>
 }
 
+#include <lua/lua.hpp>
+#include <luabind/luabind.hpp>
+
 #include <string>
 
 class ScriptSystem
@@ -24,6 +27,8 @@ class ScriptSystem
 
 		bool loadFile( const std::string& );
 		bool callFunc( const std::string& );
+
+		lua_State* getLuaState() { return this->luaState; };
 
 	private:
 		static ScriptSystem* instance;

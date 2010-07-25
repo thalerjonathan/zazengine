@@ -29,9 +29,21 @@ end
 
 function beginFrame( factor )
 	frameCount = frameCount + 1
-	-- print( "lua got called: beginFrame" )
+	-- print( factor )
 end
 
 function endFrame()
 	-- print( "lua got called: endFrame" )
+end
+
+function onKeyDown( key )
+
+end
+
+function onKeyPressed( key )
+
+end
+
+function onKeyUp( key )
+
 end
