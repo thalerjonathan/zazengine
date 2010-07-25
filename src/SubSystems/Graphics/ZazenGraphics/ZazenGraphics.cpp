@@ -9,6 +9,11 @@
 
 #include <GL/glew.h>
 
+#include "Renderer/Model.h"
+#include "Renderer/geom/GeomPlane.h"
+#include "Renderer/geom/GeomSphere.h"
+#include "Renderer/geom/GeomTeapot.h"
+
 #include <iostream>
 
 #define WINDOW_WIDTH 800
@@ -29,10 +34,10 @@ ZazenGraphics::~ZazenGraphics()
 }
 
 bool
-ZazenGraphics::initialize( TiXmlElement* )
+ZazenGraphics::initialize( TiXmlElement* configNode )
 {
 	cout << endl << "=============== ZazenGraphics initializing... ===============" << endl;
-	
+
 	cout << "Initializing SDL..." << endl;
 	int error = SDL_Init(SDL_INIT_EVERYTHING);
 	if (error != 0) {
@@ -100,6 +105,29 @@ ZazenGraphics::initialize( TiXmlElement* )
 	this->camera->setPosition(0, 0, 20);
 	this->camera->changeHeading(0);
 	
+	this->activeScene = new Scene( "NullScene", this->camera );
+
+	TiXmlElement* skyBoxNode = configNode->FirstChildElement( "skyBox" );
+	if ( skyBoxNode )
+	{
+		string folder;
+
+		const char* str = skyBoxNode->Attribute( "folder" );
+		if (str != 0)
+			folder = str;
+
+		this->activeScene->setSkyBoxFolder( folder );
+	}
+	else
+	{
+		cout << "INFO ... scene hast no Skybox defined" << endl;
+	}
+
+	if ( false == this->loadGeomClasses( configNode ) )
+	{
+		return false;
+	}
+
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	
 	return true;
@@ -109,6 +137,9 @@ bool
 ZazenGraphics::shutdown()
 {
 	cout << endl << "=============== ZazenGraphics shutting down... ===============" << endl;
+
+	delete this->activeScene;
+	this->activeScene = 0;
 
 	SDL_Quit();
 	
@@ -123,6 +154,8 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
+	this->activeScene->load(false, 0, 0, 0);
+
 	return true;
 }
 
@@ -139,11 +172,11 @@ ZazenGraphics::pause()
 }
 
 bool
-ZazenGraphics::process(double iterationFactor)
+ZazenGraphics::process( double iterationFactor )
 {
 	//cout << "ZazenGraphics::process" << endl;
 
-	//this->activeScene->processFrame( iterationFactor );
+	this->activeScene->processFrame( iterationFactor );
 
 	return true;
 }
@@ -175,5 +208,148 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode )
 		return 0;
 	}
 
+	Scene::EntityInstance instance;
+
+	const char* str = instanceNode->Attribute( "class" );
+	if ( 0 != str )
+	{
+		instance.entity = str;
+	}
+
+	str = instanceNode->Attribute( "x" );
+	if ( 0 != str )
+	{
+		instance.position.data[0] = atof( str );
+	}
+
+	str = instanceNode->Attribute( "y" );
+	if ( 0 != str )
+	{
+		instance.position.data[1] = atof( str );
+	}
+
+	str = instanceNode->Attribute( "z" );
+	if ( 0 != str )
+	{
+		instance.position.data[2] = atof( str );
+	}
+
+	instance.size = 1.0;
+
+	this->activeScene->addInstance( instance );
+
 	return entity;
+}
+
+bool
+ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
+{
+	TiXmlElement* geomClassesNode = configNode->FirstChildElement( "geomClasses" );
+	if ( 0 == geomClassesNode )
+	{
+		cout << "ERROR ... no geomClasses defined - exit" << endl;
+		return false;
+	}
+
+	for (TiXmlElement* classNode = geomClassesNode->FirstChildElement(); classNode != 0; classNode = classNode->NextSiblingElement())
+	{
+		const char* str = classNode->Value();
+		if ( 0 == str )
+			continue;
+
+		if ( 0 == strcmp( str, "geomClass" ) )
+		{
+			Scene::Entity entity;
+
+			string modelType;
+
+			str = classNode->Attribute( "id" );
+			if ( 0 == str )
+			{
+				cout << "ERROR ... id attribute missing in geomClass - ignoring" << endl;
+				continue;
+			}
+			else
+			{
+				entity.name = str;
+			}
+
+			str = classNode->Attribute( "material" );
+			if ( 0 != str )
+			{
+				// is optinal
+				entity.material = str;
+			}
+
+			str = classNode->Attribute( "modelType" );
+			if ( 0 == str )
+			{
+				cout << "ERROR ... modelType attribute missing in geomClass - ignoring" << endl;
+				continue;
+			}
+			else
+			{
+				modelType = str;
+			}
+
+			if ( "BUILTIN" == modelType)
+			{
+				string geomType;
+				str = classNode->Attribute( "geomType" );
+				if ( 0 == str )
+				{
+					cout << "ERROR ... geomType attribute missing in geomClass - ignoring" << endl;
+					continue;
+				}
+				else
+				{
+					geomType = str;
+				}
+
+				if ( "SPHERE" == geomType )
+				{
+					GeomSphere* sphere = new GeomSphere( 1 );
+					Model::registerGeom( sphere, entity.name );
+				}
+				else if ( "TEAPOT" == geomType )
+				{
+					GeomTeapot* teapot = new GeomTeapot( 1 );
+					Model::registerGeom( teapot, entity.name );
+				}
+				else if ( "PLANE" == geomType )
+				{
+					float length = 200;
+					float width = 400;
+
+					str = classNode->Attribute("length");
+					if (str != 0)
+						length = atof(str);
+
+					str = classNode->Attribute("width");
+					if (str != 0)
+						width = atof(str);
+
+					GeomPlane* plane = new GeomPlane( length, width );
+					Model::registerGeom( plane, entity.name );
+				}
+			}
+			else if ( "MESH" == modelType)
+			{
+				str = classNode->Attribute( "file" );
+				if ( 0 == str )
+				{
+					cout << "ERROR ... file attribute missing in geomClass - ignoring" << endl;
+					continue;
+				}
+				else
+				{
+					entity.modelFile = str;
+				}
+			}
+
+			this->activeScene->addEntity( entity );
+		}
+	}
+
+	return true;
 }

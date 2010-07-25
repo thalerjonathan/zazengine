@@ -8,7 +8,7 @@
 		<class id="TeapotRefractive" modelType="BUILTIN" geomType="TEAPOT" material="RDCglass"/>
 		<class id="PlaneRefractive" modelType="BUILTIN" geomType="PLANE" length="25" width="25" material="NMCTglass"/>
 				
-		<class name="Watertower" modelType="MESH" file="3ds/watertower.3ds"/>
+		<class name="Watertower" modelType="MESH" file="media/graphics/models/3ds/watertower.3ds"/>
 		
 		<class name="Sphere" modelType="BUILTIN" geomType="SPHERE"/>
 		<class name="Plane" modelType="BUILTIN" geomType="PLANE" length="25" width="25"/>

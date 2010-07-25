@@ -50,8 +50,8 @@ class ZazenGraphics : public IGraphics
 		
 		Camera* camera;
 		Scene* activeScene;
-		std::vector<Scene*> scenes;
 	
+		bool loadGeomClasses( TiXmlElement* );
 };
 
 #endif /* ZAZENGRAPHICS_H_ */

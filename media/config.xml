@@ -54,5 +54,15 @@
 				<type id="SPHERE" r="1"/>
 			</physics>
 		</object>
+		
+		<object name="plane">
+			<graphics>
+				<instance class="Plane" x="0" y="0" z="0"/>
+			</graphics>
+			
+			<physics>
+				<type id="PLANE" r="1"/>
+			</physics>
+		</object>
 	</objectList>
 </config>
