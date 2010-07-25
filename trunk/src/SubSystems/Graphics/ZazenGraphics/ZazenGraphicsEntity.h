@@ -10,9 +10,13 @@
 
 #include "../../../Core/SubSystems/IFaces/IGraphicsEntity.h"
 
+#include "Renderer/Scene.h"
+
 class ZazenGraphicsEntity : public IGraphicsEntity
 {
 	public:
+		friend class ZazenGraphics;
+
 		ZazenGraphicsEntity();
 		virtual ~ZazenGraphicsEntity();
 
@@ -24,6 +28,8 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 
 	private:
 		std::string type;
+
+		Scene::EntityInstance* instance;
 };
 
 #endif /* ZAZENGRAPHICSENTITY_H_ */

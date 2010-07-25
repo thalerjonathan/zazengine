@@ -35,6 +35,9 @@ Core::initalize()
 		Core::instance->gameObjectFactory = new ZazenGameObjectFactory();
 		Core::instance->subSystemFactory = new ZazenSubSystemFactory();
 
+		Core::instance->subSysEventManager = new EventManager();
+		Core::instance->objectsEventManager = new EventManager();
+
 		if ( false == ScriptSystem::initialize() )
 		{
 			cout << "ERROR ... failed initializing ScriptSystem - exit" << endl;
@@ -46,9 +49,6 @@ Core::initalize()
 			cout << "ERROR ... failed initializing Core - exit" << endl;
 			return false;
 		}
-
-		Core::instance->subSysEventManager = new EventManager();
-		Core::instance->objectsEventManager = new EventManager();
 
 		cout << "********************************************************" << endl;
 		cout << "************** Core successfully initialized ***********" << endl;
@@ -63,9 +63,6 @@ Core::shutdown()
 {
 	if ( Core::instance )
 	{
-		delete Core::instance->gameObjectFactory;
-		delete Core::instance->subSystemFactory;
-
 		ScriptSystem::getInstance().callFunc( "onShutdown" );
 
 		list<ISubSystem*>::iterator iter;
@@ -83,6 +80,12 @@ Core::shutdown()
 
 		if ( Core::instance->objectsEventManager )
 			delete Core::instance->objectsEventManager;
+
+		if ( Core::instance->gameObjectFactory )
+			delete Core::instance->gameObjectFactory;
+
+		if ( Core::instance->subSystemFactory )
+			delete Core::instance->subSystemFactory;
 
 		ScriptSystem::shutdown();
 

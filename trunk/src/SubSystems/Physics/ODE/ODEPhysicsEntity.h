@@ -17,21 +17,19 @@ class ODEPhysicsEntity : public IPhysicsEntity
 	public:
 		friend class ODEPhysics;
 
-		ODEPhysicsEntity() : type ("physics") { this->physicType = 0; };
+		ODEPhysicsEntity() : entityType ("physics") { this->physicType = 0; };
 		virtual ~ODEPhysicsEntity() {};
 
-		const std::string& getType() const { return this->type; };
+		const std::string& getType() const { return this->entityType; };
 
-		const double* getPos() const { return pos; };
-		const double* getRot() const { return rot; };
-		const double* getVel() const { return vel; };
+		const bool isStatic() const { return this->physicType->isStatic(); };
+
+		const float* getPos() const { return dBodyGetPosition( this->physicType->getBodyID() ); };
+		const float* getRot() const { return dBodyGetRotation( this->physicType->getBodyID() ); };
+		const float* getVel() const { return dBodyGetLinearVel( this->physicType->getBodyID() ); };
 
 	private:
-		std::string type;
-
-		double pos[3];
-		double rot[12];
-		double vel[3];
+		std::string entityType;
 
 		PhysicType* physicType;
 

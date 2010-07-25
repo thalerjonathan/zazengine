@@ -22,12 +22,17 @@ class Event
 {
 	public:
 		Event() { this->id = ""; this->target = 0; this->source = 0; this->startTimestamp = 0; };
+		Event( const std::string& id ) { this->id = id; this->target = 0; this->source = 0; this->startTimestamp = 0; };
 		Event(const Event& e) { this->id = e.id; this->source = e.source; this->target = e.target; this->startTimestamp = e.startTimestamp; };
 		~Event() {};
 
 		EventID id;
 		IEventListener* source;
 		IEventListener* target;
+
+		bool operator== ( const Event& e ) const { return this->id == e.id; };
+		bool operator== ( const std::string& str ) const { return this->id == str; };
+		bool operator== ( const char* str ) const { return this->id == str; };
 
 		long int startTimestamp;
 

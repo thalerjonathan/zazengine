@@ -116,8 +116,6 @@ ODEPhysics::pause()
 bool
 ODEPhysics::process(double factor)
 {
-	//cout << "ODEPhysics::process" << endl;
-
 	this->doProcessing = true;
 	this->sem->release();
 
@@ -127,8 +125,6 @@ ODEPhysics::process(double factor)
 bool
 ODEPhysics::finalizeProcess()
 {
-	//cout << "ODEPhysics::finalizeProcess" << endl;
-
 	this->doProcessing = false;
 	this->sem->grab();
 
@@ -136,22 +132,6 @@ ODEPhysics::finalizeProcess()
 	while ( iter != this->entities.end() )
 	{
 		ODEPhysicsEntity* entity = *iter++;
-
-		const dReal* pos = dBodyGetPosition( entity->physicType->getBodyID() );
-		const dReal* rot = dBodyGetRotation( entity->physicType->getBodyID() );
-		const dReal* vel = dBodyGetLinearVel( entity->physicType->getBodyID() );
-
-		entity->pos[0] = pos[0];
-		entity->pos[1] = pos[1];
-		entity->pos[2] = pos[2];
-
-		for (int i = 0; i < 12; i++)
-			entity->rot[i] = rot[i];
-
-		entity->vel[0] = vel[0];
-		entity->vel[1] = vel[1];
-		entity->vel[2] = vel[2];
-
 		entity->processConsumers();
 	}
 
@@ -186,29 +166,24 @@ ODEPhysics::createEntity( TiXmlElement* objectNode )
 		typeID = str;
 	}
 
-	PhysicType* type = 0;
+	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
 
 	if ( "SPHERE" == typeID )
 	{
-		type = new PhysicSphere( false, 1, 1 );
+		entity->physicType = new PhysicSphere( false, 1, 1 );
 	}
 	else if ( "BOX" == typeID )
 	{
-		type = new PhysicBox( false, 1, 1, 1, 1 );
+		entity->physicType = new PhysicBox( false, 1, 1, 1, 1 );
 	}
 	else if ( "PLANE" == typeID )
 	{
-		type = new PhysicPlane( false, 1, 0, 0, 0, 1 );
+		entity->physicType = new PhysicPlane( true, 1, 0, 0, 0, 1 );
 	}
 
-	type->create( this->worldID, this->spaceID );
+	entity->physicType->create( this->worldID, this->spaceID );
 
-	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
-	entity->physicType = type;
-
-	memset( entity->pos, 0, sizeof( entity->pos ) );
-	memset( entity->rot, 0, sizeof( entity->rot ) );
-	memset( entity->vel, 0, sizeof( entity->vel ) );
+	this->entities.push_back( entity );
 
 	return entity;
 }
@@ -226,11 +201,6 @@ ODEPhysics::processInternal()
 			dJointGroupEmpty(this->contactGroupID);
 		}
 	}
-
-/*
-	memcpy(node->matrix.data, pRotMatrix, 11 * sizeof(float));
-	memcpy(&node->matrix.data[12], pPos, 3 * sizeof(float));
-*/
 
 	this->sem->release();
 }

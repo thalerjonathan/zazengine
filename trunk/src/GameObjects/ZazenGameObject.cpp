@@ -105,7 +105,7 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 			map<string, ISubSystemEntity*>::iterator findIter = this->subSystemEntities.find( dependencies[i] );
 			if ( findIter != this->subSystemEntities.end() )
 			{
-				entity->addConsumer( findIter->second );
+				findIter->second->addConsumer( entity );
 			}
 			else
 			{

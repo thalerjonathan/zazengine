@@ -15,37 +15,25 @@ class Scene
 		 std::string name;
 		 std::string modelFile;
 		 std::string material;
-
-#ifdef USE_PHYSICS
-		PhysicType* physic;
-#endif
 	 } Entity;
  
 	 typedef struct {
 		 std::string entity;
-		 Vector position;
 		 float size;
+		 Transform* transform;
 	 } EntityInstance;
 
 	 Scene(const std::string&, Camera*);
 	 ~Scene();
-	
-#ifdef USE_PHYSICS
-	 void doRain() { this->rainFlag = !this->rainFlag; this->lastRainTick = SDL_GetTicks(); };
-#endif
 	 
 	 void setSkyBoxFolder(std::string& f) { this->skyBoxFolder = f; };
 	 void setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax);
 
 	 void processFrame(double);
 	 void load(bool, int, int, int);
-
-#ifdef USE_PHYSICS
-	 void addPhysics(PhysicType* p) { this->additionalPhysics.push_back(p); };
-#endif
 	 
 	 void addEntity(Entity& e) { this->entities[e.name] = e; };
-	 void addInstance(EntityInstance& i) { this->instances.push_back(i); };
+	 void addInstance(EntityInstance* i) { this->instances.push_back(i); };
 	 
 	 void printInfo();
 	 
@@ -58,18 +46,12 @@ class Scene
 
 	 std::string skyBoxFolder;
 
-#ifdef USE_PHYSICS
-	 std::vector<PhysicType*> additionalPhysics;
-#endif
-	 
 	 std::map<std::string, Entity> entities;
-	 std::vector<EntityInstance> instances;
+	 std::vector<EntityInstance*> instances;
 	 
 	 Camera* camera;
 	 Renderer* renderer;
-#ifdef USE_PHYSICS
-	 World* world;
-#endif
+
 	 GeomInstance* sceneRoot;
 	 GeomInstance* skyBoxInstance;
 
@@ -78,11 +60,6 @@ class Scene
 	 GeomInstance* buildChildren(GeomType*);
 	 
 	 void randomizeInstances(int, int, int);
-
-#ifdef USE_PHYSICS
-	bool rainFlag;
-	int lastRainTick;
-#endif
 
 	Entity getRandomEntity();
 

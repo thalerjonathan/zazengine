@@ -16,12 +16,12 @@ using namespace std;
 ZazenGraphicsEntity::ZazenGraphicsEntity()
 	: type( "graphics" )
 {
-
+	this->instance = 0;
 }
 
 ZazenGraphicsEntity::~ZazenGraphicsEntity()
 {
-
+	delete this->instance;
 }
 
 vector<string>
@@ -41,7 +41,14 @@ ZazenGraphicsEntity::consume( ISubSystemEntity* producer )
 		IPhysicsEntity* physics = dynamic_cast<IPhysicsEntity*>( producer );
 		if ( 0 != physics )
 		{
-			// TODO: do update of this
+			if ( false == physics->isStatic() )
+			{
+				const float* physicsPos = physics->getPos();
+				const float* physicsRot = physics->getRot();
+
+				memcpy(this->instance->transform->matrix.data, physicsRot, 11 * sizeof( float ) );
+				memcpy(&this->instance->transform->matrix.data[12], physicsPos, 3 * sizeof( float ) );
+			}
 		}
 		else
 		{

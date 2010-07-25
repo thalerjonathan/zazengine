@@ -7,9 +7,6 @@
 
 #include "ScriptSystem.h"
 
-#include <lua/lua.hpp>
-#include <luabind/luabind.hpp>
-
 #include <iostream>
 
 using namespace std;

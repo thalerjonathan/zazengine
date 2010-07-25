@@ -11,6 +11,8 @@
 
 #include "../../../Core/Core.h"
 
+#include "../../../Core/ScriptSystem/ScriptSystem.h"
+
 #include <iostream>
 
 #include <SDL/SDL.h>
@@ -74,62 +76,72 @@ SDLInput::process(double factor)
 
 	SDL_Event event;
 	
-	if (SDL_PollEvent(&event)) {
-		if (event.type == SDL_KEYDOWN) {
-			cout << "keydown: " << event.key.keysym.sym << endl;
+	if (SDL_PollEvent(&event))
+	{
+		if (event.type == SDL_KEYDOWN)
+		{
+			ScriptSystem::getInstance().callFunc( "onKeyDown" );
 
-			if (event.key.keysym.sym == SDLK_q)
-				Core::getInstance().stop();
-			else
-				pressedKeys.push_back(event.key.keysym.sym);
+			pressedKeys.push_back(event.key.keysym.sym);
 			
-		} else if (event.type == SDL_KEYUP) {
+		}
+		else if (event.type == SDL_KEYUP)
+		{
+			ScriptSystem::getInstance().callFunc( "onKeyUp" );
+
 			pressedKeys.remove(event.key.keysym.sym);
 			
-		} else if (event.type == SDL_MOUSEMOTION) {
+		}
+		else if (event.type == SDL_MOUSEMOTION)
+		{
 			//this->camera->changeHeading(event.motion.xrel * loopFactor * 0.01);
 			//this->camera->changePitch(event.motion.yrel * loopFactor * 0.01);
 			
-		} else if (event.type == SDL_QUIT) {
+		}
+		else if (event.type == SDL_QUIT)
+		{
 			Core::getInstance().stop();
 		}
 	}
 	
 	list<int>::iterator pressedKeysIter = pressedKeys.begin();
-	while (pressedKeysIter != pressedKeys.end()) {
+	while ( pressedKeysIter != pressedKeys.end() )
+	{
 		int key = *pressedKeysIter++;
 		
-		switch(key){
+		switch( key )
+		{
 			case SDLK_RIGHT:
-				//this->camera->changeHeading(-1 * loopFactor);
+			{
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_RIGHT" ) );
 				break;
-				
+			}
 			case SDLK_LEFT:
-				//this->camera->changeHeading(1 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_LEFT" ) );
 				break;
 				
 			case SDLK_UP:
-				//this->camera->changePitch(-1 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_UP" ) );
 				break;
 				
 			case SDLK_DOWN:
-				//this->camera->changePitch(1 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_DOWN" ) );
 				break;
 				
 			case SDLK_w:
-				//this->camera->strafeForward(5 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_w" ) );
 				break;
 				
 			case SDLK_s:
-				//this->camera->strafeForward(-5 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_s" ) );
 				break;
 				
 			case SDLK_d:
-				//this->camera->changeRoll(-1 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_d" ) );
 				break;
 				
 			case SDLK_a:
-				//this->camera->changeRoll(1 * loopFactor);
+				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_a" ) );
 				break;
 				
 			default:
@@ -143,8 +155,6 @@ SDLInput::process(double factor)
 bool
 SDLInput::finalizeProcess()
 {
-	//cout << "PlayGroundPhysics::finalizeProcess" << endl;
-
 	return true;
 }
 

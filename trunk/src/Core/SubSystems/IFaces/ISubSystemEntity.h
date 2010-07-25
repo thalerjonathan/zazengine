@@ -20,7 +20,7 @@ class ISubSystemEntity
 
 		virtual const std::string& getType() const = 0;
 
-		std::vector<std::string> getDependencies() const { return std::vector<std::string>(); };
+		virtual std::vector<std::string> getDependencies() const { return std::vector<std::string>(); };
 
 		virtual void consume(ISubSystemEntity*) {};
 

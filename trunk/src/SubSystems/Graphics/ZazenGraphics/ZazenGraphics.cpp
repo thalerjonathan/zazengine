@@ -14,6 +14,8 @@
 #include "Renderer/geom/GeomSphere.h"
 #include "Renderer/geom/GeomTeapot.h"
 
+#include "../../../Core/Core.h"
+
 #include <iostream>
 
 #define WINDOW_WIDTH 800
@@ -40,20 +42,25 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 
 	cout << "Initializing SDL..." << endl;
 	int error = SDL_Init(SDL_INIT_EVERYTHING);
-	if (error != 0) {
+	if (error != 0)
+	{
 		cout << "FAILED ... Initializing SDL failed - exit..." << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... SDL initialized" << endl;
 	}
 	
-	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1) {
+	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
+	{
 		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
 		return false;
 	}
 	
-	this->drawContext = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
-	if (this->drawContext == 0) {
+	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
+	if (this->drawContext == 0)
+	{
 		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
 		return false;
 	}
@@ -61,49 +68,68 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	cout << "OK ... Videocontext created" << endl;
 	
 	GLenum err = glewInit();
-	if (err != GLEW_OK) {
+	if (err != GLEW_OK)
+	{
 		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
 	}
 	
-	if (!GLEW_VERSION_2_0) {
+	if (!GLEW_VERSION_2_0)
+	{
 		cout << "ERROR ... OpenGL not version 2.0 - exit..." << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... OpenGL 2.0 supported" << endl;
 	}
 	
-	if (!GLEW_ARB_vertex_buffer_object) {
+	if (!GLEW_ARB_vertex_buffer_object)
+	{
 		cout << "ERROR ... GL_ARB_vertex_buffer_object not supported - exit..." << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... GL_ARB_vertex_buffer_object supported" << endl;
 	}
 	
-	if (!GLEW_ARB_vertex_program) {
+	if (!GLEW_ARB_vertex_program)
+	{
 		cout << "ERROR ... GL_ARB_vertex_program not supported - exit..." << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... GL_ARB_vertex_program supported" << endl;
 	}
 	
-	if (!GLEW_ARB_fragment_program) {
+	if (!GLEW_ARB_fragment_program)
+	{
 		cout << "ERROR ... GL_ARB_fragment_program not supported - exit..." << endl;
 		return false;
-	} else {
+	}
+	else
+	{
 		cout << "OK ... GL_ARB_fragment_program supported" << endl;
 	}
+
+	int argc = 0;
+	glutInit(&argc, NULL);
 	
-	if (Material::loadMaterials() == false) {
+	if (Material::loadMaterials() == false)
+	{
 		cout << "FAILED ... loading Materials" << endl;
 		return false;
 	}
 	
-	this->camera = new Camera(45.0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	this->camera->setPosition(0, 0, 20);
-	this->camera->changeHeading(0);
+	this->camera = new Camera( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
+	this->camera->setPosition( 0, 0, 20 );
+	this->camera->changeHeading( 0 );
 	
 	this->activeScene = new Scene( "NullScene", this->camera );
 
@@ -128,6 +154,15 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_RIGHT", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_LEFT", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_UP", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_DOWN", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_w", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_s", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_d", this );
+	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_a", this );
+
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	
 	return true;
@@ -137,6 +172,8 @@ bool
 ZazenGraphics::shutdown()
 {
 	cout << endl << "=============== ZazenGraphics shutting down... ===============" << endl;
+
+	Core::getInstance().getSubSysEventManager().unregisterForEvent( "SDLK_RIGHT", this );
 
 	delete this->activeScene;
 	this->activeScene = 0;
@@ -174,8 +211,7 @@ ZazenGraphics::pause()
 bool
 ZazenGraphics::process( double iterationFactor )
 {
-	//cout << "ZazenGraphics::process" << endl;
-
+	this->lastItFact = iterationFactor;
 	this->activeScene->processFrame( iterationFactor );
 
 	return true;
@@ -184,14 +220,45 @@ ZazenGraphics::process( double iterationFactor )
 bool
 ZazenGraphics::finalizeProcess()
 {
-	//cout << "ZazenGraphics::finalizeProcess()" << endl;
-
 	return true;
 }
 
 bool
-ZazenGraphics::sendEvent(const Event& e)
+ZazenGraphics::sendEvent( const Event& e )
 {
+	if ( e == "SDLK_RIGHT" )
+	{
+		this->camera->changeHeading( -0.005 * this->lastItFact );
+	}
+	else if ( e == "SDLK_LEFT" )
+	{
+		this->camera->changeHeading( 0.005 * this->lastItFact );
+	}
+	else if ( e == "SDLK_UP" )
+	{
+		this->camera->changePitch( -0.005 * this->lastItFact );
+	}
+	else if ( e == "SDLK_DOWN" )
+	{
+		this->camera->changePitch( 0.005 * this->lastItFact );
+	}
+	else if ( e == "SDLK_w" )
+	{
+		this->camera->strafeForward( 0.01 * this->lastItFact );
+	}
+	else if ( e == "SDLK_s" )
+	{
+		this->camera->strafeForward( -0.01 * this->lastItFact );
+	}
+	else if ( e == "SDLK_d" )
+	{
+		this->camera->changeRoll( -0.005 * this->lastItFact );
+	}
+	else if ( e == "SDLK_a" )
+	{
+		this->camera->changeRoll( 0.005 * this->lastItFact );
+	}
+
 	return true;
 }
 
@@ -208,35 +275,39 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode )
 		return 0;
 	}
 
-	Scene::EntityInstance instance;
+	Vector v;
+	entity->instance = new Scene::EntityInstance();
+	entity->instance->transform = new Transform();
 
 	const char* str = instanceNode->Attribute( "class" );
 	if ( 0 != str )
 	{
-		instance.entity = str;
+		entity->instance->entity = str;
 	}
 
 	str = instanceNode->Attribute( "x" );
 	if ( 0 != str )
 	{
-		instance.position.data[0] = atof( str );
+		v.data[0] = atof( str );
 	}
 
 	str = instanceNode->Attribute( "y" );
 	if ( 0 != str )
 	{
-		instance.position.data[1] = atof( str );
+		v.data[1] = atof( str );
 	}
 
 	str = instanceNode->Attribute( "z" );
 	if ( 0 != str )
 	{
-		instance.position.data[2] = atof( str );
+		v.data[2] = atof( str );
 	}
 
-	instance.size = 1.0;
+	entity->instance->size = 1.0;
 
-	this->activeScene->addInstance( instance );
+	entity->instance->transform->setPosition(v);
+
+	this->activeScene->addInstance( entity->instance );
 
 	return entity;
 }
@@ -257,7 +328,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 		if ( 0 == str )
 			continue;
 
-		if ( 0 == strcmp( str, "geomClass" ) )
+		if ( 0 == strcmp( str, "class" ) )
 		{
 			Scene::Entity entity;
 

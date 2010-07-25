@@ -51,6 +51,8 @@ class ZazenGraphics : public IGraphics
 		Camera* camera;
 		Scene* activeScene;
 	
+		double lastItFact;
+
 		bool loadGeomClasses( TiXmlElement* );
 };
 
