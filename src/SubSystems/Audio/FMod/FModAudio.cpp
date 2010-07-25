@@ -202,10 +202,8 @@ FModAudio::createEntity( TiXmlElement* objectNode )
 		{
 			str = soundNode->Attribute( "file" );
 
-			FMOD::Sound* sound = 0;
 			FMOD_RESULT result = FMOD_OK;
-
-		    result = this->system->createSound( str, FMOD_SOFTWARE | FMOD_3D, 0, &sound );
+		    result = this->system->createSound( str, FMOD_SOFTWARE | FMOD_3D, 0, &entity->sound );
 		    if (result != FMOD_OK)
 		    {
 		    	cout << "ERROR ... loading sound from file \"" << str << ": " << FMOD_ErrorString( result ) << endl;

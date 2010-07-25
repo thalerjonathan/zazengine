@@ -16,7 +16,8 @@ using namespace std;
 FModAudioEntity::FModAudioEntity()
 	:type( "audio" )
 {
-
+	this->sound = 0;
+	this->channel = 0;
 }
 
 FModAudioEntity::~FModAudioEntity()

@@ -21,8 +21,6 @@ bool PhysicSphere::create(dWorldID worldID, dSpaceID spaceID)
 		dMass massStruct;
 		dMassSetZero(&massStruct);
 		dMassSetSphereTotal(&massStruct, this->mass, radius);
-		
-		massStruct.mass = this->mass;
 
 		dBodySetMass(this->bodyID, &massStruct);
 		dGeomSetBody (this->geomID, this->bodyID);
