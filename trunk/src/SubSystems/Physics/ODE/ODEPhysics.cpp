@@ -166,6 +166,25 @@ ODEPhysics::createEntity( TiXmlElement* objectNode )
 		typeID = str;
 	}
 
+	Vector v;
+	str = typeNode->Attribute( "x" );
+	if ( 0 != str )
+	{
+		v.data[0] = atof( str );
+	}
+
+	str = typeNode->Attribute( "y" );
+	if ( 0 != str )
+	{
+		v.data[1] = atof( str );
+	}
+
+	str = typeNode->Attribute( "z" );
+	if ( 0 != str )
+	{
+		v.data[2] = atof( str );
+	}
+
 	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
 
 	if ( "SPHERE" == typeID )
@@ -182,6 +201,9 @@ ODEPhysics::createEntity( TiXmlElement* objectNode )
 	}
 
 	entity->physicType->create( this->worldID, this->spaceID );
+
+	if ( false == entity->physicType->isStatic() )
+		entity->physicType->setPosition( v );
 
 	this->entities.push_back( entity );
 

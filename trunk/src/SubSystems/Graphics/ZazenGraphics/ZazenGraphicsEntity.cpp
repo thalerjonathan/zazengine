@@ -48,6 +48,8 @@ ZazenGraphicsEntity::consume( ISubSystemEntity* producer )
 
 				memcpy(this->instance->transform->matrix.data, physicsRot, 11 * sizeof( float ) );
 				memcpy(&this->instance->transform->matrix.data[12], physicsPos, 3 * sizeof( float ) );
+
+				this->instance->transform->matrix.print();
 			}
 		}
 		else

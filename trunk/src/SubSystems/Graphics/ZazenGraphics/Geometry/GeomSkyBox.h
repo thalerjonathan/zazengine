@@ -11,13 +11,13 @@
 #define _GEOMSPACEBOX_H_
 
 #include "GeomType.h"
-#include "../Texture.h"
-#include "../Camera.h"
+#include "../Material/Texture.h"
+#include "../Scene/Camera.h"
 
 class GeomSkyBox : public GeomType
 {
  public:
-	GeomSkyBox(Camera& cam, std::string& textures);
+	GeomSkyBox( Camera& cam, std::string& textures );
 	virtual ~GeomSkyBox();
 	
 	void render();

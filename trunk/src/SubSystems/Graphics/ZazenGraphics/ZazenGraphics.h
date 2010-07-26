@@ -12,8 +12,8 @@
 
 #include "ZazenGraphicsEntity.h"
 
-#include "Renderer/Scene.h"
-#include "Renderer/Camera.h"
+#include "Scene/Scene.h"
+#include "Scene/Camera.h"
 
 #include <SDL/SDL.h>
 

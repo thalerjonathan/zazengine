@@ -9,10 +9,10 @@
 
 #include <GL/glew.h>
 
-#include "Renderer/Model.h"
-#include "Renderer/geom/GeomPlane.h"
-#include "Renderer/geom/GeomSphere.h"
-#include "Renderer/geom/GeomTeapot.h"
+#include "Geometry/GeometryFactory.h"
+#include "Geometry/GeomPlane.h"
+#include "Geometry/GeomSphere.h"
+#include "Geometry/GeomTeapot.h"
 
 #include "../../../Core/Core.h"
 
@@ -128,8 +128,8 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	}
 	
 	this->camera = new Camera( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPosition( 0, 0, 20 );
-	this->camera->changeHeading( 0 );
+	this->camera->setPosition( 0, 40, 40 );
+	this->camera->changePitch( -0.7 );
 	
 	this->activeScene = new Scene( "NullScene", this->camera );
 
@@ -179,9 +179,10 @@ ZazenGraphics::shutdown()
 	this->activeScene = 0;
 
 	SDL_Quit();
-	
+
 	Material::freeAll();
 	Texture::freeAll();
+	GeometryFactory::freeAll();
 	
 	cout << "================ ZazenGraphics shutdown =================" << endl;
 
@@ -380,12 +381,12 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 				if ( "SPHERE" == geomType )
 				{
 					GeomSphere* sphere = new GeomSphere( 1 );
-					Model::registerGeom( sphere, entity.name );
+					GeometryFactory::registerGeom( sphere, entity.name );
 				}
 				else if ( "TEAPOT" == geomType )
 				{
 					GeomTeapot* teapot = new GeomTeapot( 1 );
-					Model::registerGeom( teapot, entity.name );
+					GeometryFactory::registerGeom( teapot, entity.name );
 				}
 				else if ( "PLANE" == geomType )
 				{
@@ -401,7 +402,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 						width = atof(str);
 
 					GeomPlane* plane = new GeomPlane( length, width );
-					Model::registerGeom( plane, entity.name );
+					GeometryFactory::registerGeom( plane, entity.name );
 				}
 			}
 			else if ( "MESH" == modelType)

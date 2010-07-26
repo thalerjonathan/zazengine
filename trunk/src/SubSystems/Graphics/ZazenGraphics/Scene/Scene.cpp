@@ -6,12 +6,12 @@
 	#ifdef SFX_RENDERING
 		#include "graphic/SFXRenderer.h"
 	#else
-		#include "StandardRenderer.h"
+		#include "../Renderer/StandardRenderer.h"
 	#endif
 #endif
 
-#include "geom/GeomSphere.h"
-#include "Model.h"
+#include "../Geometry/GeomSphere.h"
+#include "../Geometry/GeometryFactory.h"
 
 #include "../../../../Core/Utils/Math/Transform.h"
 
@@ -73,7 +73,7 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		Entity& entity = iter->second;
 
 		if (entity.modelFile != "")
-			Model::loadMesh(entity.name, entity.modelFile);
+			GeometryFactory::loadMesh(entity.name, entity.modelFile);
 
 		iter++;
 	}
@@ -82,7 +82,7 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		EntityInstance* instance = this->instances[i];
 		Entity entity = this->entities[instance->entity];
 
-		GeomType* model = Model::get(instance->entity);
+		GeomType* model = GeometryFactory::get(instance->entity);
 		if (model == 0) {
 			cout << "ERROR ... instance " << instance->entity << " has no model - ignoring instance" << endl;
 			continue;
@@ -184,7 +184,7 @@ void Scene::randomizeInstances(int rows, int columns, int density)
 		
 		for (int j = 0; j < columns; j++) {
 			Scene::Entity entity = this->getRandomEntity();
-			GeomType* model = Model::get(entity.name);
+			GeomType* model = GeometryFactory::get(entity.name);
 			if (model == 0) {
 				cout << "ERROR ... instance " << entity.name << " has no model - ignoring instance" << endl;
 				continue;

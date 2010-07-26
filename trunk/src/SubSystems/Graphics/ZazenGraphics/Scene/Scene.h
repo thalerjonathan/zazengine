@@ -1,8 +1,8 @@
 #ifndef SCENE_H_
 #define SCENE_H_
 
-#include "Geominstance.h"
-#include "Renderer.h"
+#include "../Geometry/GeomInstance.h"
+#include "../Renderer/Renderer.h"
 
 #include <string>
 #include <list>
@@ -23,7 +23,7 @@ class Scene
 		 Transform* transform;
 	 } EntityInstance;
 
-	 Scene(const std::string&, Camera*);
+	 Scene( const std::string&, Camera* );
 	 ~Scene();
 	 
 	 void setSkyBoxFolder(std::string& f) { this->skyBoxFolder = f; };

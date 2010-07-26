@@ -1,5 +1,5 @@
 /*
- *  model.cpp
+ *  GeometryFactory.cpp
  *  ZENgine
  *
  *  Created by Jonathan Thaler on 01.05.08.
@@ -7,11 +7,11 @@
  *
  */
 
-#include "Model.h"
+#include "GeometryFactory.h"
 
-#include "geom/GeomMesh.h"
-#include "geom/GeomTeapot.h"
-#include "geom/GeomPlane.h"
+#include "GeomMesh.h"
+#include "GeomTeapot.h"
+#include "GeomPlane.h"
 
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -20,7 +20,7 @@
  #include <sys/stat.h> 
  #include <unistd.h> 
 
-#include "geom/loaders/ply/ply.h"
+#include "Loaders/Ply/ply.h"
 
 #include <lib3ds/file.h>
 #include <lib3ds/mesh.h>
@@ -149,49 +149,49 @@ abs(float a)
 
 using namespace std;
 
-map<string, GeomType*> Model::models;
+map<string, GeomType*> GeometryFactory::meshes;
 
-GeomType* Model::get(const std::string& id)
+GeomType* GeometryFactory::get(const std::string& id)
 {
-	map<std::string, GeomType*>::iterator findIter = Model::models.find(id);
-	if (findIter != Model::models.end())
+	map<std::string, GeomType*>::iterator findIter = GeometryFactory::meshes.find(id);
+	if (findIter != GeometryFactory::meshes.end())
 		return findIter->second;
 
 	return 0;
 }
 
-void Model::loadMesh(const std::string& id, const std::string& fileName)
+void GeometryFactory::loadMesh(const std::string& id, const std::string& fileName)
 {
 	string ending;
 	unsigned long index = fileName.find_last_of('.');
 	if (index != string::npos)
 		ending = fileName.substr(index + 1, fileName.length() - index);
 
-	GeomType* model = 0;
+	GeomType* GeometryFactory = 0;
 
 	if (strcasecmp(ending.c_str(), "ply") == 0) {
-		model = Model::loadPly(fileName);
+		GeometryFactory = GeometryFactory::loadPly(fileName);
 	} else if (strcasecmp(ending.c_str(), "ms3d") == 0) {
-		model = Model::loadMs3D(fileName);
+		GeometryFactory = GeometryFactory::loadMs3D(fileName);
 	} else if (strcasecmp(ending.c_str(), "3ds") == 0) {
-		model = Model::load3DS(fileName);
+		GeometryFactory = GeometryFactory::load3DS(fileName);
 	} else {
-		model = Model::loadFolder(fileName);
+		GeometryFactory = GeometryFactory::loadFolder(fileName);
 	}
 
-	if (model)
-		Model::models[id] = model;
+	if (GeometryFactory)
+		GeometryFactory::meshes[id] = GeometryFactory;
 }
-void Model::freeAll()
+void GeometryFactory::freeAll()
 {
 }
 
-GeomType* Model::loadFolder(const std::string& folderName)
+GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 {
-	string fullPath = "resources/models/" + folderName;	
+	string fullPath = "resources/GeometryFactorys/" + folderName;
 	DIR* directory = opendir(fullPath.c_str());
 	if (!directory) {
-			cout << "ERROR ... couldn't open Directory \"" << fullPath << "\" in Model::loadFolder" << endl;		
+			cout << "ERROR ... couldn't open Directory \"" << fullPath << "\" in GeometryFactory::loadFolder" << endl;
 			return 0;	
 	}
 	
@@ -215,12 +215,12 @@ GeomType* Model::loadFolder(const std::string& folderName)
 		if (fileName == "..")
 			continue;
 
-		GeomType* subFolderModel = 0;
+		GeomType* subFolderGeometryFactory = 0;
 		string subFolderPath = folderName + "/" + fileName;
 
 		if (S_ISDIR(entryStatus.st_mode)) {
 			//cout << "subFolderPath = " << subFolderPath << endl;
-			subFolderModel = Model::loadFolder(subFolderPath);
+			subFolderGeometryFactory = GeometryFactory::loadFolder(subFolderPath);
 
 		} else {
 			string ending;
@@ -231,21 +231,21 @@ GeomType* Model::loadFolder(const std::string& folderName)
 			//cout << "subFilePath = " << fullFileName << endl;
 
 			if (strcasecmp(ending.c_str(), "ply") == 0) {
-				subFolderModel = Model::loadPly(fullFileName);
+				subFolderGeometryFactory = GeometryFactory::loadPly(fullFileName);
 			} else if (strcasecmp(ending.c_str(), "ms3d") == 0) {
-				subFolderModel = Model::loadMs3D(fullFileName);
+				subFolderGeometryFactory = GeometryFactory::loadMs3D(fullFileName);
 			} else if (strcasecmp(ending.c_str(), "3ds") == 0) {
-				subFolderModel = Model::load3DS(fullFileName);
+				subFolderGeometryFactory = GeometryFactory::load3DS(fullFileName);
 			} else {
 				cout << "bad ending: \"" << ending << "\"" << endl;
 			}
 		}
 		
-		if (subFolderModel) {
-			subFolderModel->parent = folderGroup;
+		if (subFolderGeometryFactory) {
+			subFolderGeometryFactory->parent = folderGroup;
 			
-			folderGroup->compareBB(subFolderModel->getBBMin(), subFolderModel->getBBMin());
-			folderGroup->children.push_back(subFolderModel);
+			folderGroup->compareBB(subFolderGeometryFactory->getBBMin(), subFolderGeometryFactory->getBBMin());
+			folderGroup->children.push_back(subFolderGeometryFactory);
 		}
 	}
 
@@ -254,12 +254,12 @@ GeomType* Model::loadFolder(const std::string& folderName)
 	return folderGroup;
 }
 
-GeomType* Model::load3DS(const std::string& fileName)
+GeomType* GeometryFactory::load3DS(const std::string& fileName)
 {
-	string fullFilename = "resources/models/" + fileName;
-	Lib3dsFile* modelData = lib3ds_file_load(fullFilename.c_str());
-	if (modelData == 0) {
-		cout << "ERROR ... couldnt load model " << fullFilename << endl; 
+	string fullFilename = "resources/GeometryFactorys/" + fileName;
+	Lib3dsFile* GeometryFactoryData = lib3ds_file_load(fullFilename.c_str());
+	if (GeometryFactoryData == 0) {
+		cout << "ERROR ... couldnt load GeometryFactory " << fullFilename << endl;
 		return 0;
 	}
 
@@ -267,7 +267,7 @@ GeomType* Model::load3DS(const std::string& fileName)
 
 	int meshCount = 0;
 	int totalFaces = 0;
-	for(Lib3dsMesh* mesh = modelData->meshes; mesh != NULL;mesh = mesh->next) {
+	for(Lib3dsMesh* mesh = GeometryFactoryData->meshes; mesh != NULL;mesh = mesh->next) {
 		totalFaces += mesh->faces;
 		meshCount++;
 	}
@@ -280,7 +280,7 @@ GeomType* Model::load3DS(const std::string& fileName)
 	if (meshCount > 1)
 		geomGroup = new GeomType();
 	
-	for(Lib3dsMesh* mesh = modelData->meshes; mesh != NULL; mesh = mesh->next) {
+	for(Lib3dsMesh* mesh = GeometryFactoryData->meshes; mesh != NULL; mesh = mesh->next) {
 		Lib3dsVector* vertices = new Lib3dsVector[mesh->faces * 3];
 		Lib3dsVector* normals = new Lib3dsVector[mesh->faces * 3];
 		
@@ -315,7 +315,7 @@ GeomType* Model::load3DS(const std::string& fileName)
 				vertices[i * 3 + j][1] = mesh->pointL[face->points[j]].pos[1];
 				vertices[i * 3 + j][2] = mesh->pointL[face->points[j]].pos[2];
 				
-				//newModel->indices[faceIndex * 3 + j] = face->points[j];
+				//newGeometryFactory->indices[faceIndex * 3 + j] = face->points[j];
 				
 				/*
 				float tmp = meshStruct->vertices[faceIndex * 3 + j][2];
@@ -338,16 +338,16 @@ GeomType* Model::load3DS(const std::string& fileName)
 	if (meshCount > 1)
 		geomGroup->setBB(geomGroupBBmin, geomGroupBBmax);
 	
-    lib3ds_file_free(modelData);
+    lib3ds_file_free(GeometryFactoryData);
       
     cout << "LOADED ... " << fileName << endl;
     
     return geomGroup;
 }
 
-GeomType* Model::loadMs3D(const std::string& fileName)
+GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 {
-	string fullFilename = "resources/models/" + fileName;
+	string fullFilename = "resources/GeometryFactorys/" + fileName;
 	ifstream fileStream(fullFilename.c_str(), ios::in | ios::binary);
 	
 	cout << "LOADING ... " << fileName << endl;
@@ -454,8 +454,8 @@ GeomType* Model::loadMs3D(const std::string& fileName)
 	for (int i = 0; i < numGroups; i++) {
 		int numTriangles = groups[i]->numtriangles;
 		
-		GeomMesh::Vertex* modelVertices = new GeomMesh::Vertex[numTriangles * 3];
-		GeomMesh::Vertex* modelNormals = new GeomMesh::Vertex[numTriangles * 3];
+		GeomMesh::Vertex* GeometryFactoryVertices = new GeomMesh::Vertex[numTriangles * 3];
+		GeomMesh::Vertex* GeometryFactoryNormals = new GeomMesh::Vertex[numTriangles * 3];
 		
 		Vector meshBBmin;
 		Vector meshBBmax;
@@ -481,17 +481,17 @@ GeomType* Model::loadMs3D(const std::string& fileName)
 				else if (vertex.vertex[2] < meshBBmin[2])
 					meshBBmin.data[2] = vertex.vertex[2];
 
-				modelVertices[j * 3 + k][0] = vertex.vertex[0];
-				modelVertices[j * 3 + k][1] = vertex.vertex[1];
-				modelVertices[j * 3 + k][2] = vertex.vertex[2];
+				GeometryFactoryVertices[j * 3 + k][0] = vertex.vertex[0];
+				GeometryFactoryVertices[j * 3 + k][1] = vertex.vertex[1];
+				GeometryFactoryVertices[j * 3 + k][2] = vertex.vertex[2];
 				
-				modelNormals[j * 3 + k][0] = triangle.vertexNormals[k][0];
-				modelNormals[j * 3 + k][1] = triangle.vertexNormals[k][1];
-				modelNormals[j * 3 + k][2] = triangle.vertexNormals[k][2];
+				GeometryFactoryNormals[j * 3 + k][0] = triangle.vertexNormals[k][0];
+				GeometryFactoryNormals[j * 3 + k][1] = triangle.vertexNormals[k][1];
+				GeometryFactoryNormals[j * 3 + k][2] = triangle.vertexNormals[k][2];
 			}
 		}
 		
-		GeomMesh* geomMesh = new GeomMesh(numTriangles, modelVertices, modelNormals);
+		GeomMesh* geomMesh = new GeomMesh(numTriangles, GeometryFactoryVertices, GeometryFactoryNormals);
 		geomMesh->setBB(meshBBmin, meshBBmax);
 		
 		if (numGroups > 1)
@@ -514,21 +514,21 @@ GeomType* Model::loadMs3D(const std::string& fileName)
 	return geomGroup;
 }
 
-GeomType* Model::loadPly(const std::string& fileName)
+GeomType* GeometryFactory::loadPly(const std::string& fileName)
 {	
-	string fullFilename = "resources/models/" + fileName;
+	string fullFilename = "resources/GeometryFactorys/" + fileName;
 
 	cout << "LOADING ... " << fileName << endl;
 
 	FILE* file = fopen(fileName.c_str(), "rb");
 	if (file == 0) {
-		cout << "ERROR in Model: failed opening file \"" << fileName << "\" with error " << endl;
+		cout << "ERROR in GeometryFactory: failed opening file \"" << fileName << "\" with error " << endl;
 		return 0;
 	}
 
 	PlyFile* plyFile = read_ply(file);
 	if (plyFile == 0) {
-		cout << "ERROR in Model: failed reading file \"" << fileName << "\"" << endl;
+		cout << "ERROR in GeometryFactory: failed reading file \"" << fileName << "\"" << endl;
 		return 0;
 	}
 
@@ -586,8 +586,8 @@ GeomType* Model::loadPly(const std::string& fileName)
 
     cout << "we got " << faceCount << " faces and " << vertices.size() << " vertices " << endl;
 
-	GeomMesh::Vertex* modelVertices = new GeomMesh::Vertex[faceCount * 3];
-    GeomMesh::Vertex* modelNormals = new GeomMesh::Vertex[faceCount * 3];
+	GeomMesh::Vertex* GeometryFactoryVertices = new GeomMesh::Vertex[faceCount * 3];
+    GeomMesh::Vertex* GeometryFactoryNormals = new GeomMesh::Vertex[faceCount * 3];
 
   	for (unsigned int i = 0; i < faceCount; i++) {
 		PlyFace face = faces[i];
@@ -623,17 +623,17 @@ GeomType* Model::loadPly(const std::string& fileName)
 			else if (z < meshBBmin[2])
 				meshBBmin.data[2] = z;
 
-			modelVertices[i * 3 + j][0] = x;
-			modelVertices[i * 3 + j][1] = y;
-			modelVertices[i * 3 + j][2] = z;
+			GeometryFactoryVertices[i * 3 + j][0] = x;
+			GeometryFactoryVertices[i * 3 + j][1] = y;
+			GeometryFactoryVertices[i * 3 + j][2] = z;
 
-			modelNormals[i * 3 + j][0] = nx;
-			modelNormals[i * 3 + j][1] = ny;
-			modelNormals[i * 3 + j][2] = nz;
+			GeometryFactoryNormals[i * 3 + j][0] = nx;
+			GeometryFactoryNormals[i * 3 + j][1] = ny;
+			GeometryFactoryNormals[i * 3 + j][2] = nz;
 		}
 	}
 
-  	GeomMesh* geomMesh = new GeomMesh(faceCount, modelVertices, modelNormals);
+  	GeomMesh* geomMesh = new GeomMesh(faceCount, GeometryFactoryVertices, GeometryFactoryNormals);
   	geomMesh->setBB(meshBBmin, meshBBmax);
 	
 	return geomMesh;

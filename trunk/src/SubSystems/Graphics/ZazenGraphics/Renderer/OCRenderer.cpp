@@ -3,8 +3,8 @@
 
 #include "OCRenderer.h"
 
-#include "Statemanager.h"
-#include "Occlusionquerystate.h"
+#include "../States/Statemanager.h"
+#include "../States/Occlusionquerystate.h"
 
 #include <iostream>
 #include <algorithm>

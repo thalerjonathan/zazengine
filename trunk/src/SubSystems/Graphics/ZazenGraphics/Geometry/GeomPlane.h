@@ -5,7 +5,7 @@
 #include <GL/glut.h>
 
 #include "GeomType.h"
-#include "../Texture.h"
+#include "../Material/Texture.h"
 #include <iostream>
 
 class GeomPlane : public GeomType

@@ -23,7 +23,7 @@
 			</graphics>
 			
 			<physics>
-				<type id="SPHERE" r="1"/>
+				<type id="SPHERE" r="1" x="0" y="10" z="0"/>
 			</physics>
 		</object>
 		
@@ -37,7 +37,7 @@
 			</graphics>
 			
 			<physics>
-				<type id="SPHERE" r="1"/>
+				<type id="SPHERE" r="1" x="10" y="10" z="0"/>
 			</physics>
 		</object>
 		
@@ -51,7 +51,7 @@
 			</graphics>
 			
 			<physics>
-				<type id="SPHERE" r="1"/>
+				<type id="SPHERE" r="1" x="0" y="10" z="10"/>
 			</physics>
 		</object>
 		
