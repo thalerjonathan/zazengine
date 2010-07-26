@@ -9,8 +9,8 @@
 
 using namespace std;
 
-Renderer::Renderer(Camera& camera, std::string& skyBoxFolder)
-	: camera(camera)
+Renderer::Renderer( Camera& camera, std::string& skyBoxFolder )
+	: camera( camera )
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
@@ -47,23 +47,6 @@ Renderer::Renderer(Camera& camera, std::string& skyBoxFolder)
 Renderer::~Renderer()
 {
 
-}
-
-void
-Renderer::renderText( const std::string& text, int x, int y )
-{
-	this->camera.setupOrtho();
-
-	for ( unsigned int i = 0; i < text.size(); i++ )
-	{
-		glColor3f( 1.0, 1.0, 1.0 );
-		//glRasterPos2i( x + ( i * 10 ), y );
-
-		//glutStrokeCharacter( GLUT_STROKE_ROMAN, text[i] );
-		glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18, text[i] );
-	}
-
-	this->camera.setupPerspective();
 }
 
 void

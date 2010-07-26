@@ -1,6 +1,6 @@
-#include "Geominstance.h"
+#include "GeomInstance.h"
 
-GeomInstance::GeomInstance(GeomType* geom)
+GeomInstance::GeomInstance( GeomType* geom )
 {
 	this->visible = true;
 	this->distance = 0;
@@ -14,7 +14,8 @@ GeomInstance::~GeomInstance()
 {
 }
 
-float GeomInstance::recalculateDistance()
+float
+GeomInstance::recalculateDistance()
 {
 	Vector wTranfCenter(this->geom->getCenter());
 	this->transform.transform(wTranfCenter);

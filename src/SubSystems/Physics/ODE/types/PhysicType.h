@@ -20,9 +20,9 @@ class PhysicType
 	 bool isStatic() { return this->staticFlag; };
 	 float getMass() { return this->mass; };
 
-	 void setPosition(const Vector& pos)
+	 void setPosition( const Vector& pos )
 	 {
-		 if (this->staticFlag)
+		 if ( this->staticFlag )
 			 dGeomSetPosition(this->geomID, pos[0], pos[1], pos[2]);
 		 else
 			 dBodySetPosition(this->bodyID, pos[0], pos[1], pos[2]);
@@ -30,7 +30,7 @@ class PhysicType
 
 	 dBodyID getBodyID() { return this->bodyID; };
 
-	 virtual bool create(dWorldID, dSpaceID) = 0;
+	 virtual bool create( dWorldID, dSpaceID ) = 0;
 	 
  protected:
 	 bool staticFlag;

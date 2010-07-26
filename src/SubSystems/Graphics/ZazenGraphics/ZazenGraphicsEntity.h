@@ -10,7 +10,7 @@
 
 #include "../../../Core/SubSystems/IFaces/IGraphicsEntity.h"
 
-#include "Renderer/Scene.h"
+#include "Scene/Scene.h"
 
 class ZazenGraphicsEntity : public IGraphicsEntity
 {

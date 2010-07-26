@@ -3,9 +3,9 @@
 
 #include <GL/glew.h>
 
-#include "../../../../../Core/Utils/Math/Vector.h"
-#include "../../../../../Core/Utils/Math/Matrix.h"
-#include "../Material.h"
+#include "../../../../Core/Utils/Math/Vector.h"
+#include "../../../../Core/Utils/Math/Matrix.h"
+#include "../Material/Material.h"
 
 #include <vector>
 
