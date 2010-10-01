@@ -16,7 +16,7 @@ class IPhysics : public ISubSystem
 	public:
 		virtual ~IPhysics() {};
 
-		virtual IPhysicsEntity* createEntity( TiXmlElement* ) = 0;
+		virtual IPhysicsEntity* createEntity( TiXmlElement*, IGameObject* parent ) = 0;
 
 };
 

@@ -37,7 +37,7 @@ class SDLInput : public IInput
 		
 		bool sendEvent( const Event& );
 		
-		ISubSystemEntity* createEntity( TiXmlElement* );
+		ISubSystemEntity* createEntity( TiXmlElement*, IGameObject* parent);
 		
 	private:
 		std::string id;

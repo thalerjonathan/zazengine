@@ -72,7 +72,7 @@ SDLInput::pause()
 bool
 SDLInput::process(double factor)
 {
-	//cout << "SDLInput::process" << endl;
+	cout << "SDLInput::process" << endl;
 
 	SDL_Event event;
 	
@@ -113,35 +113,35 @@ SDLInput::process(double factor)
 		{
 			case SDLK_RIGHT:
 			{
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_RIGHT" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_RIGHT" ) );
 				break;
 			}
 			case SDLK_LEFT:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_LEFT" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_LEFT" ) );
 				break;
 				
 			case SDLK_UP:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_UP" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_UP" ) );
 				break;
 				
 			case SDLK_DOWN:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_DOWN" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_DOWN" ) );
 				break;
 				
 			case SDLK_w:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_w" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_w" ) );
 				break;
 				
 			case SDLK_s:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_s" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_s" ) );
 				break;
 				
 			case SDLK_d:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_d" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_d" ) );
 				break;
 				
 			case SDLK_a:
-				Core::getInstance().getSubSysEventManager().postEvent( Event( "SDLK_a" ) );
+				Core::getInstance().getEventManager().postEvent( Event( "SDLK_a" ) );
 				break;
 				
 			default:
@@ -149,6 +149,8 @@ SDLInput::process(double factor)
 		}
 	}
 	
+	cout << "SDL_process end" << endl;
+
 	return true;
 }
 
@@ -165,7 +167,7 @@ SDLInput::sendEvent(const Event& e)
 }
 
 ISubSystemEntity*
-SDLInput::createEntity( TiXmlElement* cfgNode )
+SDLInput::createEntity( TiXmlElement* cfgNode, IGameObject* parent )
 {
 	return 0;
 }

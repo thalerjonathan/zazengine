@@ -84,9 +84,9 @@ ZazenAI::sendEvent(const Event& e)
 }
 
 ZazenAIEntity*
-ZazenAI::createEntity( TiXmlElement* node )
+ZazenAI::createEntity( TiXmlElement* node, IGameObject* parent )
 {
-	ZazenAIEntity* entity = new ZazenAIEntity();
+	ZazenAIEntity* entity = new ZazenAIEntity( parent );
 
 	return entity;
 }

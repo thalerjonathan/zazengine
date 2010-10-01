@@ -17,8 +17,8 @@ class ODEPhysicsEntity : public IPhysicsEntity
 	public:
 		friend class ODEPhysics;
 
-		ODEPhysicsEntity() : entityType ("physics") { this->physicType = 0; };
-		virtual ~ODEPhysicsEntity() {};
+		ODEPhysicsEntity( IGameObject* p );
+		virtual ~ODEPhysicsEntity();
 
 		const std::string& getType() const { return this->entityType; };
 
@@ -27,6 +27,8 @@ class ODEPhysicsEntity : public IPhysicsEntity
 		const float* getPos() const { return dBodyGetPosition( this->physicType->getBodyID() ); };
 		const float* getRot() const { return dBodyGetRotation( this->physicType->getBodyID() ); };
 		const float* getVel() const { return dBodyGetLinearVel( this->physicType->getBodyID() ); };
+
+		virtual bool sendEvent(const Event& e);
 
 	private:
 		std::string entityType;

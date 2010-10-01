@@ -45,7 +45,7 @@ EventManager::~EventManager()
 }
 
 bool
-EventManager::registerForEvent(EventID eventID, IEventListener* listener )
+EventManager::registerForEvent( EventID eventID, IEventListener* listener )
 {
 	this->registrationSem->grab();
 
@@ -62,7 +62,7 @@ EventManager::registerForEvent(EventID eventID, IEventListener* listener )
 }
 
 bool
-EventManager::unregisterForEvent(EventID eventID, IEventListener* listener )
+EventManager::unregisterForEvent( EventID eventID, IEventListener* listener )
 {
 	this->registrationSem->grab();
 
@@ -82,7 +82,7 @@ bool
 EventManager::postEvent(const Event& e)
 {
 	this->queueSem->grab();
-	this->eventQueue.push_back(e);
+	this->eventQueue.push_back( e );
 	this->queueSem->release();
 
 	return true;
@@ -92,12 +92,12 @@ void
 EventManager::processQueue()
 {
 	//sem_wait(this->queueSem);
-	list<Event> eventQueueCpy(this->eventQueue);
+	list<Event> eventQueueCpy( this->eventQueue );
 	this->eventQueue.clear();
 	//sem_post(this->queueSem);
 
 	//sem_wait(this->registrationSem);
-	list<Registration> regQueueCpy(this->regQueue);
+	list<Registration> regQueueCpy( this->regQueue );
 	this->regQueue.clear();
 	//sem_post(this->registrationSem);
 
@@ -111,7 +111,7 @@ EventManager::processQueue()
 		{
 			if ( false == reg.unregister )
 			{
-				findIter->second->push_back(reg.listener);
+				findIter->second->push_back( reg.listener );
 			}
 			else
 			{
@@ -148,7 +148,7 @@ EventManager::processQueue()
 		Event& e = *eventIter++;
 
 		// broadcast
-		if (e.target == 0)
+		if ( e.target == 0 )
 		{
 			this->broadCast( e );
 		}

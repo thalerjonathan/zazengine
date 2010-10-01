@@ -19,7 +19,11 @@
 
 /* BIG TARGET: Discrete Realtime Autonomus Entity Simulation
  *
- * Next Step: integrate LUA
+ * TODO: clear, powerful and flexible event-system
+ * TODO: solve how input moves around
+ * TODO: integrate event-system with LUA-scripting
+ *
+ * TODO: client-server model for world
  *
  */
 class Core
@@ -34,16 +38,14 @@ class Core
 
 		ISubSystem* getSubSystemByType( const std::string& );
 
-		EventManager& getSubSysEventManager() const { return *this->subSysEventManager; };
-		EventManager& getObjectsEventManager() const { return *this->objectsEventManager; };
+		EventManager& getEventManager() const { return *this->eventManager; };
 
 	private:
 		static Core* instance;
 
 		bool runCore;
 
-		EventManager* subSysEventManager;
-		EventManager* objectsEventManager;
+		EventManager* eventManager;
 
 		IGameObjectFactory* gameObjectFactory;
 		ISubSystemFactory* subSystemFactory;

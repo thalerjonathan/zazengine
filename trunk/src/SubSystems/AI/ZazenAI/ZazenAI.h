@@ -35,7 +35,7 @@ class ZazenAI : public IAi
 
 		bool sendEvent( const Event& e );
 
-		ZazenAIEntity* createEntity( TiXmlElement* );
+		ZazenAIEntity* createEntity( TiXmlElement*, IGameObject* parent );
 
 	private:
 		std::string id;

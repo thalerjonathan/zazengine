@@ -16,7 +16,7 @@ class IAudio : public ISubSystem
 	public:
 		virtual ~IAudio() {};
 
-		virtual IAudioEntity* createEntity( TiXmlElement* ) = 0;
+		virtual IAudioEntity* createEntity( TiXmlElement*, IGameObject* parent ) = 0;
 
 };
 

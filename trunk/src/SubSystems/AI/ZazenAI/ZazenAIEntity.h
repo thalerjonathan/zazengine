@@ -13,10 +13,12 @@
 class ZazenAIEntity : public IAIEntity
 {
 	public:
-		ZazenAIEntity() : type("ai") {};
-		virtual ~ZazenAIEntity() {};
+		ZazenAIEntity( IGameObject* p );
+		virtual ~ZazenAIEntity();
 
 		const std::string& getType() const { return this->type; };
+
+		virtual bool sendEvent(const Event& e);
 
 	private:
 		std::string type;

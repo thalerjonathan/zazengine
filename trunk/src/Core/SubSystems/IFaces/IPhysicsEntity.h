@@ -13,6 +13,7 @@
 class IPhysicsEntity : public ISubSystemEntity
 {
 	public:
+		IPhysicsEntity( IGameObject* p ) : ISubSystemEntity( p ) {};
 		virtual ~IPhysicsEntity() {};
 
 		virtual const bool isStatic() const = 0;

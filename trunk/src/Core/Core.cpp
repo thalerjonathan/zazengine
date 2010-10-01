@@ -35,8 +35,7 @@ Core::initalize()
 		Core::instance->gameObjectFactory = new ZazenGameObjectFactory();
 		Core::instance->subSystemFactory = new ZazenSubSystemFactory();
 
-		Core::instance->subSysEventManager = new EventManager();
-		Core::instance->objectsEventManager = new EventManager();
+		Core::instance->eventManager = new EventManager();
 
 		if ( false == ScriptSystem::initialize() )
 		{
@@ -75,11 +74,8 @@ Core::shutdown()
 			delete subSys;
 		}
 
-		if ( Core::instance->subSysEventManager )
-			delete Core::instance->subSysEventManager;
-
-		if ( Core::instance->objectsEventManager )
-			delete Core::instance->objectsEventManager;
+		if ( Core::instance->eventManager )
+			delete Core::instance->eventManager;
 
 		if ( Core::instance->gameObjectFactory )
 			delete Core::instance->gameObjectFactory;
@@ -101,8 +97,7 @@ Core::Core()
 
 	this->runCore = false;
 
-	this->subSysEventManager = 0;
-	this->objectsEventManager = 0;
+	this->eventManager = 0;
 }
 
 Core::~Core()
@@ -133,8 +128,7 @@ Core::start()
 		gettimeofday( &t, NULL );
 		startTicks = t.tv_usec + 1000000 * t.tv_sec;
 		
-		this->subSysEventManager->processQueue();
-		this->objectsEventManager->processQueue();
+		this->eventManager->processQueue();
 
 		if ( false == ScriptSystem::getInstance().callFunc( "beginFrame" ) )
 		{
@@ -154,6 +148,8 @@ Core::start()
 			this->runCore = false;
 			break;
 		}
+
+		//sleep( 1 );
 
 		subSysIter = this->subSystems.begin();
 		while ( subSysIter != this->subSystems.end() )

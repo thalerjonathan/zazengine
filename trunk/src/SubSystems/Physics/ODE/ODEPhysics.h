@@ -42,14 +42,14 @@ class ODEPhysics : public IPhysics
 
 		bool sendEvent( const Event& e );
 
-		ODEPhysicsEntity* createEntity( TiXmlElement* );
+		ODEPhysicsEntity* createEntity( TiXmlElement*, IGameObject* parent );
 
 	private:
 		std::string id;
 		std::string type;
 
-		bool runThread;
-		bool doProcessing;
+		volatile bool runThread;
+		volatile bool doProcessing;
 
 		Semaphore* sem;
 		Thread* thread;
@@ -58,9 +58,12 @@ class ODEPhysics : public IPhysics
 		dSpaceID spaceID;
 		dJointGroupID contactGroupID;
 
+		std::list<Event> receivedEvents;
 		std::list<ODEPhysicsEntity*> entities;
 
-		void processInternal();
+		void processEvents();
+		void doSimulation();
+		void generateEvents();
 
 		static void collisionCallback(void *data, dGeomID o1, dGeomID o2);
 

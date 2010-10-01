@@ -13,8 +13,9 @@
 
 using namespace std;
 
-ZazenGraphicsEntity::ZazenGraphicsEntity()
-	: type( "graphics" )
+ZazenGraphicsEntity::ZazenGraphicsEntity( IGameObject* p )
+	: IGraphicsEntity( p ),
+	type( "graphics" )
 {
 	this->instance = 0;
 }
@@ -24,6 +25,19 @@ ZazenGraphicsEntity::~ZazenGraphicsEntity()
 	delete this->instance;
 }
 
+bool
+ZazenGraphicsEntity::sendEvent(const Event& e)
+{
+	if ( e == "setOrientation" )
+	{
+		this->queuedEvents.push_back( e );
+		return true;
+	}
+
+	return false;
+}
+
+/*
 vector<string>
 ZazenGraphicsEntity::getDependencies() const
 {
@@ -58,3 +72,4 @@ ZazenGraphicsEntity::consume( ISubSystemEntity* producer )
 		}
 	}
 }
+*/

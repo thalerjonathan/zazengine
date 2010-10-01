@@ -14,7 +14,7 @@ using namespace std;
 
 FModAudio::FModAudio()
 	: id ("FModAudio"),
-	  type ("audio")
+	type ("audio")
 {
 	this->system = 0;
 	this->bgMusic = 0;
@@ -168,7 +168,31 @@ FModAudio::pause()
 bool
 FModAudio::process(double factor)
 {
-	//cout << "FModAudio::process" << endl;
+	cout << "FModAudio::process enter" << endl;
+
+	// process events of entities
+	std::list<FModAudioEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		FModAudioEntity* entity = *iter++;
+
+		std::list<Event>::iterator eventsIter = entity->queuedEvents.begin();
+		while ( eventsIter != entity->queuedEvents.end() )
+		{
+			Event& e = *eventsIter++;
+
+			cout << "received Event '" << e.id << "' in FModAudio from GO '" << entity->getParent()->getName() << endl;
+
+			if ( e == "setOrientation" )
+			{
+
+			}
+		}
+
+		entity->queuedEvents.clear();
+	}
+
+	cout << "FModAudio::process leave" << endl;
 
 	return true;
 }
@@ -176,7 +200,7 @@ FModAudio::process(double factor)
 bool
 FModAudio::finalizeProcess()
 {
-	//cout << "FModAudio::finalizeProcess" << endl;
+	cout << "FModAudio::finalizeProcess" << endl;
 
 	return true;
 }
@@ -188,9 +212,9 @@ FModAudio::sendEvent(const Event& e)
 }
 
 FModAudioEntity*
-FModAudio::createEntity( TiXmlElement* objectNode )
+FModAudio::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 {
-	FModAudioEntity* entity = new FModAudioEntity();
+	FModAudioEntity* entity = new FModAudioEntity( parent );
 
 	for (TiXmlElement* soundNode = objectNode->FirstChildElement(); soundNode != 0; soundNode = soundNode->NextSiblingElement())
 	{

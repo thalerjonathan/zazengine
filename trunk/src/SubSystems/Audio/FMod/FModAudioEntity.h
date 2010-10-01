@@ -17,14 +17,18 @@ class FModAudioEntity : public IAudioEntity
 	public:
 		friend class FModAudio;
 
-		FModAudioEntity( );
+		FModAudioEntity( IGameObject* p );
 		virtual ~FModAudioEntity();
 
 		const std::string& getType() const { return this->type; };
 
+		virtual bool sendEvent(const Event& e);
+
+		/*
 		std::vector<std::string> getDependencies() const;
 
 		void consume( ISubSystemEntity* );
+		*/
 
 	private:
 		std::string type;
