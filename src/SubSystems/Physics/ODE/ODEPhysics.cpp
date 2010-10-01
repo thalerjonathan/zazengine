@@ -28,7 +28,9 @@ ODEPhysics::ODEPhysics()
 	: id("ODEPhysics"),
 	  type("physics")
 {
-	this->sem = 0;
+	this->semA = 0;
+	this->semB = 0;
+
 	this->thread = 0;
 
 	this->doProcessing = false;
@@ -52,8 +54,10 @@ ODEPhysics::initialize( TiXmlElement* )
 	this->spaceID = dHashSpaceCreate(0);
 	this->contactGroupID = dJointGroupCreate(0);
 
-	this->sem = new Semaphore();
-	this->sem->grab();
+	this->semA = new Semaphore();
+	this->semB = new Semaphore();
+
+	this->semA->grab();
 
 	this->thread = new Thread();
 	this->thread->start( ODEPhysics::threadFunc, this );
@@ -70,14 +74,18 @@ ODEPhysics::shutdown()
 
 	this->doProcessing = false;
 	this->runThread = false;
-	this->sem->release();
+	this->semB->release();
+	this->semA->release();
 
 	this->thread->join();
 	delete this->thread;
 	this->thread = 0;
 
-	delete this->sem;
-	this->sem = 0;
+	delete this->semB;
+	delete this->semA;
+
+	this->semB = 0;
+	this->semA = 0;
 
 	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
 	while ( iter != this->entities.end() )
@@ -119,16 +127,11 @@ ODEPhysics::process(double factor)
 {
 	cout << "ODEPhysics::process enter" << endl;
 
-	//cout << "ODEPhysics::process bevore doProcessing = true" << endl;
-
 	this->doProcessing = true;
 
-	//cout << "ODEPhysics::process bevore release sem" << endl;
-	//this->sem->isBlocking();
-	this->sem->release();
+	this->semB->release();
+	this->semA->release();
 
-	//cout << " ODEPhysics::process after release sem" << endl;
-	//this->sem->isBlocking();
 	cout << "ODEPhysics::process leave" << endl;
 
 	return true;
@@ -139,17 +142,14 @@ ODEPhysics::finalizeProcess()
 {
 	cout << "ODEPhysics::finalizeProcess enter" << endl;
 
-	//cout << "ODEPhysics::finalizeProcess bevore doProcessing = false" << endl;
+	this->semB->grab();
 
 	this->doProcessing = false;
 
-	//cout << "ODEPhysics::finalizeProcess bevore grab" << endl;
-	//this->sem->isBlocking();
-	this->sem->grab();
+	this->semA->grab();
 
+	this->semB->release();
 
-	//cout << "ODEPhysics::finalizeProcess after grab" << endl;
-	//this->sem->isBlocking();
 	cout << "ODEPhysics::finalizeProcess leave" << endl;
 
 	//this->generateEvents();
@@ -296,15 +296,9 @@ ODEPhysics::processEvents()
 void
 ODEPhysics::doSimulation()
 {
-	//cout << "ODEPhysics::doSimulation bevore physics sem grab" << endl;
-	//this->sem->isBlocking();
-	this->sem->grab();
+	this->semA->grab();
 
-	//cout << "ODEPhysics::doSimulation grabbed physics sem" << endl;
-	//this->sem->isBlocking();
 	this->processEvents();
-
-	//cout << "ODEPhysics::doSimulation beginng physics processing" << endl;
 
 	while ( this->doProcessing )
 	{
@@ -315,22 +309,11 @@ ODEPhysics::doSimulation()
 		}
 	}
 
-	//cout << "ODEPhysics::doSimulation ended physics processing" << endl;
-
-	//cout << "ODEPhysics::doSimulation sleeping physics processing" << endl;
-
-
-
 	this->generateEvents();
 
-	//cout << "ODEPhysics::doSimulation bevore physics sem release" << endl;
-	//this->sem->isBlocking();
-	this->sem->release();
+	this->semA->release();
 
-	usleep(500000);
-
-	//cout << "ODEPhysics::doSimulation release physics sem" << endl;
-	//this->sem->isBlocking();
+	this->semB->grab();
 }
 
 void

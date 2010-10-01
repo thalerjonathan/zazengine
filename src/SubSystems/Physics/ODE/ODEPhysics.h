@@ -48,10 +48,12 @@ class ODEPhysics : public IPhysics
 		std::string id;
 		std::string type;
 
-		volatile bool runThread;
-		volatile bool doProcessing;
+		bool runThread;
+		bool doProcessing;
 
-		Semaphore* sem;
+		Semaphore* semA;
+		Semaphore* semB;
+
 		Thread* thread;
 
 		dWorldID worldID;
