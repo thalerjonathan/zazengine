@@ -40,7 +40,7 @@ class ZazenGraphics : public IGraphics
 
 		bool sendEvent( const Event& e );
 
-		ZazenGraphicsEntity* createEntity( TiXmlElement* );
+		ZazenGraphicsEntity* createEntity( TiXmlElement*, IGameObject* parent );
 
 	private:
 		std::string id;
@@ -52,6 +52,8 @@ class ZazenGraphics : public IGraphics
 		Scene* activeScene;
 	
 		double lastItFact;
+
+		std::list<ZazenGraphicsEntity*> entities;
 
 		bool loadGeomClasses( TiXmlElement* );
 };

@@ -154,14 +154,14 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_RIGHT", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_LEFT", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_UP", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_DOWN", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_w", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_s", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_d", this );
-	Core::getInstance().getSubSysEventManager().registerForEvent( "SDLK_a", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_RIGHT", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_LEFT", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_UP", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_DOWN", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_w", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_s", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_d", this );
+	Core::getInstance().getEventManager().registerForEvent( "SDLK_a", this );
 
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	
@@ -173,7 +173,16 @@ ZazenGraphics::shutdown()
 {
 	cout << endl << "=============== ZazenGraphics shutting down... ===============" << endl;
 
-	Core::getInstance().getSubSysEventManager().unregisterForEvent( "SDLK_RIGHT", this );
+	Core::getInstance().getEventManager().unregisterForEvent( "SDLK_RIGHT", this );
+
+	std::list<ZazenGraphicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ZazenGraphicsEntity* entity = *iter++;
+		delete entity;
+	}
+
+	this->entities.clear();
 
 	delete this->activeScene;
 	this->activeScene = 0;
@@ -212,8 +221,34 @@ ZazenGraphics::pause()
 bool
 ZazenGraphics::process( double iterationFactor )
 {
+	cout << "ZazenGraphics::process enter" << endl;
+
+	// process events of entities
+	std::list<ZazenGraphicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ZazenGraphicsEntity* entity = *iter++;
+
+		std::list<Event>::iterator eventsIter = entity->queuedEvents.begin();
+		while ( eventsIter != entity->queuedEvents.end() )
+		{
+			Event& e = *eventsIter++;
+
+			cout << "received Event '" << e.id << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
+
+			if ( e == "setOrientation" )
+			{
+
+			}
+		}
+
+		entity->queuedEvents.clear();
+	}
+
 	this->lastItFact = iterationFactor;
 	this->activeScene->processFrame( iterationFactor );
+
+	cout << "ZazenGraphics::process leave" << endl;
 
 	return true;
 }
@@ -221,6 +256,8 @@ ZazenGraphics::process( double iterationFactor )
 bool
 ZazenGraphics::finalizeProcess()
 {
+	cout << "ZazenGraphics::finalizeProcess" << endl;
+
 	return true;
 }
 
@@ -264,9 +301,9 @@ ZazenGraphics::sendEvent( const Event& e )
 }
 
 ZazenGraphicsEntity*
-ZazenGraphics::createEntity( TiXmlElement* objectNode )
+ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 {
-	ZazenGraphicsEntity* entity = new ZazenGraphicsEntity();
+	ZazenGraphicsEntity* entity = new ZazenGraphicsEntity( parent );
 
 	TiXmlElement* instanceNode = objectNode->FirstChildElement( "instance" );
 	if ( 0 == instanceNode )
@@ -309,6 +346,8 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode )
 	entity->instance->transform->setPosition(v);
 
 	this->activeScene->addInstance( entity->instance );
+
+	this->entities.push_back( entity );
 
 	return entity;
 }

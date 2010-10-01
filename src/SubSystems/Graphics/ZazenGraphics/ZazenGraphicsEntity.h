@@ -17,14 +17,18 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 	public:
 		friend class ZazenGraphics;
 
-		ZazenGraphicsEntity();
+		ZazenGraphicsEntity( IGameObject* p );
 		virtual ~ZazenGraphicsEntity();
 
 		const std::string& getType() const { return this->type; };
 
+		/*
 		std::vector<std::string> getDependencies() const;
 
 		void consume( ISubSystemEntity* );
+		*/
+
+		virtual bool sendEvent(const Event& e);
 
 	private:
 		std::string type;

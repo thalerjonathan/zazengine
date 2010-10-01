@@ -9,33 +9,27 @@
 #define ISUBSYSTEMENTITY_H_
 
 #include <string>
-#include <vector>
+#include <list>
 
 #include "../../ObjectModel/IFaces/IGameObject.h"
 
-class ISubSystemEntity
+class ISubSystemEntity : public IEventListener
 {
 	public:
+		ISubSystemEntity( IGameObject* parent ) : parent( parent ) {};
 		virtual ~ISubSystemEntity() {};
+
+		IGameObject* getParent() { return this->parent; };
 
 		virtual const std::string& getType() const = 0;
 
-		virtual std::vector<std::string> getDependencies() const { return std::vector<std::string>(); };
-
-		virtual void consume(ISubSystemEntity*) {};
-
-		void addConsumer(ISubSystemEntity* c) { this->consumers.push_back( c ); };
-
-		void processConsumers()
-		{
-			for ( unsigned int i = 0; i < consumers.size(); i++)
-			{
-				consumers[i]->consume( this );
-			}
-		}
+	protected:
+		std::list<Event> queuedEvents;
 
 	private:
-		std::vector<ISubSystemEntity*> consumers;
+		IGameObject* parent;
+
+
 };
 
 #endif /* ISUBSYSTEMENTITY_H_ */

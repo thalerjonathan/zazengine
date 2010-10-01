@@ -8,6 +8,8 @@
 #ifndef SEMAPHORE_H_
 #define SEMAPHORE_H_
 
+#include <iostream>
+
 #ifdef __linux__
 	#include <semaphore.h>
 	#include <errno.h>
@@ -92,6 +94,25 @@ class Semaphore
 				if ( 0 != sem_post( &this->sem ) )
 					throw std::runtime_error( strerror(errno) );
 			#endif
+		}
+
+		bool isBlocking()
+		{
+			int value = 0;
+
+			#ifdef __linux__
+				if ( 0 != sem_getvalue( &this->sem, &value ) )
+					throw std::runtime_error( strerror(errno) );
+			#endif
+
+			#ifdef __MACOSX__
+				if ( 0 != sem_getvalue( &this->sem, &value ) )
+					throw std::runtime_error( strerror(errno) );
+			#endif
+
+			std::cout << " value = " << value << std::endl;
+
+			return value < 0;
 		}
 
 	private:

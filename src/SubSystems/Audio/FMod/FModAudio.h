@@ -12,7 +12,6 @@
 
 #include "FModAudioEntity.h"
 
-#include <AL/alut.h>
 #include <fmod/fmod.hpp>
 #include <fmod/fmod_errors.h>
 
@@ -41,7 +40,7 @@ class FModAudio : public IAudio
 
 		bool sendEvent( const Event& e );
 
-		FModAudioEntity* createEntity( TiXmlElement* );
+		FModAudioEntity* createEntity( TiXmlElement*, IGameObject* parent );
 
 	private:
 		std::string id;

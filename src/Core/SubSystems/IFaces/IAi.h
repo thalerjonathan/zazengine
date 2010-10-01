@@ -16,7 +16,7 @@ class IAi : public ISubSystem
 	public:
 		virtual ~IAi() {};
 
-		virtual IAIEntity* createEntity( TiXmlElement* ) = 0;
+		virtual IAIEntity* createEntity( TiXmlElement*, IGameObject* parent ) = 0;
 
 };
 

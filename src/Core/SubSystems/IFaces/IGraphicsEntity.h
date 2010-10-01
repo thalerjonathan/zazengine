@@ -13,6 +13,7 @@
 class IGraphicsEntity : public ISubSystemEntity
 {
 	public:
+		IGraphicsEntity( IGameObject* p ) : ISubSystemEntity( p ) {};
 		virtual ~IGraphicsEntity() {};
 
 };

@@ -30,6 +30,21 @@ ZazenGameObject::sendEvent( const Event& e )
 {
 	//cout << "Processing event " << e.id << " in EventProcessor " << this->id << endl;
 
+	map<string, ISubSystemEntity*>::iterator iter = this->subSystemEntities.begin();
+	while ( iter != this->subSystemEntities.end() )
+	{
+		ISubSystemEntity* entity = iter->second;
+		iter++;
+
+		if ( e == "collidesWith" )
+		{
+		} else {
+			entity->sendEvent( e );
+		}
+	}
+
+	// TODO: call into script-function when provided for this event
+
 	return true;
 }
 
@@ -82,7 +97,7 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 		}
 		else
 		{
-			ISubSystemEntity* subSystemEntity = subSystem->createEntity( subSystemEntityNode );
+			ISubSystemEntity* subSystemEntity = subSystem->createEntity( subSystemEntityNode, this );
 			if ( 0 == subSystemEntity )
 			{
 				cout << "ERROR ... failed creating instance for subsystem \"" << str << "\"" << endl;
@@ -93,6 +108,7 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 		}
 	}
 
+	/*
 	map<string, ISubSystemEntity*>::iterator iter = this->subSystemEntities.begin();
 	while ( iter != this->subSystemEntities.end() )
 	{
@@ -114,6 +130,7 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 			}
 		}
 	}
+	*/
 
 	return true;
 }

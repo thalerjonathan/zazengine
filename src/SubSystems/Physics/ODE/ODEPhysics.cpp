@@ -4,8 +4,9 @@
  *  Created on: 06.07.2010
  *      Author: joni
  */
-
 #include "ODEPhysics.h"
+
+#include "../../../Core/Core.h"
 
 #include "types/PhysicPlane.h"
 #include "types/PhysicSphere.h"
@@ -116,8 +117,19 @@ ODEPhysics::pause()
 bool
 ODEPhysics::process(double factor)
 {
+	cout << "ODEPhysics::process enter" << endl;
+
+	//cout << "ODEPhysics::process bevore doProcessing = true" << endl;
+
 	this->doProcessing = true;
+
+	//cout << "ODEPhysics::process bevore release sem" << endl;
+	//this->sem->isBlocking();
 	this->sem->release();
+
+	//cout << " ODEPhysics::process after release sem" << endl;
+	//this->sem->isBlocking();
+	cout << "ODEPhysics::process leave" << endl;
 
 	return true;
 }
@@ -125,27 +137,62 @@ ODEPhysics::process(double factor)
 bool
 ODEPhysics::finalizeProcess()
 {
+	cout << "ODEPhysics::finalizeProcess enter" << endl;
+
+	//cout << "ODEPhysics::finalizeProcess bevore doProcessing = false" << endl;
+
 	this->doProcessing = false;
+
+	//cout << "ODEPhysics::finalizeProcess bevore grab" << endl;
+	//this->sem->isBlocking();
 	this->sem->grab();
 
+
+	//cout << "ODEPhysics::finalizeProcess after grab" << endl;
+	//this->sem->isBlocking();
+	cout << "ODEPhysics::finalizeProcess leave" << endl;
+
+	//this->generateEvents();
+
+	return true;
+}
+
+void
+ODEPhysics::generateEvents()
+{
+	// update of new positions
 	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
 	while ( iter != this->entities.end() )
 	{
 		ODEPhysicsEntity* entity = *iter++;
-		entity->processConsumers();
-	}
 
-	return true;
+		if ( false == entity->isStatic() )
+		{
+			cout << "enqueued setOrientation in ODEPhysics targeted at GO '" << entity->getParent()->getName() << endl;
+
+			Event e( "setOrientation" );
+			e.target = entity->getParent();
+
+			Core::getInstance().getEventManager().postEvent( e );
+		}
+	}
 }
 
+// this call should be guaranteed to come just from the main-thread during a sync-point
+// when the event-manager dispatches the queue. never should one do a direct call
+// to sendEvent, instead all events should be queued in the manager and be dispatched
+// during the sync-point.
+// => it is save to process receivedEvents in the thread
 bool
 ODEPhysics::sendEvent(const Event& e)
 {
+	this->receivedEvents.push_back( e );
+
 	return true;
 }
 
 ODEPhysicsEntity*
-ODEPhysics::createEntity( TiXmlElement* objectNode )
+ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 {
 	TiXmlElement* typeNode = objectNode->FirstChildElement( "type" );
 	if ( 0 == typeNode )
@@ -185,7 +232,7 @@ ODEPhysics::createEntity( TiXmlElement* objectNode )
 		v.data[2] = atof( str );
 	}
 
-	ODEPhysicsEntity* entity = new ODEPhysicsEntity();
+	ODEPhysicsEntity* entity = new ODEPhysicsEntity( parent );
 
 	if ( "SPHERE" == typeID )
 	{
@@ -211,9 +258,53 @@ ODEPhysics::createEntity( TiXmlElement* objectNode )
 }
 
 void
-ODEPhysics::processInternal()
+ODEPhysics::processEvents()
 {
+	std::list<Event>::iterator eventsIter = this->receivedEvents.begin();
+	while ( eventsIter != this->receivedEvents.end() )
+	{
+		Event& e = *eventsIter++;
+
+		cout << "received Event " << e.id << " in ODEPhysics as target" << endl;
+	}
+
+	this->receivedEvents.clear();
+
+	// process events of entities
+	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ODEPhysicsEntity* entity = *iter++;
+
+		eventsIter = entity->queuedEvents.begin();
+		while ( eventsIter != entity->queuedEvents.end() )
+		{
+			Event& e = *eventsIter++;
+
+			cout << "received Event " << e.id << " in ODEPhysics from GO '" << entity->getParent()->getName() << endl;
+
+			if ( e == "moveForward" )
+			{
+				// TODO: alter position
+			}
+		}
+
+		entity->queuedEvents.clear();
+	}
+}
+
+void
+ODEPhysics::doSimulation()
+{
+	//cout << "ODEPhysics::doSimulation bevore physics sem grab" << endl;
+	//this->sem->isBlocking();
 	this->sem->grab();
+
+	//cout << "ODEPhysics::doSimulation grabbed physics sem" << endl;
+	//this->sem->isBlocking();
+	this->processEvents();
+
+	//cout << "ODEPhysics::doSimulation beginng physics processing" << endl;
 
 	while ( this->doProcessing )
 	{
@@ -224,7 +315,22 @@ ODEPhysics::processInternal()
 		}
 	}
 
+	//cout << "ODEPhysics::doSimulation ended physics processing" << endl;
+
+	//cout << "ODEPhysics::doSimulation sleeping physics processing" << endl;
+
+
+
+	this->generateEvents();
+
+	//cout << "ODEPhysics::doSimulation bevore physics sem release" << endl;
+	//this->sem->isBlocking();
 	this->sem->release();
+
+	usleep(500000);
+
+	//cout << "ODEPhysics::doSimulation release physics sem" << endl;
+	//this->sem->isBlocking();
 }
 
 void
@@ -267,7 +373,7 @@ ODEPhysics::threadFunc(void* args)
 	instance->runThread = true;
 	while ( instance->runThread )
 	{
-		instance->processInternal();
+		instance->doSimulation();
 	}
 
 	cout << "ODEPhysics " << instance->id << " finished thread" << endl;

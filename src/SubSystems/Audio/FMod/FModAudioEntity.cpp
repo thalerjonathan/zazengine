@@ -13,8 +13,9 @@
 
 using namespace std;
 
-FModAudioEntity::FModAudioEntity()
-	:type( "audio" )
+FModAudioEntity::FModAudioEntity( IGameObject* p )
+	: IAudioEntity( p ),
+	type( "audio" )
 {
 	this->sound = 0;
 	this->channel = 0;
@@ -25,6 +26,19 @@ FModAudioEntity::~FModAudioEntity()
 
 }
 
+bool
+FModAudioEntity::sendEvent(const Event& e)
+{
+	if ( e == "setOrientation" )
+	{
+		this->queuedEvents.push_back( e );
+		return true;
+	}
+
+	return false;
+}
+
+/*
 vector<string>
 FModAudioEntity::getDependencies() const
 {
@@ -67,4 +81,5 @@ FModAudioEntity::consume( ISubSystemEntity* producer )
 		}
 	}
 }
+*/
 

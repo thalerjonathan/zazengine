@@ -13,6 +13,7 @@
 class IAudioEntity : public ISubSystemEntity
 {
 	public:
+		IAudioEntity( IGameObject* p ) : ISubSystemEntity( p ) {};
 		virtual ~IAudioEntity() {};
 
 };

@@ -13,6 +13,7 @@
 class IAIEntity : public ISubSystemEntity
 {
 	public:
+		IAIEntity( IGameObject* p ) : ISubSystemEntity( p ) {};
 		virtual ~IAIEntity() {};
 
 };

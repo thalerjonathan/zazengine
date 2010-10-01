@@ -35,7 +35,7 @@ class ISubSystem : public IEventListener
 		virtual bool process(double) = 0;		// runs simulations/calculations for this frame: in this step all calculations are done either synced or threaded
 		virtual bool finalizeProcess() = 0;		// finishes processing and must block until threads are finished: in this step all calculations are finished and maybe exchanged through consumer/producer
 
-		virtual ISubSystemEntity* createEntity( TiXmlElement* ) = 0;
+		virtual ISubSystemEntity* createEntity( TiXmlElement*, IGameObject* parent ) = 0;
 
 };
 #endif /* ISUBSYSTEM_H_ */
