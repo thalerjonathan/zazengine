@@ -181,11 +181,14 @@ FModAudio::process(double factor)
 		{
 			Event& e = *eventsIter++;
 
-			cout << "received Event '" << e.id << "' in FModAudio from GO '" << entity->getParent()->getName() << endl;
+			cout << "received Event '" << e.getID() << "' in FModAudio from GO '" << entity->getParent()->getName() << endl;
 
-			if ( e == "setOrientation" )
+			if ( e == "updatePhysics" )
 			{
+				Value& pos = e.getValue( "pos" );
+				Value& vel = e.getValue( "vel" );
 
+				entity->setPosVel( pos.data, vel.data );
 			}
 		}
 

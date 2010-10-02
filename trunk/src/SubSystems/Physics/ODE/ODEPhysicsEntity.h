@@ -24,9 +24,11 @@ class ODEPhysicsEntity : public IPhysicsEntity
 
 		const bool isStatic() const { return this->physicType->isStatic(); };
 
-		const float* getPos() const { return dBodyGetPosition( this->physicType->getBodyID() ); };
-		const float* getRot() const { return dBodyGetRotation( this->physicType->getBodyID() ); };
-		const float* getVel() const { return dBodyGetLinearVel( this->physicType->getBodyID() ); };
+		const float* getPos() const { return this->pos; };
+		const float* getRot() const { return this->rot; };
+		const float* getVel() const { return this->vel; };
+
+		virtual void update();
 
 		virtual bool sendEvent(const Event& e);
 
@@ -35,6 +37,9 @@ class ODEPhysicsEntity : public IPhysicsEntity
 
 		PhysicType* physicType;
 
+		float pos[3];
+		float rot[12];
+		float vel[3];
 };
 
 #endif /* PLAYGROUNDPHYSICSENTITY_H_ */

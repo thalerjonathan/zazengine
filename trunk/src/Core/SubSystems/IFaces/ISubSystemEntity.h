@@ -23,6 +23,9 @@ class ISubSystemEntity : public IEventListener
 
 		virtual const std::string& getType() const = 0;
 
+		// to be overridden
+		virtual void update() {};
+
 	protected:
 		std::list<Event> queuedEvents;
 

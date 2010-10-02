@@ -16,6 +16,7 @@ class IGraphicsEntity : public ISubSystemEntity
 		IGraphicsEntity( IGameObject* p ) : ISubSystemEntity( p ) {};
 		virtual ~IGraphicsEntity() {};
 
+		virtual void setOrientation( const float* pos, const float* rot) = 0;
 };
 
 #endif /* IGRAPHICSENTITY_H_ */

@@ -21,25 +21,27 @@ typedef std::string EventID;
 class Event
 {
 	public:
-		Event() { this->id = ""; this->target = 0; this->source = 0; this->startTimestamp = 0; };
-		Event( const std::string& id ) { this->id = id; this->target = 0; this->source = 0; this->startTimestamp = 0; };
-		Event(const Event& e) { this->id = e.id; this->source = e.source; this->target = e.target; this->startTimestamp = e.startTimestamp; };
-		~Event() {};
+		Event( const std::string& id );
+		Event(const Event& e);
+		~Event();
 
-		EventID id;
-		IEventListener* source;
-		IEventListener* target;
+		const EventID getID() const { return this->id; };
+
+		void setTarget( IEventListener* t ) { this->target = t; };
+		IEventListener* getTarget() { return this->target; };
 
 		bool operator== ( const Event& e ) const { return this->id == e.id; };
 		bool operator== ( const std::string& str ) const { return this->id == str; };
 		bool operator== ( const char* str ) const { return this->id == str; };
 
-		long int startTimestamp;
-
-		void addValue( const Value& );
-		Value getValue( const std::string& id );
+		void addValue( const std::string& id, const Value& );
+		Value& getValue( const std::string& id );
 
 	private:
+		const EventID id;
+		IEventListener* source;
+		IEventListener* target;
+
 		std::map<std::string, Value> values;
 };
 

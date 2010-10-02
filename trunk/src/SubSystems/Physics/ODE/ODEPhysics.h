@@ -63,6 +63,7 @@ class ODEPhysics : public IPhysics
 		std::list<Event> receivedEvents;
 		std::list<ODEPhysicsEntity*> entities;
 
+		void updateEntities();
 		void processEvents();
 		void doSimulation();
 		void generateEvents();

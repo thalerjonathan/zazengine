@@ -143,6 +143,9 @@ SDLInput::process(double factor)
 			case SDLK_a:
 				Core::getInstance().getEventManager().postEvent( Event( "SDLK_a" ) );
 				break;
+
+			case SDLK_q:
+				Core::getInstance().stop();
 				
 			default:
 				break;

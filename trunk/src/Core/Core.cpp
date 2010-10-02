@@ -149,7 +149,7 @@ Core::start()
 			break;
 		}
 
-		//sleep( 1 );
+		sleep( 1 );
 
 		subSysIter = this->subSystems.begin();
 		while ( subSysIter != this->subSystems.end() )
