@@ -22,11 +22,7 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 
 		const std::string& getType() const { return this->type; };
 
-		/*
-		std::vector<std::string> getDependencies() const;
-
-		void consume( ISubSystemEntity* );
-		*/
+		virtual void setOrientation( const float* pos, const float* rot);
 
 		virtual bool sendEvent(const Event& e);
 

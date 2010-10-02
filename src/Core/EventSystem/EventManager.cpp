@@ -148,13 +148,13 @@ EventManager::processQueue()
 		Event& e = *eventIter++;
 
 		// broadcast
-		if ( e.target == 0 )
+		if ( e.getTarget() == 0 )
 		{
 			this->broadCast( e );
 		}
 		else
 		{
-			e.target->sendEvent( e );
+			e.getTarget()->sendEvent( e );
 		}
 	}
 }
@@ -162,7 +162,7 @@ EventManager::processQueue()
 void
 EventManager::broadCast(const Event& e)
 {
-	map<EventID, list<IEventListener*>* >::iterator findIter = this->eventListeners.find( e.id );
+	map<EventID, list<IEventListener*>* >::iterator findIter = this->eventListeners.find( e.getID() );
 	if ( findIter != this->eventListeners.end() )
 	{
 		list<IEventListener*>* listeners = findIter->second;

@@ -13,6 +13,13 @@
 class Value
 {
 	public:
+		Value() {};
+		Value( const float* data ) : data( data ) {};
+		Value( const Value& v ) : data( v.data ) {};
+		~Value() {};
+
+		const float* data;
+/*
 		enum ValueType {
 			TYPE_INT,
 			TYPE_LONG,
@@ -20,6 +27,7 @@ class Value
 			TYPE_DOUBLE,
 			TYPE_BOOL,
 			TYPE_STRING,
+			TYPE_DATA,
 			TYPE_COUNT	// NUMBER OF UNIQUE TYPES
 		};
 
@@ -32,8 +40,10 @@ class Value
 		bool getBool() const { return this->boolValue; };
 		const std::string& getString() const { return this->stringValue; };
 		//T* getTypedPtr() {};
+*/
 
 	private:
+		/*
 		ValueType type;
 
 		union {
@@ -42,10 +52,13 @@ class Value
 			double doubleValue;
 			long longValue;
 			bool boolValue;
+			char* dataValue;
 		};
 
+
 		std::string stringValue;
-		void* ptr;
+		void* data;
+		*/
 };
 
 #endif /* VALUE_H_ */

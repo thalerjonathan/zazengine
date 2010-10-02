@@ -24,11 +24,7 @@ class FModAudioEntity : public IAudioEntity
 
 		virtual bool sendEvent(const Event& e);
 
-		/*
-		std::vector<std::string> getDependencies() const;
-
-		void consume( ISubSystemEntity* );
-		*/
+		void setPosVel( const float* pos, const float* vel );
 
 	private:
 		std::string type;

@@ -28,7 +28,7 @@ ZazenGraphicsEntity::~ZazenGraphicsEntity()
 bool
 ZazenGraphicsEntity::sendEvent(const Event& e)
 {
-	if ( e == "setOrientation" )
+	if ( e == "updatePhysics" )
 	{
 		this->queuedEvents.push_back( e );
 		return true;
@@ -37,39 +37,14 @@ ZazenGraphicsEntity::sendEvent(const Event& e)
 	return false;
 }
 
-/*
-vector<string>
-ZazenGraphicsEntity::getDependencies() const
-{
-	vector<string> dep;
-	dep.push_back( "physics" );
-
-	return dep;
-}
-
 void
-ZazenGraphicsEntity::consume( ISubSystemEntity* producer )
+ZazenGraphicsEntity::setOrientation( const float* pos, const float* rot)
 {
-	if ( "physics" == producer->getType() )
-	{
-		IPhysicsEntity* physics = dynamic_cast<IPhysicsEntity*>( producer );
-		if ( 0 != physics )
-		{
-			if ( false == physics->isStatic() )
-			{
-				const float* physicsPos = physics->getPos();
-				const float* physicsRot = physics->getRot();
+	memcpy( this->instance->transform->matrix.data, rot, 11 * sizeof( float ) );
+	memcpy( &this->instance->transform->matrix.data[12], pos, 3 * sizeof( float ) );
 
-				memcpy(this->instance->transform->matrix.data, physicsRot, 11 * sizeof( float ) );
-				memcpy(&this->instance->transform->matrix.data[12], physicsPos, 3 * sizeof( float ) );
+	cout << "Graphics: " << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
+	cout << "Graphics: resulting matrix: " << endl;
 
-				this->instance->transform->matrix.print();
-			}
-		}
-		else
-		{
-			cout << "internal error: producer typename is physics but not of type IPhysicsEntity" << endl;
-		}
-	}
+	this->instance->transform->matrix.print();
 }
-*/

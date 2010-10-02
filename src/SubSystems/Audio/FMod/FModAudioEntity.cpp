@@ -29,7 +29,7 @@ FModAudioEntity::~FModAudioEntity()
 bool
 FModAudioEntity::sendEvent(const Event& e)
 {
-	if ( e == "setOrientation" )
+	if ( e == "updatePhysics" )
 	{
 		this->queuedEvents.push_back( e );
 		return true;
@@ -38,48 +38,21 @@ FModAudioEntity::sendEvent(const Event& e)
 	return false;
 }
 
-/*
-vector<string>
-FModAudioEntity::getDependencies() const
-{
-	vector<string> dep;
-	dep.push_back( "physics" );
-
-	return dep;
-}
-
 void
-FModAudioEntity::consume( ISubSystemEntity* producer )
+FModAudioEntity::setPosVel( const float* pos, const float* vel )
 {
-	if ( "physics" == producer->getType() )
-	{
-		IPhysicsEntity* physics = dynamic_cast<IPhysicsEntity*>( producer );
-		if ( 0 != physics )
-		{
-			if ( false == physics->isStatic() )
-			{
-				const float* physicsPos = physics->getPos();
-				const float* physicsVel = physics->getVel();
+	FMOD_VECTOR position;
+	FMOD_VECTOR velocity;
 
-				FMOD_VECTOR position;
-				FMOD_VECTOR velocity;
+	position.x = pos[0];
+	position.y = pos[1];
+	position.z = pos[2];
 
-				position.x = physicsPos[0];
-				position.y = physicsPos[1];
-				position.z = physicsPos[2];
+	velocity.x = vel[0];
+	velocity.y = vel[1];
+	velocity.z = vel[2];
 
-				velocity.x = physicsVel[0];
-				velocity.y = physicsVel[1];
-				velocity.z = physicsVel[2];
+	cout << "Audio:" << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
 
-				this->channel->set3DAttributes( &position, &velocity );
-			}
-		}
-		else
-		{
-			cout << "internal error: producer typename is physics but not of type IPhysicsEntity" << endl;
-		}
-	}
+	this->channel->set3DAttributes( &position, &velocity );
 }
-*/
-

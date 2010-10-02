@@ -234,11 +234,14 @@ ZazenGraphics::process( double iterationFactor )
 		{
 			Event& e = *eventsIter++;
 
-			cout << "received Event '" << e.id << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
+			cout << "received Event '" << e.getID() << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
 
-			if ( e == "setOrientation" )
+			if ( e == "updatePhysics" )
 			{
+				Value& pos = e.getValue( "pos" );
+				Value& rot = e.getValue( "rot" );
 
+				entity->setOrientation( pos.data, rot.data );
 			}
 		}
 

@@ -125,14 +125,16 @@ ODEPhysics::pause()
 bool
 ODEPhysics::process(double factor)
 {
-	cout << "ODEPhysics::process enter" << endl;
+	//cout << "ODEPhysics::process enter" << endl;
 
 	this->doProcessing = true;
 
 	this->semB->release();
 	this->semA->release();
 
-	cout << "ODEPhysics::process leave" << endl;
+	//cout << "ODEPhysics::process leave" << endl;
+
+	//this->doSimulation();
 
 	return true;
 }
@@ -140,7 +142,7 @@ ODEPhysics::process(double factor)
 bool
 ODEPhysics::finalizeProcess()
 {
-	cout << "ODEPhysics::finalizeProcess enter" << endl;
+	//cout << "ODEPhysics::finalizeProcess enter" << endl;
 
 	this->semB->grab();
 
@@ -150,9 +152,9 @@ ODEPhysics::finalizeProcess()
 
 	this->semB->release();
 
-	cout << "ODEPhysics::finalizeProcess leave" << endl;
+	this->generateEvents();
 
-	//this->generateEvents();
+	//cout << "ODEPhysics::finalizeProcess leave" << endl;
 
 	return true;
 }
@@ -168,10 +170,22 @@ ODEPhysics::generateEvents()
 
 		if ( false == entity->isStatic() )
 		{
-			cout << "enqueued setOrientation in ODEPhysics targeted at GO '" << entity->getParent()->getName() << endl;
+			//cout << "enqueued setOrientation in ODEPhysics targeted at GO '" << entity->getParent()->getName() << endl;
 
-			Event e( "setOrientation" );
-			e.target = entity->getParent();
+			const float* pos = entity->getPos();
+			const float* rot = entity->getRot();
+			const float* vel = entity->getVel();
+
+			Event e( "updatePhysics" );
+			e.setTarget( entity->getParent() );
+
+			e.addValue( "pos", Value( pos ) );
+			e.addValue( "rot", Value( rot ) );
+			e.addValue( "vel", Value( vel ) );
+
+			Value testPos = e.getValue( "pos" );
+
+			cout << "testPos : " << testPos.data[0] << "/" << testPos.data[1] << "/" << testPos.data[2] << endl;
 
 			Core::getInstance().getEventManager().postEvent( e );
 		}
@@ -258,6 +272,19 @@ ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 }
 
 void
+ODEPhysics::updateEntities()
+{
+	std::list<ODEPhysicsEntity*>::iterator iter = this->entities.begin();
+	while ( iter != this->entities.end() )
+	{
+		ODEPhysicsEntity* entity = *iter++;
+
+		if ( false == entity->isStatic() )
+			entity->update();
+	}
+}
+
+void
 ODEPhysics::processEvents()
 {
 	std::list<Event>::iterator eventsIter = this->receivedEvents.begin();
@@ -265,7 +292,7 @@ ODEPhysics::processEvents()
 	{
 		Event& e = *eventsIter++;
 
-		cout << "received Event " << e.id << " in ODEPhysics as target" << endl;
+		cout << "received Event " << e.getID() << " in ODEPhysics as target" << endl;
 	}
 
 	this->receivedEvents.clear();
@@ -281,7 +308,7 @@ ODEPhysics::processEvents()
 		{
 			Event& e = *eventsIter++;
 
-			cout << "received Event " << e.id << " in ODEPhysics from GO '" << entity->getParent()->getName() << endl;
+			cout << "received Event " << e.getID() << " in ODEPhysics from GO '" << entity->getParent()->getName() << endl;
 
 			if ( e == "moveForward" )
 			{
@@ -300,6 +327,7 @@ ODEPhysics::doSimulation()
 
 	this->processEvents();
 
+	// no loop, just do once !!!
 	while ( this->doProcessing )
 	{
 		for (int i = 0; i < 10; i++) {
@@ -309,7 +337,7 @@ ODEPhysics::doSimulation()
 		}
 	}
 
-	this->generateEvents();
+	this->updateEntities();
 
 	this->semA->release();
 
