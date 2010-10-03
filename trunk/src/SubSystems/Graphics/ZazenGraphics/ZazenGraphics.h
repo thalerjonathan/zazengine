@@ -38,7 +38,7 @@ class ZazenGraphics : public IGraphics
 		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent( const Event& e );
+		bool sendEvent( Event& e );
 
 		ZazenGraphicsEntity* createEntity( TiXmlElement*, IGameObject* parent );
 

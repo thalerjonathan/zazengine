@@ -22,7 +22,7 @@ class Event
 {
 	public:
 		Event( const std::string& id );
-		Event(const Event& e);
+		Event( const Event& e );
 		~Event();
 
 		const EventID getID() const { return this->id; };

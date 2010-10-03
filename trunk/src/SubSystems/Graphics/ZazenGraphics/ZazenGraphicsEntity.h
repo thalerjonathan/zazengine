@@ -24,7 +24,7 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 
 		virtual void setOrientation( const float* pos, const float* rot);
 
-		virtual bool sendEvent(const Event& e);
+		virtual bool sendEvent( Event& e );
 
 	private:
 		std::string type;

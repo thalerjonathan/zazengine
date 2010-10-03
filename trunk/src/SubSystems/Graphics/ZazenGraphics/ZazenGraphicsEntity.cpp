@@ -26,11 +26,16 @@ ZazenGraphicsEntity::~ZazenGraphicsEntity()
 }
 
 bool
-ZazenGraphicsEntity::sendEvent(const Event& e)
+ZazenGraphicsEntity::sendEvent( Event& e )
 {
+	// process immediately because no call to graphics api, just coping of data (yet)
 	if ( e == "updatePhysics" )
 	{
-		this->queuedEvents.push_back( e );
+		Value& pos = e.getValue( "pos" );
+		Value& rot = e.getValue( "rot" );
+
+		this->setOrientation( pos.data, rot.data );
+
 		return true;
 	}
 
@@ -43,8 +48,7 @@ ZazenGraphicsEntity::setOrientation( const float* pos, const float* rot)
 	memcpy( this->instance->transform->matrix.data, rot, 11 * sizeof( float ) );
 	memcpy( &this->instance->transform->matrix.data[12], pos, 3 * sizeof( float ) );
 
-	cout << "Graphics: " << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
-	cout << "Graphics: resulting matrix: " << endl;
-
-	this->instance->transform->matrix.print();
+	//cout << "Graphics: " << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
+	//cout << "Graphics: resulting matrix: " << endl;
+	//this->instance->transform->matrix.print();
 }

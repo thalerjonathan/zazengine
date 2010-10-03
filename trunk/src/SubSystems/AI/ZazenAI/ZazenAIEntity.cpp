@@ -23,7 +23,7 @@ ZazenAIEntity::~ZazenAIEntity()
 }
 
 bool
-ZazenAIEntity::sendEvent(const Event& e)
+ZazenAIEntity::sendEvent( Event& e )
 {
 	if ( e == "setOrientation" )
 	{

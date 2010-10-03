@@ -26,7 +26,7 @@ ZazenGameObject::~ZazenGameObject()
 }
 
 bool
-ZazenGameObject::sendEvent( const Event& e )
+ZazenGameObject::sendEvent( Event& e )
 {
 	//cout << "Processing event " << e.id << " in EventProcessor " << this->id << endl;
 

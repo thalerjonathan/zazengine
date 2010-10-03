@@ -30,7 +30,7 @@ class ODEPhysicsEntity : public IPhysicsEntity
 
 		virtual void update();
 
-		virtual bool sendEvent(const Event& e);
+		virtual bool sendEvent( Event& e );
 
 	private:
 		std::string entityType;

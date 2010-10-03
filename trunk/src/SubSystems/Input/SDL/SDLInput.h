@@ -35,7 +35,7 @@ class SDLInput : public IInput
 		bool process( double );
 		bool finalizeProcess();
 		
-		bool sendEvent( const Event& );
+		bool sendEvent( Event& );
 		
 		ISubSystemEntity* createEntity( TiXmlElement*, IGameObject* parent);
 		

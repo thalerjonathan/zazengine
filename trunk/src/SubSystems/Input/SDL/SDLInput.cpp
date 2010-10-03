@@ -72,7 +72,7 @@ SDLInput::pause()
 bool
 SDLInput::process(double factor)
 {
-	cout << "SDLInput::process" << endl;
+	//cout << "SDLInput::process" << endl;
 
 	SDL_Event event;
 	
@@ -152,7 +152,7 @@ SDLInput::process(double factor)
 		}
 	}
 	
-	cout << "SDL_process end" << endl;
+	//cout << "SDL_process end" << endl;
 
 	return true;
 }
@@ -164,7 +164,7 @@ SDLInput::finalizeProcess()
 }
 
 bool
-SDLInput::sendEvent(const Event& e)
+SDLInput::sendEvent( Event& e )
 {
 	return true;
 }

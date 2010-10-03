@@ -29,7 +29,7 @@ class EventManager
 		bool registerForEvent(EventID, IEventListener*);
 		bool unregisterForEvent(EventID, IEventListener*);
 
-		bool postEvent(const Event&);
+		bool postEvent( const Event& );
 
 		void processQueue();
 
@@ -50,7 +50,7 @@ class EventManager
 
 		std::map<EventID, std::list<IEventListener*>* > eventListeners;
 
-		void broadCast(const Event&);
+		void broadCast( Event& );
 
 };
 

@@ -38,7 +38,7 @@ class FModAudio : public IAudio
 		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent( const Event& e );
+		bool sendEvent( Event& e );
 
 		FModAudioEntity* createEntity( TiXmlElement*, IGameObject* parent );
 

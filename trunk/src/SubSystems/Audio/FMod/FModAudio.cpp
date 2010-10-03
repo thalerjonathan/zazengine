@@ -168,7 +168,7 @@ FModAudio::pause()
 bool
 FModAudio::process(double factor)
 {
-	cout << "FModAudio::process enter" << endl;
+	//cout << "FModAudio::process enter" << endl;
 
 	// process events of entities
 	std::list<FModAudioEntity*>::iterator iter = this->entities.begin();
@@ -181,12 +181,12 @@ FModAudio::process(double factor)
 		{
 			Event& e = *eventsIter++;
 
-			cout << "received Event '" << e.getID() << "' in FModAudio from GO '" << entity->getParent()->getName() << endl;
+			//cout << "received Event '" << e.getID() << "' in FModAudio from GO '" << entity->getParent()->getName() << endl;
 
 			if ( e == "updatePhysics" )
 			{
-				Value& pos = e.getValue( "pos" );
-				Value& vel = e.getValue( "vel" );
+				const Value& pos = e.getValue( "pos" );
+				const Value& vel = e.getValue( "vel" );
 
 				entity->setPosVel( pos.data, vel.data );
 			}
@@ -195,7 +195,7 @@ FModAudio::process(double factor)
 		entity->queuedEvents.clear();
 	}
 
-	cout << "FModAudio::process leave" << endl;
+	//cout << "FModAudio::process leave" << endl;
 
 	return true;
 }
@@ -203,13 +203,13 @@ FModAudio::process(double factor)
 bool
 FModAudio::finalizeProcess()
 {
-	cout << "FModAudio::finalizeProcess" << endl;
+	//cout << "FModAudio::finalizeProcess" << endl;
 
 	return true;
 }
 
 bool
-FModAudio::sendEvent(const Event& e)
+FModAudio::sendEvent( Event& e )
 {
 	return true;
 }

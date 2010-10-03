@@ -221,7 +221,7 @@ ZazenGraphics::pause()
 bool
 ZazenGraphics::process( double iterationFactor )
 {
-	cout << "ZazenGraphics::process enter" << endl;
+	//cout << "ZazenGraphics::process enter" << endl;
 
 	// process events of entities
 	std::list<ZazenGraphicsEntity*>::iterator iter = this->entities.begin();
@@ -234,15 +234,7 @@ ZazenGraphics::process( double iterationFactor )
 		{
 			Event& e = *eventsIter++;
 
-			cout << "received Event '" << e.getID() << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
-
-			if ( e == "updatePhysics" )
-			{
-				Value& pos = e.getValue( "pos" );
-				Value& rot = e.getValue( "rot" );
-
-				entity->setOrientation( pos.data, rot.data );
-			}
+			//cout << "received Event '" << e.getID() << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
 		}
 
 		entity->queuedEvents.clear();
@@ -251,7 +243,7 @@ ZazenGraphics::process( double iterationFactor )
 	this->lastItFact = iterationFactor;
 	this->activeScene->processFrame( iterationFactor );
 
-	cout << "ZazenGraphics::process leave" << endl;
+	//cout << "ZazenGraphics::process leave" << endl;
 
 	return true;
 }
@@ -259,13 +251,13 @@ ZazenGraphics::process( double iterationFactor )
 bool
 ZazenGraphics::finalizeProcess()
 {
-	cout << "ZazenGraphics::finalizeProcess" << endl;
+	//cout << "ZazenGraphics::finalizeProcess" << endl;
 
 	return true;
 }
 
 bool
-ZazenGraphics::sendEvent( const Event& e )
+ZazenGraphics::sendEvent( Event& e )
 {
 	if ( e == "SDLK_RIGHT" )
 	{

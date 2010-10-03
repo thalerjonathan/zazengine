@@ -16,7 +16,7 @@ class IEventListener
 		virtual ~IEventListener() {};
 
 		//virtual const std::string& getID() const = 0;
-		virtual bool sendEvent(const Event& e) = 0;
+		virtual bool sendEvent( Event& e ) = 0;
 };
 
 #endif /* IEVENTLISTENER_H_ */
