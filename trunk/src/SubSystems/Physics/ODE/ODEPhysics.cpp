@@ -50,8 +50,9 @@ ODEPhysics::initialize( TiXmlElement* )
 	dInitODE();
 
 	this->worldID = dWorldCreate();
-	dWorldSetGravity(this->worldID, 0.0f, -9.8f * GRAVITY_FACTOR, 0.0f);
 	this->spaceID = dHashSpaceCreate(0);
+	dWorldSetGravity(this->worldID, 0.0f, -9.8f, 0.0f);
+	dWorldSetCFM(this->worldID,1e-5);
 	this->contactGroupID = dJointGroupCreate(0);
 
 	this->semA = new Semaphore();
@@ -254,7 +255,7 @@ ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	}
 	else if ( "PLANE" == typeID )
 	{
-		entity->physicType = new PhysicPlane( true, 1, 0, 0, 0, 1 );
+		entity->physicType = new PhysicPlane( true, 1, 0, 0, 1, 0 );
 	}
 
 	entity->physicType->create( this->worldID, this->spaceID );
