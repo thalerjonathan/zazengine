@@ -27,7 +27,7 @@ FModAudioEntity::~FModAudioEntity()
 }
 
 bool
-FModAudioEntity::sendEvent(const Event& e)
+FModAudioEntity::sendEvent( Event& e )
 {
 	if ( e == "updatePhysics" )
 	{
@@ -52,7 +52,7 @@ FModAudioEntity::setPosVel( const float* pos, const float* vel )
 	velocity.y = vel[1];
 	velocity.z = vel[2];
 
-	cout << "Audio:" << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
+	//cout << "Audio:" << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
 
 	this->channel->set3DAttributes( &position, &velocity );
 }

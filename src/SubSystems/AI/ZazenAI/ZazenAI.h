@@ -33,7 +33,7 @@ class ZazenAI : public IAi
 		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent( const Event& e );
+		bool sendEvent( Event& e );
 
 		ZazenAIEntity* createEntity( TiXmlElement*, IGameObject* parent );
 

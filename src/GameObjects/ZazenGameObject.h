@@ -22,7 +22,7 @@ class ZazenGameObject : public IGameObject
 		GameObjectID getID() const { return id; };
 		const std::string& getName() const { return this->name; };
 
-		bool sendEvent(const Event&);
+		bool sendEvent( Event& );
 
 		IGameObject* clone() { return 0; };
 

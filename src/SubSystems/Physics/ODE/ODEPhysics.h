@@ -40,7 +40,7 @@ class ODEPhysics : public IPhysics
 		bool process( double );
 		bool finalizeProcess();
 
-		bool sendEvent( const Event& e );
+		bool sendEvent( Event& e );
 
 		ODEPhysicsEntity* createEntity( TiXmlElement*, IGameObject* parent );
 

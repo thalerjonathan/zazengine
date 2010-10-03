@@ -78,7 +78,7 @@ ZazenAI::finalizeProcess()
 }
 
 bool
-ZazenAI::sendEvent(const Event& e)
+ZazenAI::sendEvent( Event& e )
 {
 	return true;
 }

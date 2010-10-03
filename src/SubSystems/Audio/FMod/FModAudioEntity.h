@@ -22,7 +22,7 @@ class FModAudioEntity : public IAudioEntity
 
 		const std::string& getType() const { return this->type; };
 
-		virtual bool sendEvent(const Event& e);
+		virtual bool sendEvent( Event& e );
 
 		void setPosVel( const float* pos, const float* vel );
 

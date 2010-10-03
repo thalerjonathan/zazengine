@@ -30,11 +30,11 @@ ODEPhysicsEntity::update()
 	dBodyCopyRotation( this->physicType->getBodyID(), this->rot );
 	memcpy( this->vel, dBodyGetLinearVel( this->physicType->getBodyID() ), 3 * sizeof( float ) );
 
-	cout << "Physics:" << this->getParent()->getName() << " has position of (" << this->pos[0] << "/" << this->pos[1] << "/" << this->pos[2] << ")" << endl;
+	//cout << "Physics:" << this->getParent()->getName() << " has position of (" << this->pos[0] << "/" << this->pos[1] << "/" << this->pos[2] << ")" << endl;
 }
 
 bool
-ODEPhysicsEntity::sendEvent(const Event& e)
+ODEPhysicsEntity::sendEvent( Event& e )
 {
 	if ( e == "moveForward" )
 	{

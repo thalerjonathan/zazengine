@@ -57,10 +57,10 @@ ODEPhysics::initialize( TiXmlElement* )
 	this->semA = new Semaphore();
 	this->semB = new Semaphore();
 
-	this->semA->grab();
+	//this->semA->grab();
 
 	this->thread = new Thread();
-	this->thread->start( ODEPhysics::threadFunc, this );
+	//this->thread->start( ODEPhysics::threadFunc, this );
 
 	cout << "================ ODEPhysics initialized =================" << endl;
 
@@ -77,7 +77,7 @@ ODEPhysics::shutdown()
 	this->semB->release();
 	this->semA->release();
 
-	this->thread->join();
+	//this->thread->join();
 	delete this->thread;
 	this->thread = 0;
 
@@ -127,14 +127,9 @@ ODEPhysics::process(double factor)
 {
 	//cout << "ODEPhysics::process enter" << endl;
 
-	this->doProcessing = true;
-
-	this->semB->release();
-	this->semA->release();
+	this->doSimulation();
 
 	//cout << "ODEPhysics::process leave" << endl;
-
-	//this->doSimulation();
 
 	return true;
 }
@@ -144,19 +139,23 @@ ODEPhysics::finalizeProcess()
 {
 	//cout << "ODEPhysics::finalizeProcess enter" << endl;
 
-	this->semB->grab();
-
-	this->doProcessing = false;
-
-	this->semA->grab();
-
-	this->semB->release();
-
 	this->generateEvents();
 
 	//cout << "ODEPhysics::finalizeProcess leave" << endl;
 
 	return true;
+}
+
+void
+ODEPhysics::doSimulation()
+{
+	this->processEvents();
+
+	dSpaceCollide(this->spaceID, this, ODEPhysics::collisionCallback);
+	dWorldQuickStep(this->worldID, 0.001);
+	dJointGroupEmpty(this->contactGroupID);
+
+	this->updateEntities();
 }
 
 void
@@ -183,10 +182,6 @@ ODEPhysics::generateEvents()
 			e.addValue( "rot", Value( rot ) );
 			e.addValue( "vel", Value( vel ) );
 
-			Value testPos = e.getValue( "pos" );
-
-			cout << "testPos : " << testPos.data[0] << "/" << testPos.data[1] << "/" << testPos.data[2] << endl;
-
 			Core::getInstance().getEventManager().postEvent( e );
 		}
 	}
@@ -196,9 +191,10 @@ ODEPhysics::generateEvents()
 // when the event-manager dispatches the queue. never should one do a direct call
 // to sendEvent, instead all events should be queued in the manager and be dispatched
 // during the sync-point.
-// => it is save to process receivedEvents in the thread
+// => it is save to process receivedEvents in the thread and it is save to not protect
+// it by semaphore because the thread does not process the queue during this call
 bool
-ODEPhysics::sendEvent(const Event& e)
+ODEPhysics::sendEvent( Event& e )
 {
 	this->receivedEvents.push_back( e );
 
@@ -318,30 +314,6 @@ ODEPhysics::processEvents()
 
 		entity->queuedEvents.clear();
 	}
-}
-
-void
-ODEPhysics::doSimulation()
-{
-	this->semA->grab();
-
-	this->processEvents();
-
-	// no loop, just do once !!!
-	while ( this->doProcessing )
-	{
-		for (int i = 0; i < 10; i++) {
-			dSpaceCollide(this->spaceID, this, ODEPhysics::collisionCallback);
-			dWorldQuickStep(this->worldID, 0.001);
-			dJointGroupEmpty(this->contactGroupID);
-		}
-	}
-
-	this->updateEntities();
-
-	this->semA->release();
-
-	this->semB->grab();
 }
 
 void

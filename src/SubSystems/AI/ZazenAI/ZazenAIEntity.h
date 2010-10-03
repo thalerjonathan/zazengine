@@ -18,7 +18,7 @@ class ZazenAIEntity : public IAIEntity
 
 		const std::string& getType() const { return this->type; };
 
-		virtual bool sendEvent(const Event& e);
+		virtual bool sendEvent( Event& e );
 
 	private:
 		std::string type;

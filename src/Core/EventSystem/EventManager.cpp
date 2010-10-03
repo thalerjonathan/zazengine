@@ -79,7 +79,7 @@ EventManager::unregisterForEvent( EventID eventID, IEventListener* listener )
 }
 
 bool
-EventManager::postEvent(const Event& e)
+EventManager::postEvent( const Event& e )
 {
 	this->queueSem->grab();
 	this->eventQueue.push_back( e );
@@ -160,7 +160,7 @@ EventManager::processQueue()
 }
 
 void
-EventManager::broadCast(const Event& e)
+EventManager::broadCast( Event& e )
 {
 	map<EventID, list<IEventListener*>* >::iterator findIter = this->eventListeners.find( e.getID() );
 	if ( findIter != this->eventListeners.end() )
