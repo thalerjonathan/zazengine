@@ -26,7 +26,7 @@
 				<type id="SPHERE" r="1" x="0" y="10" z="0"/>
 			</physics>
 		</object>
-		<!--
+		
 		<object name="objB" script="media/scripts/objB/objB.lua">
 			<audio>
 				<sound file="media/audio/bell.wav" loop="TRUE"/>
@@ -54,7 +54,7 @@
 				<type id="SPHERE" r="1" x="0" y="10" z="10"/>
 			</physics>
 		</object>
-		-->
+		<!-- -->
 		<object name="plane">
 			<graphics>
 				<instance class="Plane" x="0" y="0" z="0"/>

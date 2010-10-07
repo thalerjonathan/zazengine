@@ -20,7 +20,7 @@
 #include <iostream>
 
 #define MAX_CONTACTS 3
-#define GRAVITY_FACTOR 1
+#define GRAVITY_FACTOR 10
 
 using namespace std;
 
@@ -28,6 +28,8 @@ ODEPhysics::ODEPhysics()
 	: id("ODEPhysics"),
 	  type("physics")
 {
+	this->step = 0;
+
 	this->semA = 0;
 	this->semB = 0;
 
@@ -157,6 +159,8 @@ ODEPhysics::doSimulation()
 	dJointGroupEmpty(this->contactGroupID);
 
 	this->updateEntities();
+
+	cout << this->step++ <<endl;
 }
 
 void
@@ -247,7 +251,7 @@ ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 
 	if ( "SPHERE" == typeID )
 	{
-		entity->physicType = new PhysicSphere( false, 1, 1 );
+		entity->physicType = new PhysicSphere( false, 10, 1 );
 	}
 	else if ( "BOX" == typeID )
 	{
@@ -255,7 +259,7 @@ ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	}
 	else if ( "PLANE" == typeID )
 	{
-		entity->physicType = new PhysicPlane( true, 1, 0, 0, 1, 0 );
+		entity->physicType = new PhysicPlane( true, 1, 0, 1, 0, 0 );
 	}
 
 	entity->physicType->create( this->worldID, this->spaceID );

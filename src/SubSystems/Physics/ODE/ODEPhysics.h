@@ -48,6 +48,8 @@ class ODEPhysics : public IPhysics
 		std::string id;
 		std::string type;
 
+		long step;
+
 		bool runThread;
 		bool doProcessing;
 
