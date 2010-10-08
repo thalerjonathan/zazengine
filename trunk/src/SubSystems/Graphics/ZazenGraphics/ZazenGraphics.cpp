@@ -13,6 +13,7 @@
 #include "Geometry/GeomPlane.h"
 #include "Geometry/GeomSphere.h"
 #include "Geometry/GeomTeapot.h"
+#include "Geometry/GeomBox.h"
 
 #include "../../../Core/Core.h"
 
@@ -77,7 +78,7 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	{
 		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
 	}
-	
+
 	if (!GLEW_VERSION_2_0)
 	{
 		cout << "ERROR ... OpenGL not version 2.0 - exit..." << endl;
@@ -421,6 +422,11 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 				{
 					GeomTeapot* teapot = new GeomTeapot( 1 );
 					GeometryFactory::registerGeom( teapot, entity.name );
+				}
+				else if ( "BOX" == geomType )
+				{
+					GeomBox* box = new GeomBox( 1 );
+					GeometryFactory::registerGeom( box, entity.name );
 				}
 				else if ( "PLANE" == geomType )
 				{

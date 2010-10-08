@@ -3,13 +3,13 @@
 
 #include <GL/glut.h>
 
-#include "geomtype.h"
+#include "GeomType.h"
 
 class GeomBox : public GeomType
 {
  public:
 	GeomBox(float size) { this->size = size; };
-	virtual ~BoxNode() {};
+	virtual ~GeomBox() {};
  
 	void render() { glutSolidCube(this->size); };
 

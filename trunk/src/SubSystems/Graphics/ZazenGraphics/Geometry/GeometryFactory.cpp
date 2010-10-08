@@ -188,7 +188,7 @@ void GeometryFactory::freeAll()
 
 GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 {
-	string fullPath = "resources/GeometryFactorys/" + folderName;
+	string fullPath = folderName;
 	DIR* directory = opendir(fullPath.c_str());
 	if (!directory) {
 			cout << "ERROR ... couldn't open Directory \"" << fullPath << "\" in GeometryFactory::loadFolder" << endl;
@@ -256,7 +256,7 @@ GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 
 GeomType* GeometryFactory::load3DS(const std::string& fileName)
 {
-	string fullFilename = "resources/GeometryFactorys/" + fileName;
+	string fullFilename = fileName;
 	Lib3dsFile* GeometryFactoryData = lib3ds_file_load(fullFilename.c_str());
 	if (GeometryFactoryData == 0) {
 		cout << "ERROR ... couldnt load GeometryFactory " << fullFilename << endl;
@@ -347,7 +347,7 @@ GeomType* GeometryFactory::load3DS(const std::string& fileName)
 
 GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 {
-	string fullFilename = "resources/GeometryFactorys/" + fileName;
+	string fullFilename = fileName;
 	ifstream fileStream(fullFilename.c_str(), ios::in | ios::binary);
 	
 	cout << "LOADING ... " << fileName << endl;
@@ -516,7 +516,7 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 
 GeomType* GeometryFactory::loadPly(const std::string& fileName)
 {	
-	string fullFilename = "resources/GeometryFactorys/" + fileName;
+	string fullFilename = fileName;
 
 	cout << "LOADING ... " << fileName << endl;
 
