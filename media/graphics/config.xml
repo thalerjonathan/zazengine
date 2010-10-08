@@ -10,6 +10,7 @@
 				
 		<class id="Watertower" modelType="MESH" file="media/graphics/models/3ds/watertower.3ds"/>
 		
+		<class id="Box" modelType="BUILTIN" geomType="BOX"/>
 		<class id="Sphere" modelType="BUILTIN" geomType="SPHERE"/>
 		<class id="Plane" modelType="BUILTIN" geomType="PLANE" length="25" width="25"/>
 	</geomClasses>

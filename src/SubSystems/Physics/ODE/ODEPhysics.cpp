@@ -20,7 +20,7 @@
 #include <iostream>
 
 #define MAX_CONTACTS 3
-#define GRAVITY_FACTOR 10
+#define GRAVITY_FACTOR 1
 
 using namespace std;
 
@@ -28,8 +28,6 @@ ODEPhysics::ODEPhysics()
 	: id("ODEPhysics"),
 	  type("physics")
 {
-	this->step = 0;
-
 	this->semA = 0;
 	this->semB = 0;
 
@@ -159,8 +157,6 @@ ODEPhysics::doSimulation()
 	dJointGroupEmpty(this->contactGroupID);
 
 	this->updateEntities();
-
-	cout << this->step++ <<endl;
 }
 
 void
@@ -229,37 +225,114 @@ ODEPhysics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	}
 
 	Vector v;
-	str = typeNode->Attribute( "x" );
+	float mass = 1.0f;
+	bool staticFlag = false;
+
+	str = typeNode->Attribute( "px" );
 	if ( 0 != str )
 	{
 		v.data[0] = atof( str );
 	}
 
-	str = typeNode->Attribute( "y" );
+	str = typeNode->Attribute( "py" );
 	if ( 0 != str )
 	{
 		v.data[1] = atof( str );
 	}
 
-	str = typeNode->Attribute( "z" );
+	str = typeNode->Attribute( "pz" );
 	if ( 0 != str )
 	{
 		v.data[2] = atof( str );
+	}
+
+	str = typeNode->Attribute( "mass" );
+	if ( 0 != str )
+	{
+		mass = atof( str );
+	}
+
+	str = typeNode->Attribute( "static" );
+	if ( 0 != str )
+	{
+		if ( strcasecmp( "true", str ) == 0 )
+		{
+			staticFlag = true;
+		}
 	}
 
 	ODEPhysicsEntity* entity = new ODEPhysicsEntity( parent );
 
 	if ( "SPHERE" == typeID )
 	{
-		entity->physicType = new PhysicSphere( false, 10, 1 );
+		float r = 0;
+
+		str = typeNode->Attribute( "r" );
+		if ( 0 != str )
+		{
+			r = atof( str );
+		}
+
+		entity->physicType = new PhysicSphere( staticFlag, mass, r );
 	}
 	else if ( "BOX" == typeID )
 	{
-		entity->physicType = new PhysicBox( false, 1, 1, 1, 1 );
+		float sx = 0;
+		float sy = 0;
+		float sz = 0;
+
+		str = typeNode->Attribute( "sx" );
+		if ( 0 != str )
+		{
+			sx = atof( str );
+		}
+
+		str = typeNode->Attribute( "sy" );
+		if ( 0 != str )
+		{
+			sy = atof( str );
+		}
+
+		str = typeNode->Attribute( "sz" );
+		if ( 0 != str )
+		{
+			sz = atof( str );
+		}
+
+		entity->physicType = new PhysicBox( staticFlag, mass, sx, sy, sz );
 	}
 	else if ( "PLANE" == typeID )
 	{
-		entity->physicType = new PhysicPlane( true, 1, 0, 1, 0, 0 );
+		float dx = 0;
+		float dy = 0;
+		float dz = 0;
+		float d = 0;
+
+		str = typeNode->Attribute( "dx" );
+		if ( 0 != str )
+		{
+			dx = atof( str );
+		}
+
+		str = typeNode->Attribute( "dy" );
+		if ( 0 != str )
+		{
+			dy = atof( str );
+		}
+
+		str = typeNode->Attribute( "dz" );
+		if ( 0 != str )
+		{
+			dz = atof( str );
+		}
+
+		str = typeNode->Attribute( "d" );
+		if ( 0 != str )
+		{
+			d = atof( str );
+		}
+
+		entity->physicType = new PhysicPlane( true, mass, dx, dy, dz, d );
 	}
 
 	entity->physicType->create( this->worldID, this->spaceID );
