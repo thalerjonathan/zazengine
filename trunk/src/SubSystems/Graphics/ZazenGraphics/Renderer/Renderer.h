@@ -7,9 +7,8 @@
 
 #include <assert.h>
 
-#define CHECK_FRAMEBUFFER_STATUS() \
+#define CHECK_FRAMEBUFFER_STATUS( status ) \
 {\
- GLenum status; \
  status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT); \
  switch(status) { \
  case GL_FRAMEBUFFER_COMPLETE_EXT: \
@@ -51,7 +50,6 @@
  }\
 }
 
-
 class Renderer
 {
  public:
@@ -59,6 +57,7 @@ class Renderer
 	virtual ~Renderer();
 
 	virtual bool initialize() = 0;
+	virtual bool shutdown() = 0;
 	virtual void renderFrame( GeomInstance* ) = 0;
 
 	void printInfo();
@@ -78,8 +77,6 @@ class Renderer
 	 {
 	 	return a->distance < b->distance;
 	 }
-
-	 void createFBO(GLuint*, GLuint*);
 };
 
 #endif /*STANDARDTRAVERSAL_H_*/

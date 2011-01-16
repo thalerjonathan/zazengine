@@ -59,25 +59,3 @@ Renderer::printInfo()
 	cout << "Occluded Instances:      " << this->occludedInstances << endl;
 	cout << "------------------------------------------------------------------------------------------" << endl;
 }
-
-void
-Renderer::createFBO(GLuint* texID, GLuint* fboID)
-{
-	glGenFramebuffersEXT(1, fboID);
-	glGenTextures(1, texID);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glGenTextures failed with " << gluErrorString(glGetError()) << endl;
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, *fboID);
-	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, *texID);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glTexImage2D failed with " << gluErrorString(glGetError()) << endl;
-
-	glClearColor(0, 0, 0, 0);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, *texID, 0);
-
-	CHECK_FRAMEBUFFER_STATUS()
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-}

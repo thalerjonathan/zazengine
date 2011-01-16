@@ -28,6 +28,8 @@ class SFXRenderer : public Renderer
 
 	 GLuint backgroundTex;
 	 GLuint backgroundFBO;
+
+	 void createFBO(GLuint*, GLuint*);
 };
 
 #endif /*SFXRENDERER_H_*/
