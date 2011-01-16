@@ -202,9 +202,7 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
-	this->activeScene->load(false, 0, 0, 0);
-
-	return true;
+	return this->activeScene->load(false, 0, 0, 0);
 }
 
 bool

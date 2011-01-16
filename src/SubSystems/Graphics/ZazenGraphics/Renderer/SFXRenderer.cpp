@@ -5,53 +5,8 @@
 
 #include <iostream>
 #include <algorithm>
-#include <assert.h>
 
 using namespace std;
-
-#define CHECK_FRAMEBUFFER_STATUS() \
-{\
- GLenum status; \
- status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT); \
- switch(status) { \
- case GL_FRAMEBUFFER_COMPLETE_EXT: \
-   break; \
- case GL_FRAMEBUFFER_UNSUPPORTED_EXT: \
-   fprintf(stderr,"framebuffer GL_FRAMEBUFFER_UNSUPPORTED_EXT\n");\
-    /* you gotta choose different formats */ \
-   assert(0); \
-   break; \
- case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT: \
-   fprintf(stderr,"framebuffer INCOMPLETE_ATTACHMENT\n");\
-   break; \
- case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT: \
-   fprintf(stderr,"framebuffer FRAMEBUFFER_MISSING_ATTACHMENT\n");\
-   break; \
- case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: \
-   fprintf(stderr,"framebuffer FRAMEBUFFER_DIMENSIONS\n");\
-   break; \
-  case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: \
-   fprintf(stderr,"framebuffer INCOMPLETE_FORMATS\n");\
-   break; \
- case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT: \
-   fprintf(stderr,"framebuffer INCOMPLETE_DRAW_BUFFER\n");\
-   break; \
- case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT: \
-   fprintf(stderr,"framebuffer INCOMPLETE_READ_BUFFER\n");\
-   break; \
- case GL_FRAMEBUFFER_BINDING_EXT: \
-   fprintf(stderr,"framebuffer BINDING_EXT\n");\
-   break; \
-/*
- case GL_FRAMEBUFFER_STATUS_ERROR_EXT: \
-   fprintf(stderr,"framebuffer STATUS_ERROR\n");\
-   break; \
-*/ \
- default: \
-   /* programming error; will fail on all hardware */ \
-   assert(0); \
- }\
-}
 
 SFXRenderer::SFXRenderer(Camera& camera, std::string& skyBoxFolder)
 	: Renderer(camera, skyBoxFolder)
@@ -212,25 +167,4 @@ void SFXRenderer::traverseInstance(GeomInstance* instance)
 	} else {
 		this->renderQueue.push_back(instance);
 	}
-}
-
-void SFXRenderer::createFBO(GLuint* texID, GLuint* fboID)
-{
-	glGenFramebuffersEXT(1, fboID);
-	glGenTextures(1, texID);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glGenTextures failed with " << gluErrorString(glGetError()) << endl;
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, *fboID);
-	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, *texID);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glTexImage2D failed with " << gluErrorString(glGetError()) << endl;
-
-	glClearColor(0, 0, 0, 0);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, *texID, 0);
-
-	CHECK_FRAMEBUFFER_STATUS()
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
