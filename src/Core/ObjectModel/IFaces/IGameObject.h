@@ -11,6 +11,7 @@
 #include "../../EventSystem/IEventListener.h"
 
 #include "../../Utils/XML/tinyxml.h"
+#include "../../Utils/Data/Property.h"
 
 class ISubSystemEntity;
 
@@ -23,6 +24,8 @@ class IGameObject : public IEventListener
 
 		virtual GameObjectID getID() const = 0;
 		virtual const std::string& getName() const = 0;
+
+		virtual Property getProperty( const std::string& id ) = 0;
 
 		virtual IGameObject* clone() = 0;
 

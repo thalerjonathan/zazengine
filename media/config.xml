@@ -14,6 +14,17 @@
 	
 	<objectList>
 		<object name="objA" script="media/scripts/objA/objA.lua">
+			<properties>
+				<prop name="position" type="VEC">
+					<value x="0"/>
+					<value y="10"/>
+					<value z="0"/>
+				</prop>
+				<prop name="roll" type="float" value="0"/>
+				<prop name="head" type="float" value="0"/>
+				<prop name="pitch" type="float" value="0"/>
+			</properties>
+			
 			<audio>
 				<sound file="media/audio/bell.wav" loop="TRUE"/>
 			</audio>
@@ -87,11 +98,11 @@
 		
 		<object name="boxObj">
 			<graphics>
-				<instance class="Box" x="0" y="0" z="0"/>
+				<instance class="Box" x="0" y="5" z="0"/>
 			</graphics>
 			
 			<physics>
-				<type id="BOX" mass="1" px="0.0" py="5" pz="0" sx="1" sy="1" sz="1"/>
+				<type id="BOX" static="true" mass="1" px="0" py="1" pz="0" sx="2" sy="2" sz="2"/>
 			</physics>
 		</object>
 		
@@ -102,6 +113,30 @@
 			
 			<physics>
 				<type id="PLANE" dx="0" dy="1" dz="0" d="0"/>
+			</physics>
+		</object>
+		
+		<object name="planeLeft">
+			<physics>
+				<type id="PLANE" dx="1" dy="0" dz="0" d="-15"/>
+			</physics>
+		</object>
+		
+		<object name="planeRight">
+			<physics>
+				<type id="PLANE" dx="-1" dy="0" dz="0" d="-15"/>
+			</physics>
+		</object>
+		
+		<object name="planeBack">
+			<physics>
+				<type id="PLANE" dx="0" dy="0" dz="1" d="-15"/>
+			</physics>
+		</object>
+		
+		<object name="planeFront">
+			<physics>
+				<type id="PLANE" dx="0" dy="0" dz="-1" d="-15"/>
 			</physics>
 		</object>
 	</objectList>
