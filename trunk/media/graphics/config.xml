@@ -12,6 +12,6 @@
 		
 		<class id="Box" modelType="BUILTIN" geomType="BOX"/>
 		<class id="Sphere" modelType="BUILTIN" geomType="SPHERE"/>
-		<class id="Plane" modelType="BUILTIN" geomType="PLANE" length="25" width="25"/>
+		<class id="Plane" modelType="BUILTIN" geomType="PLANE" length="30" width="30"/>
 	</geomClasses>
 </subSystem>
