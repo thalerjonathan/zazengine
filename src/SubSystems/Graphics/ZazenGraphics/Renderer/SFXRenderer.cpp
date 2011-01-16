@@ -61,7 +61,6 @@ void SFXRenderer::renderFrame(GeomInstance* root)
 
 void SFXRenderer::processRenderQueue()
 {
-
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->backgroundFBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -168,3 +167,27 @@ void SFXRenderer::traverseInstance(GeomInstance* instance)
 		this->renderQueue.push_back(instance);
 	}
 }
+
+void
+SFXRenderer::createFBO(GLuint* texID, GLuint* fboID)
+{
+	GLenum status;
+	glGenFramebuffersEXT(1, fboID);
+	glGenTextures(1, texID);
+	if (glGetError() != GL_NO_ERROR)
+		cout << "glGenTextures failed with " << gluErrorString(glGetError()) << endl;
+
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, *fboID);
+	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, *texID);
+	glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	if (glGetError() != GL_NO_ERROR)
+		cout << "glTexImage2D failed with " << gluErrorString(glGetError()) << endl;
+
+	glClearColor(0, 0, 0, 0);
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, *texID, 0);
+
+	CHECK_FRAMEBUFFER_STATUS(status)
+
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+

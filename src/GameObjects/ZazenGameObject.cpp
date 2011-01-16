@@ -83,14 +83,17 @@ ZazenGameObject::initialize( TiXmlElement* objectNode )
 		}
 	}
 
-	TiXmlNode* propertiesNode = objectNode->FirstChild( "properties" );
-	for (TiXmlElement* propNode = propertiesNode->FirstChildElement(); propertiesNode != 0; propertiesNode = propertiesNode->NextSiblingElement())
+	TiXmlElement* propertiesNode = objectNode->FirstChildElement( "properties" );
+	if ( 0 != propertiesNode )
 	{
-		const char* str = propNode->Value();
-		if ( 0 == str )
-			continue;
+		for (TiXmlElement* propNode = propertiesNode->FirstChildElement(); propertiesNode != 0; propertiesNode = propertiesNode->NextSiblingElement())
+		{
+			const char* str = propNode->Value();
+			if ( 0 == str )
+				continue;
 
 
+		}
 	}
 
 	for (TiXmlElement* subSystemEntityNode = objectNode->FirstChildElement(); subSystemEntityNode != 0; subSystemEntityNode = subSystemEntityNode->NextSiblingElement())

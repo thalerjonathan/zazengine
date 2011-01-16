@@ -8,6 +8,8 @@
 #ifndef DRRENDERER_H_
 #define DRRENDERER_H_
 
+#define MRT_COUNT 4
+
 #include "Renderer.h"
 
 class DRRenderer : public Renderer
@@ -17,12 +19,14 @@ class DRRenderer : public Renderer
 	virtual ~DRRenderer();
 
 	virtual bool initialize();
+	virtual bool shutdown();
 
 	// renders this list of geominstances which must be in front-to-back order
 	void renderFrame(GeomInstance*);
 
  private:
-
+	GLuint m_frameBuffer;
+	GLuint m_mrt[ MRT_COUNT ];
 };
 
 #endif /* DRRENDERER_H_ */
