@@ -12,6 +12,7 @@
 
 #include <GL/glew.h>
 
+#include "Program.h"
 #include "Texture.h"
 
 #include <string>
@@ -45,18 +46,9 @@ class Material
 	bool activated;
 	bool transparent;
 
-	std::map<GLint, int> uniforms;
 	std::map<Texture*, int> textures;
 
-	GLenum materialProgram;
-	GLenum vertexShader;
-	GLenum fragmentShader;
-	
-	bool loadShaders(const std::string&, const std::string&);
-	
-	static bool readShaderSource(const std::string&, std::string&);
-	static GLuint createProgram(const std::string&, const std::string&);
-	static GLint queryUniformLoc(GLint prog, const GLchar* name);
+	Program* m_program;
 };
 
 #endif

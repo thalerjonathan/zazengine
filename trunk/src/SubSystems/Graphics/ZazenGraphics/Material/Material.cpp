@@ -15,42 +15,10 @@
 
 using namespace std;
 
-void printShaderInfoLog(GLuint obj)
-{
-	int infologLength = 0;
-	int charsWritten = 0;
-	char* infoLog;
-
-	glGetShaderiv(obj, GL_INFO_LOG_LENGTH, (GLint*) &infologLength);
-
-	if (infologLength > 0) {
-		infoLog = (char*) malloc(infologLength);
-		glGetShaderInfoLog(obj, infologLength, (GLint*) &charsWritten, infoLog);
-		if (charsWritten)
-			printf("%s\n",infoLog);
-		free(infoLog);
-	}
-}
-
-void printProgramInfoLog(GLuint obj)
-{
-	int infologLength = 0;
-	int charsWritten  = 0;
-	char *infoLog;
-
-	glGetProgramiv(obj, GL_INFO_LOG_LENGTH, (GLint*) &infologLength);
-	if (infologLength > 0) {
-	        infoLog = (char*) malloc(infologLength);
-	        glGetProgramInfoLog(obj, infologLength, (GLint*) &charsWritten, infoLog);
-		if (charsWritten)
-			printf("%s\n",infoLog);
-	        free(infoLog);
-	}
-}
-
 map<std::string, Material*> Material::allMaterials;
 
-bool Material::loadMaterials()
+bool
+Material::loadMaterials()
 {
 	string fullFileName = "media/graphics/materials/materials.xml";
 	
@@ -153,8 +121,11 @@ bool Material::loadMaterials()
 					continue;
 				}
 
-				newMaterial->materialProgram = Material::createProgram(vertextSourceFile, fragmentSourceFile);
-				if (newMaterial->materialProgram == 0) {
+				fragmentSourceFile = "media/graphics/materials/shaders/" + fragmentSourceFile;
+				vertextSourceFile = "media/graphics/materials/shaders/" + vertextSourceFile;
+
+				newMaterial->m_program = Program::createProgram(vertextSourceFile, fragmentSourceFile);
+				if (newMaterial->m_program == 0) {
 					cout << "	ERROR ... couldn't create Program for Material "  << materialName << " - ignoring Material" << endl;
 					delete newMaterial;
 					continue;
@@ -188,9 +159,7 @@ bool Material::loadMaterials()
 
 							cout << "New Uniform with id \"" << id << "\" and value " << value << " in Material \"" << materialName << "\"" << endl;
 
-							GLint loc = Material::queryUniformLoc(newMaterial->materialProgram, id.c_str());
-							if (loc != -1)
-								newMaterial->uniforms[loc] = value;
+							newMaterial->m_program->putUniform( id, value );
 						}
 					}
 				}
@@ -207,7 +176,8 @@ bool Material::loadMaterials()
 	return true;
 }
 
-void Material::freeAll()
+void
+Material::freeAll()
 {
 	map<string, Material*>::iterator iter = Material::allMaterials.begin();
 	while(iter != Material::allMaterials.end()) {
@@ -219,7 +189,8 @@ void Material::freeAll()
 	Material::allMaterials.clear();
 }
 
-Material* Material::get(const string& matName)
+Material*
+Material::get(const string& matName)
 {
 	map<string, Material*>::iterator findIter = Material::allMaterials.find(matName);
 	if (findIter != Material::allMaterials.end())
@@ -231,20 +202,17 @@ Material* Material::get(const string& matName)
 Material::Material(const std::string& name)
 	: name(name)
 {
-	this->materialProgram = 0;
-	this->vertexShader = 0;
-	this->fragmentShader = 0;
-
 	this->transparent = false;
 
 	this->activated = false;
+
+	this->m_program = 0;
 }
 
 Material::~Material()
 {
-	if (this->materialProgram) {
-		// TODO: free
-	}
+	if (this->m_program)
+		delete this->m_program;
 }
 
 void Material::activate()
@@ -262,19 +230,8 @@ void Material::activate()
 		texIter++;
 	}
 
-	if (this->materialProgram) {
-		glUseProgram(this->materialProgram);
-
-		map<GLint, int>::iterator uniIter = this->uniforms.begin();
-		while (uniIter != this->uniforms.end()) {
-			GLint loc = uniIter->first;
-			int value = uniIter->second;
-
-			glUniform1i(loc, value);
-
-			uniIter++;
-		}
-	}
+	if (this->m_program)
+		this->m_program->activate();
 
 	this->activated = true;
 }
@@ -284,8 +241,8 @@ void Material::deactivate()
 	if (this->activated == false)
 		return;
 
-	if (this->materialProgram)
-		glUseProgram(0);
+	if (this->m_program)
+		this->m_program->deactivate();
 
 	map<Texture*, int>::iterator texIter = this->textures.begin();
 	while (texIter != this->textures.end()) {
@@ -295,127 +252,4 @@ void Material::deactivate()
 	}
 
 	this->activated = false;
-}
-
-GLuint Material::createProgram(const string& vertexSourceFile, const string& fragmentSourceFile)
-{
-	GLint status;
-	GLuint program = 0;
-	GLuint vertexShader = 0;
-	GLuint fragmentShader = 0;
-
-	string vertexSourceStr;
-	string fragmentSourceStr;
-
-	if (Material::readShaderSource(vertexSourceFile, vertexSourceStr) == false)
-		return 0;
-
-	if (Material::readShaderSource(fragmentSourceFile, fragmentSourceStr) == false)
-		return 0;
-
-	const char* vertexSource = vertexSourceStr.c_str();
-	const char* fragmentSource = fragmentSourceStr.c_str();
-
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	if (vertexShader == 0) {
-		cout << "glCreateShader for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	if (fragmentShader == 0) {
-		cout << "glCreateShader for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-
-	glShaderSource(vertexShader, 1, (const GLchar**) &vertexSource, NULL);
-	if (glGetError() != GL_NO_ERROR) {
-		cout << "glShaderSource for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-	glShaderSource(fragmentShader, 1, (const GLchar**) &fragmentSource, NULL);
-	if (glGetError() != GL_NO_ERROR) {
-		cout << "glShaderSource for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-
-	glCompileShader(vertexShader);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glCompileShader for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-	printShaderInfoLog(vertexShader);
-	if (!status) {
-		cout << "Failed compiling GL_VERTEX_SHADER \"" << vertexSourceFile << "\"" << endl;
-		return 0;
-	}
-
-	glCompileShader(fragmentShader);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glCompileShader for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-	printShaderInfoLog(fragmentShader);
-	if (!status) {
-		cout << "Failed compiling GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\"" << endl;
-		return 0;
-	}
-
-	program = glCreateProgram();
-	if (program == 0) {
-		if (glGetError() != GL_NO_ERROR)
-			cout << "glCreateProgram failed with " << gluErrorString(glGetError()) << endl;
-
-		return 0;
-	}
-
-	glAttachShader(program, vertexShader);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glCompileShader for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-	glAttachShader(program, fragmentShader);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glCompileShader for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-
-	glLinkProgram(program);
-	if (glGetError() != GL_NO_ERROR)
-		cout << "glLinkProgramARB failed with " << gluErrorString(glGetError()) << endl;
-	glGetProgramiv(program, GL_LINK_STATUS, &status);
-	printProgramInfoLog(program);
-	if (!status) {
-		cout << "ERROR linking of program \"" << vertexSourceFile << "\" and \"" << fragmentSourceFile << "\" failed" << endl;
-		return 0;
-	}
-
-	return program;
-}
-
-bool Material::readShaderSource(const string& file, string& shaderSource)
-{
-	string fullFileName = "media/graphics/materials/shaders/" + file;
-
-	FILE* shaderSourceFile = fopen(fullFileName.c_str(), "r");
-	if (shaderSourceFile == 0) {
-		cout << "ERROR ... couldn't open Shadersource-File " << fullFileName << endl;
-		return false;
-	}
-
-	char c;
-	while ((c = fgetc(shaderSourceFile)) != EOF)
-		shaderSource += c;
-
-	fclose( shaderSourceFile );
-
-	return true;
-}
-
-GLint Material::queryUniformLoc(GLint prog, const GLchar* name)
-{
-	GLint location = 0;
-
-	glGetError();
-
-	location = glGetUniformLocation(prog, name);
-	if (location == -1) {
-		cout << "Coulnd't get Uniform Location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
-		return -1;
-	}
-
-	return location;
 }

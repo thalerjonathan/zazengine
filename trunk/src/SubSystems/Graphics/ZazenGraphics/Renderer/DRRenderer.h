@@ -27,6 +27,9 @@ class DRRenderer : public Renderer
  private:
 	GLuint m_frameBuffer;
 	GLuint m_mrt[ MRT_COUNT ];
+
+	Program* m_geomStageProg;
+	Program* m_lightStageProg;
 };
 
 #endif /* DRRENDERER_H_ */
