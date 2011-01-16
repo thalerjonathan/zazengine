@@ -1,5 +1,5 @@
-#ifndef OCRENDERER_H_
-#define OCRENDERER_H_
+#ifndef STDRENDERER_H_
+#define STDRENDERER_H_
 
 #include "Renderer.h"
 
@@ -25,4 +25,4 @@ class StandardRenderer : public Renderer
 	 void processInstance(GeomInstance*);
 };
 
-#endif /*OCRENDERER_H_*/
+#endif /*STDRENDERER_H_*/

@@ -1,13 +1,13 @@
 #include "Scene.h"
 
 #ifdef OCCLUSION_CULLING
-	#include "graphic/OCRenderer.h"
+	#include "../Renderer/OCRenderer.h"
+#elif SFX_RENDERING
+	#include "../Renderer/SFXRenderer.h"
+#elif DR_RENDERING
+	#include "../Renderer/DRRenderer.h"
 #else
-	#ifdef SFX_RENDERING
-		#include "graphic/SFXRenderer.h"
-	#else
-		#include "../Renderer/StandardRenderer.h"
-	#endif
+	#include "../Renderer/StandardRenderer.h"
 #endif
 
 #include "../Geometry/GeomSphere.h"
@@ -47,7 +47,7 @@ GeomInstance* Scene::buildChildren(GeomType* model)
 	return subInstance;
 }
 
-void Scene::load(bool randomizeInstances, int rows, int columns, int density)
+bool Scene::load(bool randomizeInstances, int rows, int columns, int density)
 {
 	if (this->sceneRoot)
 		delete this->sceneRoot;
@@ -57,14 +57,20 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 
 #ifdef OCCLUSION_CULLING
 	this->renderer = new OCRenderer(*this->camera, this->skyBoxFolder);
-#else
-#ifdef SFX_RENDERING
+#elif SFX_RENDERING
 	this->renderer = new SFXRenderer(*this->camera, this->skyBoxFolder);
+#elif DR_RENDERING
+	this->renderer = new DRRenderer(*this->camera, this->skyBoxFolder);
 #else
 	this->renderer = new StandardRenderer(*this->camera, this->skyBoxFolder);
 #endif
-#endif
 	
+	if ( false == this->renderer->initialize() )
+	{
+		cout << "ERROR ... initializing renderer failed - exit" << endl;
+		return false;
+	}
+
 	GeomType* sceneGeom = new GeomType();
 	this->sceneRoot = new GeomInstance(sceneGeom);
 
@@ -125,6 +131,8 @@ void Scene::load(bool randomizeInstances, int rows, int columns, int density)
 	this->sceneMeasures.data[2] = this->sceneBBMax[2] - this->sceneBBMin[2];
 	
 	sceneGeom->setBB(this->sceneBBMin, this->sceneBBMax);
+
+	return true;
 }
 
 void Scene::setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax)

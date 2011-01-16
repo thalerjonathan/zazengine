@@ -30,7 +30,7 @@ class Scene
 	 void setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax);
 
 	 void processFrame(double);
-	 void load(bool, int, int, int);
+	 bool load(bool, int, int, int);
 	 
 	 void addEntity(Entity& e) { this->entities[e.name] = e; };
 	 void addInstance(EntityInstance* i) { this->instances.push_back(i); };
