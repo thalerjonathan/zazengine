@@ -47,7 +47,8 @@ GeomInstance* Scene::buildChildren(GeomType* model)
 	return subInstance;
 }
 
-bool Scene::load(bool randomizeInstances, int rows, int columns, int density)
+bool
+Scene::load(bool randomizeInstances, int rows, int columns, int density)
 {
 	if (this->sceneRoot)
 		delete this->sceneRoot;

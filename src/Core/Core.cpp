@@ -112,7 +112,11 @@ Core::start()
 	while ( subSysIter != this->subSystems.end() )
 	{
 		ISubSystem* subSys = *subSysIter++;
-		subSys->start();
+		if ( false == subSys->start() )
+		{
+			cout << "Failed starting SubSystem \"" << subSys->getID() << " - exit" << endl;
+			return;
+		}
 	}
 
 	timeval t;

@@ -35,6 +35,16 @@ DRRenderer::renderFrame(GeomInstance* root)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_COLOR_ATTACHMENT3_EXT};
+	glDrawBuffers(4, buffers);
+
+	this->m_geomStageProg->activate();
+
+	this->m_geomStageProg->deactivate();
+
+	this->m_lightStageProg->activate();
+
+	this->m_lightStageProg->deactivate();
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
@@ -78,6 +88,20 @@ DRRenderer::initialize()
 		}
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	}
+
+	this->m_geomStageProg = Program::createProgram( "media/graphics/dr/geomDRVert.glsl", "media/graphics/dr/geomDRFrag.glsl" );
+	if ( 0 == this->m_geomStageProg )
+	{
+		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
+		return false;
+	}
+
+	this->m_lightStageProg = Program::createProgram( "media/graphics/dr/lightDRVert.glsl", "media/graphics/dr/lightDRFrag.glsl" );
+	if ( 0 == this->m_lightStageProg )
+	{
+		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
+		return false;
 	}
 
 	cout << "Initializing Deferred Renderer finished" << endl;
