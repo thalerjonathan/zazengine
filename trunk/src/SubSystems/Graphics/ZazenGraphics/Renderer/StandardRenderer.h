@@ -11,18 +11,12 @@ class StandardRenderer : public Renderer
 	StandardRenderer(Camera& camera, std::string&);
 	virtual ~StandardRenderer();
 
+	virtual bool initialize();
+	virtual bool shutdown();
+
 	 // renders this list of geominstances which must be in front-to-back order
 	 void renderFrame(GeomInstance*);
 
- private:
-	 bool parentIntersectingFrustum;
-
-	 std::list<GeomInstance*> instancesQueue;
-	 std::list<GeomInstance*> renderQueue;
-
-	 void processRenderQueue();
-	 void traverseInstance(GeomInstance*);
-	 void processInstance(GeomInstance*);
 };
 
 #endif /*STDRENDERER_H_*/

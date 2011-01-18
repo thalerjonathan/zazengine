@@ -23,7 +23,20 @@ StandardRenderer::~StandardRenderer()
 {
 }
 
-void StandardRenderer::renderFrame(GeomInstance* root)
+bool
+StandardRenderer::initialize()
+{
+	return true;
+}
+
+bool
+StandardRenderer::shutdown()
+{
+	return true;
+}
+
+void
+StandardRenderer::renderFrame(GeomInstance* root)
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
@@ -57,89 +70,9 @@ void StandardRenderer::renderFrame(GeomInstance* root)
 	glEnable(GL_TEXTURE_2D);
 
 	this->processInstance(root);
-	this->processRenderQueue();
+	this->processRenderQueue( true );
 
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
-}
-
-// geomnodes are the children of a transformnode or a geomnode
-void StandardRenderer::processInstance(GeomInstance* instance)
-{
-	instance->recalculateDistance();
-
-	bool backupFlag = this->parentIntersectingFrustum;
-
-	if (instance->parent == 0 || this->parentIntersectingFrustum) {
-		Vector bbMinWorld(instance->geom->getBBMin());
-		Vector bbMaxWorld(instance->geom->getBBMax());
-
-		instance->transform.transform(bbMinWorld);
-		instance->transform.transform(bbMaxWorld);
-
-		CullResult result = this->camera.cullBB(bbMinWorld, bbMaxWorld);
-		if (result == OUTSIDE) {
-			return;
-		}
-
-		if (result == INTERSECTING) {
-			this->parentIntersectingFrustum = true;
-		} else {
-			this->parentIntersectingFrustum = false;
-		}
-	}
-
-	this->traverseInstance(instance);
-
-	this->parentIntersectingFrustum = backupFlag;
-}
-
-void StandardRenderer::traverseInstance(GeomInstance* instance)
-{
-	// not a leaf-node
-	if (instance->children.size() > 0) {
-		instance->visible = false;
-
-		// also sort children in front-to-back
-		sort(instance->children.begin(), instance->children.end(), Renderer::geomInstanceDistCmp);
-
-		for (unsigned int i = 0; i < instance->children.size(); i++) {
-			this->processInstance(instance->children[i]);
-		}
-
-	// is a leaf-node => render
-	} else {
-		this->renderQueue.push_back(instance);
-	}
-}
-
-void StandardRenderer::processRenderQueue()
-{
-	if (this->skyBox)
-		this->skyBox->render();
-
-	list<GeomInstance*>::iterator iter = this->renderQueue.begin();
-	while (iter != this->renderQueue.end()) {
-		GeomInstance* instance = *iter++;
-
-		Material* material = instance->geom->material;
-		if (material) {
-			if (material->isTransparent())
-				continue;
-			else
-				material->activate();
-		}
-
-		glLoadMatrixf(instance->transform.data);
-		instance->geom->render();
-
-		if (material)
-			material->deactivate();
-
-		this->renderedFaces += instance->geom->getFaceCount();
-		this->renderedInstances++;
-	}
-
-	this->renderQueue.clear();
 }

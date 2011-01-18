@@ -5,6 +5,8 @@
 #include "../Geometry/GeomInstance.h"
 #include "../Geometry/GeomSkyBox.h"
 
+#include <list>
+
 #include <assert.h>
 
 #define CHECK_FRAMEBUFFER_STATUS( status ) \
@@ -70,13 +72,22 @@ class Renderer
 
 	 long long frame;
 
+	 bool parentIntersectingFrustum;
+
 	 Camera& camera;
 	 GeomSkyBox* skyBox;
+
+	 std::list<GeomInstance*> instancesQueue;
+	 std::list<GeomInstance*> renderQueue;
 
 	 static bool geomInstanceDistCmp( GeomInstance* a, GeomInstance* b )
 	 {
 	 	return a->distance < b->distance;
 	 }
+
+	 void processRenderQueue( bool useMaterial );
+	 void traverseInstance(GeomInstance*);
+	 void processInstance(GeomInstance*);
 };
 
 #endif /*STANDARDTRAVERSAL_H_*/
