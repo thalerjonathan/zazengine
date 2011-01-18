@@ -30,23 +30,91 @@ DRRenderer::~DRRenderer()
 void
 DRRenderer::renderFrame(GeomInstance* root)
 {
-	// 1. do geometry pass
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
+	this->renderedFaces = 0;
+	this->renderedInstances = 0;
 
+	// clear window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// load modelviewmatrix
+	glLoadMatrixf(this->camera.modelView.data);
+
+	//  start geometry pass
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
 
 	GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_COLOR_ATTACHMENT3_EXT};
 	glDrawBuffers(4, buffers);
 
+	// clear
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	this->m_geomStageProg->activate();
 
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+
+	glColor4f(1, 0, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(100, 0, 0);
+		glVertex3f(-100, 0, 0);
+	glEnd();
+
+	glColor4f(0, 1, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 100, 0);
+		glVertex3f(0, -100, 0);
+	glEnd();
+
+	glColor4f(0, 0, 1, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 0, 100);
+		glVertex3f(0, 0, -100);
+	glEnd();
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
+
+	// draw all geometry
+	this->processInstance(root);
+	this->processRenderQueue( false );
+
+	// finish geometry stage
 	this->m_geomStageProg->deactivate();
 
-	this->m_lightStageProg->activate();
-
-	this->m_lightStageProg->deactivate();
-
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+	// start lighting stage
+	// bind rendertargets as textures
+	for ( int i = 0; i < MRT_COUNT; i++ )
+	{
+		glActiveTexture( GL_TEXTURE0 + i );
+		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ]);
+	}
+
+	// activate lighting-stage shader
+	//this->m_lightStageProg->activate();
+
+	// set up orthogonal projection to render quad
+	this->camera.setupOrtho();
+
+	// render quad
+	glBegin( GL_QUADS );
+		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 );
+		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() );
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth(), this->camera.getHeight() );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth(), 0 );
+	glEnd();
+
+	// finish lighting stage
+	//this->m_lightStageProg->deactivate();
+
+	// switch back to perspective projection
+	this->camera.setupPerspective();
+
+	// swap buffers
+	SDL_GL_SwapBuffers();
+
+	this->frame++;
 }
 
 bool
