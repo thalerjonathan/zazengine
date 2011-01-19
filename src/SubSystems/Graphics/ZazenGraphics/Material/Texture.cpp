@@ -57,13 +57,19 @@ Texture* Texture::load(const std::string& file)
         	cout << "WARNING ... the image is not truecolor..  this will probably break" << endl;
         }
         
+        // generate texture id
 		glGenTextures(1, &textureID);
+		// bind texture
 		glBindTexture(GL_TEXTURE_2D, textureID);
+		// anisotropic filtering
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		
+        // upload data
 		glTexImage2D( GL_TEXTURE_2D, 0, nOfColors, surface->w, surface->h, 0, textureFormat, GL_UNSIGNED_BYTE, surface->pixels );
-	
+		// unbind texture
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 	} else {
 		cout << "ERROR ... SDL could not load texture " << fullFileName << " - failed with " << SDL_GetError() << endl;
 		return 0;
@@ -109,15 +115,7 @@ void Texture::activate(int targetID)
 
 	this->targetID = targetID;
 
-	if (this->targetID == 0)
-		glActiveTexture(GL_TEXTURE0);
-	else if (this->targetID == 1)
-		glActiveTexture(GL_TEXTURE1);
-	else if (this->targetID == 2)
-		glActiveTexture(GL_TEXTURE2);
-	else if (this->targetID == 3)
-		glActiveTexture(GL_TEXTURE3);
-
+	glActiveTexture( GL_TEXTURE0 + this->targetID );
 	glBindTexture(GL_TEXTURE_2D, this->textureID);
 }
 
@@ -126,15 +124,7 @@ void Texture::deactivate()
 	if (this->targetID == -1)
 		return;
 
-	if (this->targetID == 0)
-		glActiveTexture(GL_TEXTURE0);
-	else if (this->targetID == 1)
-		glActiveTexture(GL_TEXTURE1);
-	else if (this->targetID == 2)
-		glActiveTexture(GL_TEXTURE2);
-	else if (this->targetID == 3)
-		glActiveTexture(GL_TEXTURE3);
-
+	glActiveTexture(GL_TEXTURE0 + this->targetID);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	this->targetID = -1;
