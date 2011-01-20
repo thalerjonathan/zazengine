@@ -30,6 +30,8 @@ DRRenderer::~DRRenderer()
 void
 DRRenderer::renderFrame(GeomInstance* root)
 {
+	GLenum buffers[MRT_COUNT];
+
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
 
@@ -42,11 +44,13 @@ DRRenderer::renderFrame(GeomInstance* root)
 	//  start geometry pass
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
 
-	GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_COLOR_ATTACHMENT3_EXT};
-	glDrawBuffers(4, buffers);
+	// clear fbo
+	glClear(GL_COLOR_BUFFER_BIT);
 
-	// clear
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// activate drawing to targets
+	for ( int i = 0; i < MRT_COUNT; i++)
+		buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
+	glDrawBuffers(MRT_COUNT, buffers);
 
 	this->m_geomStageProg->activate();
 
@@ -146,7 +150,7 @@ DRRenderer::initialize()
 		}
 
 		glClearColor(0, 0, 0, 0);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i], 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i], 0);
 
 		CHECK_FRAMEBUFFER_STATUS( status )
 		if ( GL_FRAMEBUFFER_COMPLETE_EXT != status )
@@ -165,10 +169,25 @@ DRRenderer::initialize()
 		return false;
 	}
 
+	this->m_geomStageProg->bindFragDataLocation( 0, "normalOut" );
+	this->m_geomStageProg->bindFragDataLocation( 1, "diffuseOut" );
+	this->m_geomStageProg->bindFragDataLocation( 2, "depthOut" );
+	this->m_geomStageProg->bindFragDataLocation( 3, "genericOut" );
+
+	if ( false == this->m_geomStageProg->link() )
+	{
+		return false;
+	}
+
 	this->m_lightStageProg = Program::createProgram( "media/graphics/dr/lightDRVert.glsl", "media/graphics/dr/lightDRFrag.glsl" );
 	if ( 0 == this->m_lightStageProg )
 	{
 		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_lightStageProg->link() )
+	{
 		return false;
 	}
 
