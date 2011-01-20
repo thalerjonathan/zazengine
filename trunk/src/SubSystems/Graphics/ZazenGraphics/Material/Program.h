@@ -21,6 +21,9 @@ class Program
 	static Program* createProgram(const std::string&, const std::string&);
 
 	bool putUniform( const std::string&, int value );
+	bool bindFragDataLocation(GLuint colorNumber, const std::string& name );
+
+	bool link();
 
 	bool activate();
 	bool deactivate();
@@ -28,9 +31,12 @@ class Program
  private:
 	Program();
 
-	GLuint materialProgram;
+	GLuint program;
 	GLuint vertexShader;
 	GLuint fragmentShader;
+
+	std::string vertexSourceFile;
+	std::string fragmentSourceFile;
 
 	std::map<GLint, int> uniforms;
 
