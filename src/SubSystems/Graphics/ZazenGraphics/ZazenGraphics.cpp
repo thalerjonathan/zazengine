@@ -79,6 +79,8 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
 	}
 
+	cout << "OpenGL Version: " << glGetString(GL_VERSION) << endl;
+
 	if (!GLEW_VERSION_2_0)
 	{
 		cout << "ERROR ... OpenGL not version 2.0 - exit..." << endl;
