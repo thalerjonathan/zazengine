@@ -124,7 +124,7 @@ Material::loadMaterials()
 				fragmentSourceFile = "media/graphics/materials/shaders/" + fragmentSourceFile;
 				vertextSourceFile = "media/graphics/materials/shaders/" + vertextSourceFile;
 
-				newMaterial->m_program = Program::createProgram(vertextSourceFile, fragmentSourceFile);
+				newMaterial->m_program = Program::createProgram();
 				if (newMaterial->m_program == 0) {
 					cout << "	ERROR ... couldn't create Program for Material "  << materialName << " - ignoring Material" << endl;
 					delete newMaterial;
@@ -159,7 +159,7 @@ Material::loadMaterials()
 
 							cout << "New Uniform with id \"" << id << "\" and value " << value << " in Material \"" << materialName << "\"" << endl;
 
-							newMaterial->m_program->putUniform( id, value );
+							//newMaterial->m_program->putUniform( id, value );
 						}
 					}
 				}

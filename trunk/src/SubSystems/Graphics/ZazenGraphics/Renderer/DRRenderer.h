@@ -29,7 +29,8 @@ class DRRenderer : public Renderer
 	GLuint m_mrt[ MRT_COUNT ];
 
 	Program* m_geomStageProg;
-	Program* m_lightStageProg;
+	Shader* m_vertShaderGeomStage;
+	Shader* m_fragShaderGeomStage;
 };
 
 #endif /* DRRENDERER_H_ */

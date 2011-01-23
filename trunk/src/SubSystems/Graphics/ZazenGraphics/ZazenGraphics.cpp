@@ -408,11 +408,6 @@ ZazenGraphics::initSDL()
 		cout << "OK ... SDL initialized" << endl;
 	}
 
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
 	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
 	{
 		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
@@ -453,7 +448,8 @@ ZazenGraphics::initGL()
 
 	if ( major < 3 )
 	{
-
+		cout << "ERROR ... OpenGL Version < 3" << endl;
+		return false;
 	}
 
 	int argc = 0;
