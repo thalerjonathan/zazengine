@@ -47,6 +47,8 @@ class ZazenGraphics : public IGraphics
 		std::string type;
 	
 		SDL_Surface* drawContext;
+		SDL_WindowID window;
+		SDL_GLContext glContext;
 		
 		Camera* camera;
 		Scene* activeScene;
@@ -54,6 +56,9 @@ class ZazenGraphics : public IGraphics
 		double lastItFact;
 
 		std::list<ZazenGraphicsEntity*> entities;
+
+		bool initSDL();
+		bool initGL();
 
 		bool loadGeomClasses( TiXmlElement* );
 };

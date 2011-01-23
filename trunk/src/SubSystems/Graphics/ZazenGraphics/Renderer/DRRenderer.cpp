@@ -7,6 +7,7 @@
 
 #include <GL/glew.h>
 #include "SDL/SDL.h"
+#include <glm/glm.hpp>
 
 #include "DRRenderer.h"
 
