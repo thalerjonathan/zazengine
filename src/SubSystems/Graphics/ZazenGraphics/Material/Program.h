@@ -8,20 +8,19 @@
 #ifndef PROGRAM_H_
 #define PROGRAM_H_
 
-#include <GL/glew.h>
-
-#include <map>
-#include <string>
+#include "Shader.h"
 
 class Program
 {
  public:
 	~Program();
 
-	static Program* createProgram(const std::string&, const std::string&);
+	static Program* createProgram();
 
-	bool putUniform( const std::string&, int value );
-	bool bindFragDataLocation(GLuint colorNumber, const std::string& name );
+	bool attachShader( Shader* );
+	bool detachShader( Shader* );
+
+	bool bindFragDataLocation( GLuint colorNumber, const std::string& name );
 
 	bool link();
 
@@ -29,19 +28,11 @@ class Program
 	bool deactivate();
 
  private:
-	Program();
+	Program( GLuint programObject );
 
-	GLuint program;
-	GLuint vertexShader;
-	GLuint fragmentShader;
+	GLuint programObject;
 
-	std::string vertexSourceFile;
-	std::string fragmentSourceFile;
-
-	std::map<GLint, int> uniforms;
-
-	static bool readShaderSource(const std::string&, std::string&);
-	static GLint queryUniformLoc(GLint prog, const GLchar* name);
+	static void printInfoLog( GLuint obj );
 };
 
 #endif /* PROGRAM_H_ */

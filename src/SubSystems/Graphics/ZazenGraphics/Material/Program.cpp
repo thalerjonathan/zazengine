@@ -38,75 +38,13 @@ printInfoLog( GLuint obj, bool shader )
 }
 
 Program*
-Program::createProgram(const string& vertexSourceFile, const string& fragmentSourceFile)
+Program::createProgram()
 {
 	GLint status;
-	GLuint program = 0;
-	GLuint vertexShader = 0;
-	GLuint fragmentShader = 0;
+	GLuint programObject = 0;
 
-	string vertexSourceStr;
-	string fragmentSourceStr;
-
-	if (Program::readShaderSource(vertexSourceFile, vertexSourceStr) == false)
-		return 0;
-
-	if (Program::readShaderSource(fragmentSourceFile, fragmentSourceStr) == false)
-		return 0;
-
-	const char* vertexSource = vertexSourceStr.c_str();
-	const char* fragmentSource = fragmentSourceStr.c_str();
-
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	if (0 == vertexShader )
-	{
-		cout << "glCreateShader for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	if ( 0 == fragmentShader )
-	{
-		cout << "glCreateShader for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString(glGetError()) << endl;
-		return 0;
-	}
-
-	glShaderSource(vertexShader, 1, (const GLchar**) &vertexSource, NULL);
-	status = glGetError();
-	if ( GL_NO_ERROR != status )
-	{
-		cout << "glShaderSource for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString( status ) << endl;
-		return 0;
-	}
-
-	glShaderSource(fragmentShader, 1, (const GLchar**) &fragmentSource, NULL);
-	status = glGetError();
-	if ( GL_NO_ERROR != status )
-	{
-		cout << "glShaderSource for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString( status ) << endl;
-		return 0;
-	}
-
-	glCompileShader( vertexShader );
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-	if ( GL_TRUE != status )
-	{
-		cout << "Failed compiling GL_VERTEX_SHADER \"" << vertexSourceFile << "\"" << endl;
-		printInfoLog( vertexShader, true );
-		return 0;
-	}
-
-	glCompileShader( fragmentShader );
-	glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
-	if ( GL_TRUE != status )
-	{
-		cout << "Failed compiling GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\"" << endl;
-		printInfoLog( fragmentShader, true );
-		return 0;
-	}
-
-	program = glCreateProgram();
-	if ( 0 == program )
+	programObject = glCreateProgram();
+	if ( 0 == programObject )
 	{
 		status = glGetError();
 		if ( GL_NO_ERROR != status )
@@ -115,37 +53,12 @@ Program::createProgram(const string& vertexSourceFile, const string& fragmentSou
 		return 0;
 	}
 
-	glAttachShader( program, vertexShader );
-	status = glGetError();
-	if ( GL_NO_ERROR != status )
-	{
-		cout << "glCompileShader for GL_VERTEX_SHADER \"" << vertexSourceFile << "\" failed with " << gluErrorString( status ) << endl;
-		return 0;
-	}
-
-	glAttachShader( program, fragmentShader );
-	status = glGetError();
-	if ( GL_NO_ERROR != status )
-	{
-		cout << "glCompileShader for GL_FRAGMENT_SHADER \"" << fragmentSourceFile << "\" failed with " << gluErrorString( status ) << endl;
-		return 0;
-	}
-
-	Program* prog = new Program();
-	prog->program = program;
-	prog->vertexShader = vertexShader;
-	prog->fragmentShader = fragmentShader;
-	prog->fragmentSourceFile = fragmentSourceFile;
-	prog->vertexSourceFile = vertexSourceFile;
-
-	return prog;
+	return new Program( programObject );
 }
 
-Program::Program()
+Program::Program( GLuint programObject )
 {
-	this->program = 0;
-	this->vertexShader = 0;
-	this->fragmentShader = 0;
+	this->programObject = programObject;
 }
 
 Program::~Program()
@@ -153,18 +66,33 @@ Program::~Program()
 
 }
 
-
 bool
-Program::link()
+Program::attachShader( Shader* shader )
 {
 	GLint status;
 
-	glLinkProgram( this->program );
-	glGetProgramiv( this->program, GL_LINK_STATUS, &status);
-	if ( GL_TRUE != status )
+	glAttachShader( this->programObject, shader->getObject() );
+	status = glGetError();
+	if ( GL_NO_ERROR != status )
 	{
-		cout << "ERROR linking of program \"" << this->vertexSourceFile << "\" and \"" << this->fragmentSourceFile << "\" failed" << endl;
-		printInfoLog( this->program, false );
+		cout << "glAttachShader failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	return true;
+}
+
+
+bool
+Program::detachShader( Shader* shader )
+{
+	GLint status;
+
+	glDetachShader( this->programObject, shader->getObject() );
+	status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glDetachShader failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
@@ -172,11 +100,18 @@ Program::link()
 }
 
 bool
-Program::putUniform( const std::string& id, int value )
+Program::link()
 {
-	GLint loc = Program::queryUniformLoc( this->program, id.c_str());
-	if (loc != -1)
-		this->uniforms[loc] = value;
+	GLint status;
+
+	glLinkProgram( this->programObject );
+	glGetProgramiv( this->programObject, GL_LINK_STATUS, &status);
+	if ( GL_TRUE != status )
+	{
+		cout << "ERROR linking of program failed" << endl;
+		printInfoLog( this->programObject );
+		return false;
+	}
 
 	return true;
 }
@@ -184,7 +119,7 @@ Program::putUniform( const std::string& id, int value )
 bool
 Program::bindFragDataLocation(GLuint colorNumber, const std::string& name )
 {
-	glBindFragDataLocation( this->program, colorNumber, name.c_str() );
+	glBindFragDataLocation( this->programObject, colorNumber, name.c_str() );
 
 	GLenum status = glGetError();
 	if ( GL_NO_ERROR != status )
@@ -199,16 +134,9 @@ Program::bindFragDataLocation(GLuint colorNumber, const std::string& name )
 bool
 Program::activate()
 {
-	GLenum status;
+	glUseProgram( this->programObject );
 
-	glUseProgram(this->program);
-
-	map<GLint, int>::iterator uniIter = this->uniforms.begin();
-	while (uniIter != this->uniforms.end()) {
-		GLint loc = uniIter->first;
-		int value = uniIter->second;
-
-		glUniform1i(loc, value);
+	/*glUniform1i(loc, value);
 
 		status = glGetError();
 		if ( GL_NO_ERROR != status )
@@ -219,6 +147,7 @@ Program::activate()
 
 		uniIter++;
 	}
+	*/
 
 	return true;
 }
@@ -231,26 +160,7 @@ Program::deactivate()
 	return true;
 }
 
-bool
-Program::readShaderSource(const string& file, string& shaderSource)
-{
-	string fullFileName = file;
-
-	FILE* shaderSourceFile = fopen(fullFileName.c_str(), "r");
-	if (shaderSourceFile == 0) {
-		cout << "ERROR ... couldn't open Shadersource-File " << fullFileName << endl;
-		return false;
-	}
-
-	char c;
-	while ((c = fgetc(shaderSourceFile)) != EOF)
-		shaderSource += c;
-
-	fclose( shaderSourceFile );
-
-	return true;
-}
-
+/*
 GLint
 Program::queryUniformLoc(GLint prog, const GLchar* name)
 {
@@ -264,4 +174,24 @@ Program::queryUniformLoc(GLint prog, const GLchar* name)
 	}
 
 	return location;
+}
+*/
+
+void
+Program::printInfoLog( GLuint obj )
+{
+	char* infoLog = 0;
+	int infologLength = 0;
+	int charsWritten  = 0;
+
+	glGetProgramiv( obj , GL_INFO_LOG_LENGTH, (GLint*) &infologLength );
+	if (infologLength > 0)
+	{
+		glGetProgramInfoLog( obj, infologLength, (GLint*) &charsWritten, infoLog );
+
+	    if ( charsWritten )
+			printf("%s\n",infoLog);
+
+	    free( infoLog );
+	}
 }

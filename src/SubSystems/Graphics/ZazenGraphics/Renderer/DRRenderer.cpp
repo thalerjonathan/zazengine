@@ -163,10 +163,48 @@ DRRenderer::initialize()
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 
-	this->m_geomStageProg = Program::createProgram( "media/graphics/dr/geomDRVert.glsl", "media/graphics/dr/geomDRFrag.glsl" );
+	this->m_geomStageProg = Program::createProgram( );
 	if ( 0 == this->m_geomStageProg )
 	{
 		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
+		return false;
+	}
+
+	this->m_vertShaderGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/geomDRVert.glsl" );
+	if ( 0 == this->m_vertShaderGeomStage )
+	{
+		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage vertex-shader - exit" << endl;
+		return false;
+	}
+
+	this->m_fragShaderGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/geomDRFrag.glsl" );
+	if ( 0 == this->m_fragShaderGeomStage )
+	{
+		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage fragment-shader - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_vertShaderGeomStage->compile() )
+	{
+		cout << "failed initializing Deferred Renderer - geometry-stage vertex shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_fragShaderGeomStage->compile() )
+	{
+		cout << "failed initializing Deferred Renderer - geometry-stage vertex shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_geomStageProg->attachShader( this->m_vertShaderGeomStage ) )
+	{
+		cout << "failed initializing Deferred Renderer - attaching vertex shader to geom-stage program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_geomStageProg->attachShader( this->m_fragShaderGeomStage ) )
+	{
+		cout << "failed initializing Deferred Renderer - attaching fragment shader to geom-stage program failed - exit" << endl;
 		return false;
 	}
 
@@ -177,18 +215,7 @@ DRRenderer::initialize()
 
 	if ( false == this->m_geomStageProg->link() )
 	{
-		return false;
-	}
-
-	this->m_lightStageProg = Program::createProgram( "media/graphics/dr/lightDRVert.glsl", "media/graphics/dr/lightDRFrag.glsl" );
-	if ( 0 == this->m_lightStageProg )
-	{
-		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_lightStageProg->link() )
-	{
+		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
 		return false;
 	}
 
@@ -202,7 +229,27 @@ DRRenderer::shutdown()
 {
 	cout << "Shutting down Deferred Renderer..." << endl;
 
-	// TODO: cleanup
+	if ( this->m_geomStageProg )
+	{
+		if ( this->m_vertShaderGeomStage )
+		{
+			this->m_geomStageProg->detachShader( this->m_vertShaderGeomStage );
+
+			delete this->m_vertShaderGeomStage;
+			this->m_vertShaderGeomStage = NULL;
+		}
+
+		if ( this->m_fragShaderGeomStage )
+		{
+			this->m_geomStageProg->detachShader( this->m_fragShaderGeomStage );
+
+			delete this->m_fragShaderGeomStage;
+			this->m_fragShaderGeomStage = NULL;
+		}
+
+		delete this->m_geomStageProg;
+		this->m_geomStageProg = NULL;
+	}
 
 	cout << "Shutting down Deferred Renderer finished" << endl;
 
