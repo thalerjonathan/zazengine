@@ -41,88 +41,15 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 {
 	cout << endl << "=============== ZazenGraphics initializing... ===============" << endl;
 
-	cout << "Initializing SDL..." << endl;
-	int error = SDL_Init(SDL_INIT_EVERYTHING);
-	if (error != 0)
+	if ( false == this->initSDL() )
 	{
-		cout << "FAILED ... Initializing SDL failed - exit..." << endl;
 		return false;
-	}
-	else
-	{
-		cout << "OK ... SDL initialized" << endl;
-	}
-	
-	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
-	{
-		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
-		return false;
-	}
-	
-	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
-	if (this->drawContext == 0)
-	{
-		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
-		return false;
-	}
-	
-	cout << "OK ... Videocontext created" << endl;
-	
-	GLenum err = glewInit();
-	if (err != GLEW_OK)
-	{
-		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
 	}
 
-	cout << "OpenGL Version: " << glGetString(GL_VERSION) << endl;
-
-	if (!GLEW_VERSION_2_0)
+	if ( false == this->initGL() )
 	{
-		cout << "ERROR ... OpenGL not version 2.0 - exit..." << endl;
 		return false;
 	}
-	else
-	{
-		cout << "OK ... OpenGL 2.0 supported" << endl;
-	}
-	
-	if (!GLEW_ARB_vertex_buffer_object)
-	{
-		cout << "ERROR ... GL_ARB_vertex_buffer_object not supported - exit..." << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... GL_ARB_vertex_buffer_object supported" << endl;
-	}
-	
-	if (!GLEW_ARB_vertex_program)
-	{
-		cout << "ERROR ... GL_ARB_vertex_program not supported - exit..." << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... GL_ARB_vertex_program supported" << endl;
-	}
-	
-	if (!GLEW_ARB_fragment_program)
-	{
-		cout << "ERROR ... GL_ARB_fragment_program not supported - exit..." << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... GL_ARB_fragment_program supported" << endl;
-	}
-
-	int argc = 0;
-	glutInit(&argc, NULL);
 	
 	if (Material::loadMaterials() == false)
 	{
@@ -462,6 +389,75 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 			this->activeScene->addEntity( entity );
 		}
 	}
+
+	return true;
+}
+
+bool
+ZazenGraphics::initSDL()
+{
+	cout << "Initializing SDL..." << endl;
+	int error = SDL_Init(SDL_INIT_VIDEO);
+	if (error != 0)
+	{
+		cout << "FAILED ... Initializing SDL failed - exit..." << endl;
+		return false;
+	}
+	else
+	{
+		cout << "OK ... SDL initialized" << endl;
+	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
+	{
+		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
+		return false;
+	}
+
+	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
+	if (this->drawContext == 0)
+	{
+		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
+		return false;
+	}
+
+	cout << "OK ... Videocontext created" << endl;
+
+	return true;
+}
+
+bool
+ZazenGraphics::initGL()
+{
+	int major, minor;
+	GLenum err = glewInit();
+	if (err != GLEW_OK)
+	{
+		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
+		return false;
+	}
+	else
+	{
+		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
+	}
+
+	cout << "OpenGL Version: " << glGetString(GL_VERSION) << endl;
+
+	glGetIntegerv(GL_MAJOR_VERSION, &major); // major = 3
+	glGetIntegerv(GL_MINOR_VERSION, &minor); // minor = 2
+
+	if ( major < 3 )
+	{
+
+	}
+
+	int argc = 0;
+	glutInit(&argc, NULL);
 
 	return true;
 }
