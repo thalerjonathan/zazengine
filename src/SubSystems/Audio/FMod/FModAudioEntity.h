@@ -10,7 +10,7 @@
 
 #include "../../../Core/SubSystems/IFaces/IAudioEntity.h"
 
-#include <fmod/fmod.hpp>
+#include <fmodex/fmod.hpp>
 
 class FModAudioEntity : public IAudioEntity
 {

@@ -47,8 +47,8 @@ class ZazenGraphics : public IGraphics
 		std::string type;
 	
 		SDL_Surface* drawContext;
-		SDL_WindowID window;
-		SDL_GLContext glContext;
+		//SDL_WindowID window;
+		//SDL_GLContext glContext;
 		
 		Camera* camera;
 		Scene* activeScene;
