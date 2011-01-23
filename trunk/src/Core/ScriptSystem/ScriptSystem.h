@@ -8,11 +8,6 @@
 #ifndef SCRIPTSYSTEM_H_
 #define SCRIPTSYSTEM_H_
 
-extern "C"
-{
-	#include <lua5.1/lua.h>
-}
-
 #include <lua5.1/lua.hpp>
 #include <luabind/luabind.hpp>
 

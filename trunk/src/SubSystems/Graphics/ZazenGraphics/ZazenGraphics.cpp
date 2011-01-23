@@ -408,8 +408,8 @@ ZazenGraphics::initSDL()
 		cout << "OK ... SDL initialized" << endl;
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 

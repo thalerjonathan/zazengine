@@ -12,8 +12,8 @@
 
 #include "FModAudioEntity.h"
 
-#include <fmod/fmod.hpp>
-#include <fmod/fmod_errors.h>
+#include <fmodex/fmod.hpp>
+#include <fmodex/fmod_errors.h>
 
 #include <list>
 
