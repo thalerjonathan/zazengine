@@ -55,6 +55,9 @@ DRRenderer::renderFrame(GeomInstance* root)
 
 	this->m_geomStageProg->activate();
 
+	// setting uniforms is done after program is activated
+	// TODO: set uniforms
+
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_LIGHTING);
 
@@ -208,6 +211,7 @@ DRRenderer::initialize()
 		return false;
 	}
 
+	// setting frag-data location is done bevore linking
 	this->m_geomStageProg->bindFragDataLocation( 0, "normalOut" );
 	this->m_geomStageProg->bindFragDataLocation( 1, "diffuseOut" );
 	this->m_geomStageProg->bindFragDataLocation( 2, "depthOut" );

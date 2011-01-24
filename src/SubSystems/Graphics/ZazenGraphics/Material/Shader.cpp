@@ -73,6 +73,7 @@ Shader::Shader( GLuint shaderObject )
 
 Shader::~Shader()
 {
+	glDeleteShader( this->shaderObject );
 }
 
 bool
