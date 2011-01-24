@@ -14,29 +14,6 @@
 
 using namespace std;
 
-void
-printInfoLog( GLuint obj, bool shader )
-{
-	char* infoLog = 0;
-	int infologLength = 0;
-	int charsWritten  = 0;
-
-	glGetProgramiv( obj, GL_INFO_LOG_LENGTH, (GLint*) &infologLength );
-	if (infologLength > 0)
-	{
-		infoLog = (char*) malloc( infologLength );
-		if ( shader )
-			glGetShaderInfoLog( obj, infologLength, (GLint*) &charsWritten, infoLog );
-		else
-			glGetProgramInfoLog( obj, infologLength, (GLint*) &charsWritten, infoLog );
-
-	    if (charsWritten)
-			printf("%s\n",infoLog);
-
-	    free(infoLog);
-	}
-}
-
 Program*
 Program::createProgram()
 {
@@ -63,7 +40,7 @@ Program::Program( GLuint programObject )
 
 Program::~Program()
 {
-
+	glDeleteProgram( this->programObject );
 }
 
 bool
