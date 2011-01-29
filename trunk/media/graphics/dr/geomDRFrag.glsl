@@ -1,15 +1,18 @@
-#version 120
-#extension GL_ARB_texture_rectangle : enable
+#version 330
 
-uniform sampler2DRect backgroundTex;
-uniform sampler2D normalMap;
-uniform sampler2D diffuseMap;
+out vec4 out_diffuse;
+/*
+out vec4 out_normal;
+out vec4 out_depth;
+out vec4 out_generic;
+*/
 
 void main()
 {
-	vec3 normal = vec3(texture2D(normalMap, gl_TexCoord[0].xy));
-	vec2 bgCoord = gl_FragCoord.xy * normal.xy;
-	vec4 bgColor = texture2DRect(backgroundTex, bgCoord);
-	vec4 diffuseColor = texture2D(diffuseMap, gl_TexCoord[0].xy);
-	gl_FragColor = bgColor * diffuseColor;
+	out_diffuse = vec4(1, 0, 0, 1);
+/*
+	out_normal = vec4(1, 0, 0, 1);
+	out_depth = vec4(1, 0, 0, 1);
+	out_generic = vec4(1, 0, 0, 1);
+*/	
 }

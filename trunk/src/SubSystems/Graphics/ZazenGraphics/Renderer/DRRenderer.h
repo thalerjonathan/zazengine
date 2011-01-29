@@ -22,7 +22,7 @@ class DRRenderer : public Renderer
 	virtual bool shutdown();
 
 	// renders this list of geominstances which must be in front-to-back order
-	void renderFrame(GeomInstance*);
+	bool renderFrame(GeomInstance*);
 
  private:
 	GLuint m_frameBuffer;

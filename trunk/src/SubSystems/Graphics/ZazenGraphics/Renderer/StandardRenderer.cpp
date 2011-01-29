@@ -35,7 +35,7 @@ StandardRenderer::shutdown()
 	return true;
 }
 
-void
+bool
 StandardRenderer::renderFrame(GeomInstance* root)
 {
 	this->renderedFaces = 0;
@@ -75,4 +75,6 @@ StandardRenderer::renderFrame(GeomInstance* root)
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
+
+	return true;
 }

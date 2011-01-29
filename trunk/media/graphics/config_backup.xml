@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<subSystem type="graphics">
+	<skyBoxdd folder="skyboxes/sahara"/>
+				
+	<geomClasses>
+		<!--
+		<class id="TeapotNormal" modelType="BUILTIN" geomType="TEAPOT" material="noise"/>
+		<class id="TeapotRefractive" modelType="BUILTIN" geomType="TEAPOT" material="RDCglass"/>
+		<class id="PlaneRefractive" modelType="BUILTIN" geomType="PLANE" length="25" width="25" material="NMCTglass"/>
+				
+		<class id="Watertower" modelType="MESH" file="media/graphics/models/3ds/watertower.3ds"/>
+		-->
+		
+		<class id="Box" modelType="BUILTIN" geomType="BOX"/>
+		<class id="Sphere" modelType="BUILTIN" geomType="SPHERE"/>
+		<class id="Plane" modelType="BUILTIN" geomType="PLANE" length="30" width="30"/>
+	</geomClasses>
+</subSystem>

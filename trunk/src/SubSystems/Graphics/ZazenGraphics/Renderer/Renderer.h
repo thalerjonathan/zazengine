@@ -60,7 +60,7 @@ class Renderer
 
 	virtual bool initialize() = 0;
 	virtual bool shutdown() = 0;
-	virtual void renderFrame( GeomInstance* ) = 0;
+	virtual bool renderFrame( GeomInstance* ) = 0;
 
 	void printInfo();
 

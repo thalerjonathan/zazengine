@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <iostream>
 
@@ -41,6 +42,28 @@ Program::Program( GLuint programObject )
 Program::~Program()
 {
 	glDeleteProgram( this->programObject );
+}
+
+void
+Program::printInfoLog()
+{
+	GLchar* infoLog = 0;
+	GLint infoLogLen = 0;
+	GLint charsWritten  = 0;
+
+	glGetProgramiv( this->programObject , GL_INFO_LOG_LENGTH, &infoLogLen );
+	if (infoLogLen > 0)
+	{
+		infoLog = (GLchar*) malloc( ( infoLogLen + 1 ) * sizeof( GLchar ) );
+		memset( infoLog, 0, infoLogLen + 1 );
+
+		glGetProgramInfoLog( this->programObject, infoLogLen, &charsWritten, infoLog );
+
+	    if ( charsWritten )
+			cout << infoLog << endl;
+
+	    free( infoLog );
+	}
 }
 
 bool
@@ -86,7 +109,7 @@ Program::link()
 	if ( GL_TRUE != status )
 	{
 		cout << "ERROR linking of program failed" << endl;
-		printInfoLog( this->programObject );
+		this->printInfoLog();
 		return false;
 	}
 
@@ -94,9 +117,24 @@ Program::link()
 }
 
 bool
-Program::bindFragDataLocation(GLuint colorNumber, const std::string& name )
+Program::bindAttribLocation( GLuint index, const std::string& name )
 {
-	glBindFragDataLocation( this->programObject, colorNumber, name.c_str() );
+	glBindAttribLocation( this->programObject, index, name.c_str() );
+
+	GLenum status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glBindAttribLocation failed for name \"" << name << "\": " << gluErrorString( status )  << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool
+Program::bindFragDataLocation( GLuint index, const std::string& name )
+{
+	glBindFragDataLocation( this->programObject, index, name.c_str() );
 
 	GLenum status = glGetError();
 	if ( GL_NO_ERROR != status )
@@ -109,66 +147,66 @@ Program::bindFragDataLocation(GLuint colorNumber, const std::string& name )
 }
 
 bool
-Program::activate()
+Program::use()
 {
 	glUseProgram( this->programObject );
 
-	/*glUniform1i(loc, value);
-
-		status = glGetError();
-		if ( GL_NO_ERROR != status )
-		{
-			cout << "glUniform1i failed: " << gluErrorString( status )  << endl;
-			return false;
-		}
-
-		uniIter++;
+	GLint status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glUseProgram failed: " << gluErrorString( status )  << endl;
+		return false;
 	}
-	*/
 
 	return true;
 }
 
 bool
-Program::deactivate()
+Program::setUniform4( const std::string& name, const float* value )
 {
-	glUseProgram(0);
+	GLint location = this->getUniformLocation( name );
+	if ( -1 == location )
+		return false;
+
+	glUniform4fv( location, 4, value );
+
+	GLint status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glUniform4fv failed: " << gluErrorString( status )  << endl;
+		return false;
+	}
 
 	return true;
 }
 
-/*
+bool
+Program::setUniformMatrix4( const std::string& name, const float* value )
+{
+	GLint location = this->getUniformLocation( name );
+	if ( -1 == location )
+		return false;
+
+	glUniformMatrix4fv( location, 1, GL_FALSE, value );
+
+	GLint status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glUniformMatrix4fv failed: " << gluErrorString( status )  << endl;
+		return false;
+	}
+
+	return true;
+}
+
 GLint
-Program::queryUniformLoc(GLint prog, const GLchar* name)
+Program::getUniformLocation( const std::string& name )
 {
 	GLint location = 0;
 
-	location = glGetUniformLocation(prog, name);
-	if (location == -1)
-	{
+	location = glGetUniformLocation( this->programObject, name.c_str() );
+	if ( -1 == location )
 		cout << "Coulnd't get Uniform Location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
-		return -1;
-	}
 
 	return location;
-}
-*/
-
-void
-Program::printInfoLog( GLuint obj )
-{
-	char* infoLog = 0;
-	int infologLength = 0;
-	int charsWritten  = 0;
-
-	glGetProgramiv( obj , GL_INFO_LOG_LENGTH, (GLint*) &infologLength );
-	if (infologLength > 0)
-	{
-		glGetProgramInfoLog( obj, infologLength, (GLint*) &charsWritten, infoLog );
-
-	    if ( charsWritten )
-			printf("%s\n",infoLog);
-
-	    free( infoLog );
-	}
 }

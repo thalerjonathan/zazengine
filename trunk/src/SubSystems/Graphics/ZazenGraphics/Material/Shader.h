@@ -23,6 +23,8 @@ class Shader
 
 	static Shader* createShader( Shader::ShaderType type, const std::string& file );
 
+	void printInfoLog();
+
 	GLuint getObject() const { return this->shaderObject; };
 
 	bool compile();
@@ -34,7 +36,6 @@ class Shader
 
 	GLuint shaderObject;
 
-	static void printInfoLog( GLuint obj );
 	static bool readShaderSource(const std::string&, std::string&);
 };
 

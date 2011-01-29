@@ -29,7 +29,7 @@ class Scene
 	 void setSkyBoxFolder(std::string& f) { this->skyBoxFolder = f; };
 	 void setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax);
 
-	 void processFrame(double);
+	 bool processFrame(double);
 	 bool load(bool, int, int, int);
 	 
 	 void addEntity(Entity& e) { this->entities[e.name] = e; };

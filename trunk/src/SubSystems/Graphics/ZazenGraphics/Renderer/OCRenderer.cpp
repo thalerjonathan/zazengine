@@ -30,7 +30,7 @@ OCRenderer::~OCRenderer()
 {
 }
 
-void OCRenderer::renderFrame(GeomInstance* root)
+bool OCRenderer::renderFrame(GeomInstance* root)
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
@@ -169,6 +169,8 @@ void OCRenderer::renderFrame(GeomInstance* root)
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
+
+	return true;
 }
 
 void OCRenderer::handleReturnedQuery(QueryItem q)

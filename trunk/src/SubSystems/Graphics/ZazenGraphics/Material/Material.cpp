@@ -231,7 +231,7 @@ void Material::activate()
 	}
 
 	if (this->m_program)
-		this->m_program->activate();
+		this->m_program->use();
 
 	this->activated = true;
 }
@@ -241,8 +241,8 @@ void Material::deactivate()
 	if (this->activated == false)
 		return;
 
-	if (this->m_program)
-		this->m_program->deactivate();
+	//if (this->m_program)
+	//	this->m_program->deactivate();
 
 	map<Texture*, int>::iterator texIter = this->textures.begin();
 	while (texIter != this->textures.end()) {
