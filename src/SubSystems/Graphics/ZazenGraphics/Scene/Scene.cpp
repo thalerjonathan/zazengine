@@ -146,12 +146,12 @@ void Scene::setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax)
 	this->sceneMeasures.data[2] = this->sceneBBMax[2] - this->sceneBBMin[2];
 }
 
-void Scene::processFrame(double loopFactor)
+bool Scene::processFrame(double loopFactor)
 {	
 	this->sceneRoot->transform = this->camera->modelView;
 	this->processTransforms(this->sceneRoot);
 	
-	this->renderer->renderFrame(this->sceneRoot);
+	return this->renderer->renderFrame(this->sceneRoot);
 }
 
 void Scene::processTransforms(GeomInstance* instance)

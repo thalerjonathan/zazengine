@@ -143,7 +143,12 @@ Core::start()
 		subSysIter = this->subSystems.begin();
 		while ( subSysIter != this->subSystems.end() )
 		{
-			(*subSysIter)->process( itFact );
+			if ( false == (*subSysIter)->process( itFact ) )
+			{
+				this->runCore = false;
+				break;
+			}
+
 			subSysIter++;
 		}
 

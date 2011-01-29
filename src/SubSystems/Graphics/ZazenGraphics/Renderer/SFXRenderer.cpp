@@ -18,7 +18,7 @@ SFXRenderer::~SFXRenderer()
 {
 }
 
-void SFXRenderer::renderFrame(GeomInstance* root)
+bool SFXRenderer::renderFrame(GeomInstance* root)
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
@@ -57,6 +57,8 @@ void SFXRenderer::renderFrame(GeomInstance* root)
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
+
+	return true;
 }
 
 void SFXRenderer::processRenderQueue()

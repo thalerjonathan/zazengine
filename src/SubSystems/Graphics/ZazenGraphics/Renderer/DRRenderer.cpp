@@ -28,10 +28,10 @@ DRRenderer::~DRRenderer()
 {
 }
 
-void
+bool
 DRRenderer::renderFrame(GeomInstance* root)
 {
-	GLenum buffers[MRT_COUNT];
+	//GLenum buffers[MRT_COUNT];
 
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
@@ -40,55 +40,38 @@ DRRenderer::renderFrame(GeomInstance* root)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// load modelviewmatrix
-	glLoadMatrixf(this->camera.modelView.data);
+	//glLoadMatrixf(this->camera.modelView.data);
+	if ( false == this->m_geomStageProg->setUniformMatrix4( "in_modelViewProj", this->camera.modelView.data ) )
+		return false;
 
 	//  start geometry pass
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
+	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
 
 	// clear fbo
-	glClear(GL_COLOR_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT);
 
 	// activate drawing to targets
-	for ( int i = 0; i < MRT_COUNT; i++)
+	/*for ( int i = 0; i < MRT_COUNT; i++)
 		buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
 	glDrawBuffers(MRT_COUNT, buffers);
-
-	this->m_geomStageProg->activate();
-
-	// setting uniforms is done after program is activated
-	// TODO: set uniforms
-
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_LIGHTING);
-
-	glColor4f(1, 0, 0, 0);
-	glBegin(GL_LINES);
-		glVertex3f(100, 0, 0);
-		glVertex3f(-100, 0, 0);
-	glEnd();
-
-	glColor4f(0, 1, 0, 0);
-	glBegin(GL_LINES);
-		glVertex3f(0, 100, 0);
-		glVertex3f(0, -100, 0);
-	glEnd();
-
-	glColor4f(0, 0, 1, 0);
-	glBegin(GL_LINES);
-		glVertex3f(0, 0, 100);
-		glVertex3f(0, 0, -100);
-	glEnd();
-
-	glEnable(GL_LIGHTING);
-	glEnable(GL_TEXTURE_2D);
+	 */
 
 	// draw all geometry
 	this->processInstance(root);
-	this->processRenderQueue( false );
 
-	// finish geometry stage
-	this->m_geomStageProg->deactivate();
+	list<GeomInstance*>::iterator iter = this->renderQueue.begin();
+	while (iter != this->renderQueue.end()) {
+		GeomInstance* instance = *iter++;
 
+		if ( false == this->m_geomStageProg->setUniformMatrix4( "in_transform", instance->transform.data ) )
+			return false;
+
+		instance->geom->render();
+	}
+
+	this->renderQueue.clear();
+
+	/*
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	// start lighting stage
@@ -118,11 +101,14 @@ DRRenderer::renderFrame(GeomInstance* root)
 
 	// switch back to perspective projection
 	this->camera.setupPerspective();
+*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
+
+	return true;
 }
 
 bool
@@ -195,7 +181,7 @@ DRRenderer::initialize()
 
 	if ( false == this->m_fragShaderGeomStage->compile() )
 	{
-		cout << "failed initializing Deferred Renderer - geometry-stage vertex shader compilation failed - exit" << endl;
+		cout << "failed initializing Deferred Renderer - geometry-stage fragment shader compilation failed - exit" << endl;
 		return false;
 	}
 
@@ -212,14 +198,34 @@ DRRenderer::initialize()
 	}
 
 	// setting frag-data location is done bevore linking
-	this->m_geomStageProg->bindFragDataLocation( 0, "normalOut" );
-	this->m_geomStageProg->bindFragDataLocation( 1, "diffuseOut" );
-	this->m_geomStageProg->bindFragDataLocation( 2, "depthOut" );
-	this->m_geomStageProg->bindFragDataLocation( 3, "genericOut" );
+	/*
+	this->m_geomStageProg->bindFragDataLocation( 0, "out_diffuse" );
+	this->m_geomStageProg->bindFragDataLocation( 1, "out_normal" );
+	this->m_geomStageProg->bindFragDataLocation( 2, "out_depth" );
+	this->m_geomStageProg->bindFragDataLocation( 3, "out_generic" );
+	*/
+
+	if ( false == this->m_geomStageProg->bindAttribLocation( 0, "in_vertPos" ) )
+	{
+		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_geomStageProg->bindAttribLocation( 1, "in_vertNorm" ) )
+	{
+		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
+		return false;
+	}
 
 	if ( false == this->m_geomStageProg->link() )
 	{
 		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_geomStageProg->use() )
+	{
+		cout << "failed initializing Deferred Renderer - using geom-stage program failed - exit" << endl;
 		return false;
 	}
 

@@ -149,6 +149,7 @@ ZazenGraphics::pause()
 bool
 ZazenGraphics::process( double iterationFactor )
 {
+	bool flag = true;
 	//cout << "ZazenGraphics::process enter" << endl;
 
 	// process events of entities
@@ -169,11 +170,11 @@ ZazenGraphics::process( double iterationFactor )
 	}
 
 	this->lastItFact = iterationFactor;
-	this->activeScene->processFrame( iterationFactor );
+	flag = this->activeScene->processFrame( iterationFactor );
 
 	//cout << "ZazenGraphics::process leave" << endl;
 
-	return true;
+	return flag;
 }
 
 bool

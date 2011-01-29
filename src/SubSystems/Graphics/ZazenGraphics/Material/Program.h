@@ -17,21 +17,27 @@ class Program
 
 	static Program* createProgram();
 
+	void printInfoLog();
+
 	bool attachShader( Shader* );
 	bool detachShader( Shader* );
 
+	bool setUniformMatrix4( const std::string& name, const float* );
+	bool setUniform4( const std::string& name, const float* );
+
+	bool bindAttribLocation( GLuint index, const std::string& name );
 	bool bindFragDataLocation( GLuint colorNumber, const std::string& name );
 
 	bool link();
 
-	bool activate();
-	bool deactivate();
+	bool use();
 
  private:
 	Program( GLuint programObject );
 
 	GLuint programObject;
 
+	GLint getUniformLocation( const std::string& name );
 	static void printInfoLog( GLuint obj );
 };
 

@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <iostream>
 
@@ -76,6 +77,28 @@ Shader::~Shader()
 	glDeleteShader( this->shaderObject );
 }
 
+void
+Shader::printInfoLog()
+{
+	GLchar* infoLog = 0;
+	GLint infoLogLen = 0;
+	GLint charsWritten  = 0;
+
+	glGetShaderiv( this->shaderObject  , GL_INFO_LOG_LENGTH, &infoLogLen );
+	if (infoLogLen > 0)
+	{
+		infoLog = (GLchar*) malloc( ( infoLogLen + 1 ) * sizeof( GLchar ) );
+		memset( infoLog, 0, infoLogLen + 1 );
+
+		glGetShaderInfoLog( this->shaderObject , infoLogLen, &charsWritten, infoLog );
+
+	    if ( charsWritten )
+	    	cout << infoLog << endl;
+
+	    free( infoLog );
+	}
+}
+
 bool
 Shader::compile()
 {
@@ -85,8 +108,7 @@ Shader::compile()
 	glGetShaderiv( this->shaderObject, GL_COMPILE_STATUS, &status );
 	if ( GL_TRUE != status )
 	{
-		cout << "Failed compiling" << endl;
-		Shader::printInfoLog( this->shaderObject );
+		this->printInfoLog();
 		return false;
 	}
 
@@ -111,25 +133,4 @@ Shader::readShaderSource(const string& file, string& shaderSource)
 	fclose( shaderSourceFile );
 
 	return true;
-}
-
-void
-Shader::printInfoLog( GLuint obj )
-{
-	char* infoLog = 0;
-	int infologLength = 0;
-	int charsWritten  = 0;
-
-	glGetProgramiv( obj , GL_INFO_LOG_LENGTH, (GLint*) &infologLength );
-	if (infologLength > 0)
-	{
-		glGetShaderInfoLog( obj , infologLength, (GLint*) &charsWritten, infoLog );
-
-		//glGetProgramInfoLog( obj, infologLength, (GLint*) &charsWritten, infoLog );
-
-	    if ( charsWritten )
-			printf("%s\n",infoLog );
-
-	    free( infoLog );
-	}
 }

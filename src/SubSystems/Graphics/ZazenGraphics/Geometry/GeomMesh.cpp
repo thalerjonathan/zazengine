@@ -1,19 +1,30 @@
 #include "GeomMesh.h"
 
-GeomMesh::GeomMesh(int faces, Vertex* vertices, Vertex* normals)
-	: faces(faces)
+#define BUFFER_OFFSET( i ) ( ( char* ) NULL + ( i ) )
+
+GeomMesh::GeomMesh( int faceCount, int vertexCount, VertexData* data, int* indexBufer )
+	: faceCount(faceCount),
+	  vertexCount( vertexCount )
 {
-	this->vertexVBO = 0;
-	this->normalVBO = 0;
-	
-	this->vertices = vertices;
-	this->normals = normals;
+	this->dataVBO = 0;
+	this->indexVBO = 0;
+
+	this->data = data;
+	this->indexBuffer = indexBuffer;
 }
 
 GeomMesh::~GeomMesh()
 {
-	if (this->vertexVBO != 0 && this->normalVBO != 0) {
-		// TODO: release data from GPU
+	if (this->dataVBO )
+	{
+		glDeleteBuffers( 1, &this->dataVBO );
+		glDeleteBuffers( 1, &this->indexVBO );
+
+		if ( this->data )
+			delete this->data;
+
+		if ( this->indexBuffer )
+			delete this->indexBuffer;
 	}
 }
 
@@ -21,27 +32,24 @@ void GeomMesh::render()
 {
 	GeomType::render();
 	
-	if (this->vertexVBO == 0 && this->normalVBO == 0) {
-		glGenBuffers(1, &this->vertexVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, this->vertexVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 3 * this->faces, this->vertices, GL_STATIC_DRAW);
-	
-		glGenBuffers(1, &this->normalVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, this->normalVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 3 * this->faces, this->normals, GL_STATIC_DRAW);
+	if ( 0 != this->dataVBO )
+	{
+		glGenBuffers( 1, &this->dataVBO );
+		glBindBuffer( GL_ARRAY_BUFFER, this->dataVBO );
+		glBufferData( GL_ARRAY_BUFFER, sizeof( VertexData ) * this->vertexCount, this->data, GL_STATIC_DRAW );
+
+		// index-buffers are always 3*facecount => each face has 3 vertices
+		glGenBuffers( 1, &this->indexVBO );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, this->indexVBO );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof( int ) * this->faceCount * 3, this->indexBuffer, GL_STATIC_DRAW );
 	}
-	
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->normalVBO);
-	glNormalPointer(GL_FLOAT, 0, NULL);
- 
-	glBindBuffer(GL_ARRAY_BUFFER, this->vertexVBO);
-	glVertexPointer(3, GL_FLOAT, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, this->dataVBO );
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( VertexData ), BUFFER_OFFSET( 0 ) );
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof( VertexData ), BUFFER_OFFSET( 12 ) );
 
-	glDrawArrays(GL_TRIANGLES, 0, this->faces * 3);
-	
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, this->indexVBO );
+	glDrawElements( GL_TRIANGLES, this->faceCount * 3, GL_INT, BUFFER_OFFSET( 0 ) );
 }

@@ -14,7 +14,7 @@ class SFXRenderer : public Renderer
 	 virtual ~SFXRenderer();
 
 	 // renders this list of geominstances which must be in front-to-back order
-	 void renderFrame(GeomInstance*);
+	 bool renderFrame(GeomInstance*);
 
  private:
 	 bool parentIntersectingFrustum;

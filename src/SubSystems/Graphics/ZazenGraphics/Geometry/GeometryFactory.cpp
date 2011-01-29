@@ -117,17 +117,20 @@ typedef struct MilkshapeMaterialStruct MilkshapeMaterial;
 
 #undef PACK_STRUCT
 
-struct PlyVertex {
+struct PlyVertex
+{
 	float x,y,z;
 	float nx,ny,nz;
 };
 
-struct PlyFace {
+struct PlyFace
+{
 	unsigned char nverts;
 	int* vertexIndices;
 };
 
-PlyProperty ply_vert_props[] = {
+PlyProperty ply_vert_props[] =
+{
   {"x", Float32, Float32, offsetof(PlyVertex, x), 0, 0, 0, 0},
   {"y", Float32, Float32, offsetof(PlyVertex, y), 0, 0, 0, 0},
   {"z", Float32, Float32, offsetof(PlyVertex, z), 0, 0, 0, 0},
@@ -137,7 +140,8 @@ PlyProperty ply_vert_props[] = {
 };
 
 
-PlyProperty ply_face_props[] = {
+PlyProperty ply_face_props[] =
+{
   {"vertex_indices", Int32, Int32, offsetof(PlyFace, vertexIndices), PLY_LIST, Uint8, Uint8, offsetof(PlyFace, nverts)},
 };
 
@@ -151,7 +155,8 @@ using namespace std;
 
 map<string, GeomType*> GeometryFactory::meshes;
 
-GeomType* GeometryFactory::get(const std::string& id)
+GeomType*
+GeometryFactory::get(const std::string& id)
 {
 	map<std::string, GeomType*>::iterator findIter = GeometryFactory::meshes.find(id);
 	if (findIter != GeometryFactory::meshes.end())
@@ -160,7 +165,8 @@ GeomType* GeometryFactory::get(const std::string& id)
 	return 0;
 }
 
-void GeometryFactory::loadMesh(const std::string& id, const std::string& fileName)
+void
+GeometryFactory::loadMesh(const std::string& id, const std::string& fileName)
 {
 	string ending;
 	unsigned long index = fileName.find_last_of('.');
@@ -182,15 +188,18 @@ void GeometryFactory::loadMesh(const std::string& id, const std::string& fileNam
 	if (GeometryFactory)
 		GeometryFactory::meshes[id] = GeometryFactory;
 }
-void GeometryFactory::freeAll()
+void
+GeometryFactory::freeAll()
 {
 }
 
-GeomType* GeometryFactory::loadFolder(const std::string& folderName)
+GeomType*
+GeometryFactory::loadFolder(const std::string& folderName)
 {
 	string fullPath = folderName;
 	DIR* directory = opendir(fullPath.c_str());
-	if (!directory) {
+	if (!directory)
+	{
 			cout << "ERROR ... couldn't open Directory \"" << fullPath << "\" in GeometryFactory::loadFolder" << endl;
 			return 0;	
 	}
@@ -201,7 +210,8 @@ GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 	struct stat entryStatus;
 
 	// iterate through directory
-	while ((entry = readdir(directory)) != NULL) {
+	while ((entry = readdir(directory)) != NULL)
+	{
 		string fileName = entry->d_name;
 		string fullFileName = fullPath + "/" + fileName;
 		
@@ -218,11 +228,14 @@ GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 		GeomType* subFolderGeometryFactory = 0;
 		string subFolderPath = folderName + "/" + fileName;
 
-		if (S_ISDIR(entryStatus.st_mode)) {
+		if (S_ISDIR(entryStatus.st_mode))
+		{
 			//cout << "subFolderPath = " << subFolderPath << endl;
 			subFolderGeometryFactory = GeometryFactory::loadFolder(subFolderPath);
 
-		} else {
+		}
+		else
+		{
 			string ending;
 			unsigned long index = fullFileName.find_last_of('.');
 			if (index != string::npos)
@@ -254,41 +267,52 @@ GeomType* GeometryFactory::loadFolder(const std::string& folderName)
 	return folderGroup;
 }
 
-GeomType* GeometryFactory::load3DS(const std::string& fileName)
+GeomType*
+GeometryFactory::load3DS(const std::string& fileName)
 {
+	int meshCount = 0;
+	int totalFaces = 0;
+
+	Vector geomGroupBBmin;
+	Vector geomGroupBBmax;
+
+	Lib3dsFile* geomData = 0;
+	GeomType* geomGroup = 0;
+
 	string fullFilename = fileName;
-	Lib3dsFile* GeometryFactoryData = lib3ds_file_load(fullFilename.c_str());
-	if (GeometryFactoryData == 0) {
+
+	geomData = lib3ds_file_load(fullFilename.c_str());
+	if ( 0 == geomData )
+	{
 		cout << "ERROR ... couldnt load GeometryFactory " << fullFilename << endl;
 		return 0;
 	}
 
 	cout << "LOADING ... " << fileName << endl;
 
-	int meshCount = 0;
-	int totalFaces = 0;
-	for(Lib3dsMesh* mesh = GeometryFactoryData->meshes; mesh != NULL;mesh = mesh->next) {
+	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL;mesh = mesh->next )
+	{
 		totalFaces += mesh->faces;
 		meshCount++;
 	}
 	
-	GeomType* geomGroup = 0;
-	
-	Vector geomGroupBBmin;
-	Vector geomGroupBBmax;
-
 	if (meshCount > 1)
 		geomGroup = new GeomType();
 	
-	for(Lib3dsMesh* mesh = GeometryFactoryData->meshes; mesh != NULL; mesh = mesh->next) {
-		Lib3dsVector* vertices = new Lib3dsVector[mesh->faces * 3];
-		Lib3dsVector* normals = new Lib3dsVector[mesh->faces * 3];
-		
+	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL; mesh = mesh->next )
+	{
+		// indexbuffer for faces
+		int* indexBuffer = new int[ mesh->faces * 3 ];
+		// we cannot use vertexData for normals because they have to calculated first
+		Lib3dsVector* normals = new Lib3dsVector[ mesh->faces * 3 ];
+		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->points ];
+
 		Vector meshBBmin;
 		Vector meshBBmax;
-		lib3ds_mesh_bounding_box(mesh, meshBBmin.data, meshBBmax.data);
+		lib3ds_mesh_bounding_box( mesh, meshBBmin.data, meshBBmax.data );
 		
-		if (meshCount > 1) {
+		if (meshCount > 1)
+		{
 			if (meshBBmin[0] < geomGroupBBmin[0])
 				geomGroupBBmin.data[0] = meshBBmin[0];
 			else if (meshBBmax[0] > geomGroupBBmax[0])
@@ -305,32 +329,38 @@ GeomType* GeometryFactory::load3DS(const std::string& fileName)
 				geomGroupBBmax.data[2] = meshBBmax[2];
 		}
 		
-		lib3ds_mesh_calculate_normals(mesh, normals);
-		
-		for(unsigned int i = 0; i < mesh->faces; i++) {
-			Lib3dsFace* face = &mesh->faceL[i];
+		lib3ds_mesh_calculate_normals( mesh, normals );
 
-			for(unsigned int j = 0; j < 3; j++) {
-				vertices[i * 3 + j][0] = mesh->pointL[face->points[j]].pos[0];
-				vertices[i * 3 + j][1] = mesh->pointL[face->points[j]].pos[1];
-				vertices[i * 3 + j][2] = mesh->pointL[face->points[j]].pos[2];
-				
-				//newGeometryFactory->indices[faceIndex * 3 + j] = face->points[j];
-				
-				/*
-				float tmp = meshStruct->vertices[faceIndex * 3 + j][2];
-				meshStruct->vertices[faceIndex * 3 + j][2] = meshStruct->vertices[faceIndex * 3 + j][1];
-				meshStruct->vertices[faceIndex * 3 + j][1] = tmp;
-				*/
+		for ( unsigned int i = 0; i < mesh->points; i++ )
+		{
+			for ( unsigned int j = 0; j < 3; j++ )
+			{
+				vertexData[ i ].position[ j ] = mesh->pointL[ i ].pos[ j ];
+				vertexData[ i ].normal[ j ] = normals[ i ][ j ];
 			}
 		}
-		
-		GeomMesh* geomMesh = new GeomMesh(mesh->faces, vertices, normals);
+
+		for(unsigned int i = 0; i < mesh->faces; i++)
+		{
+			Lib3dsFace* face = &mesh->faceL[ i ];
+
+			for(unsigned int j = 0; j < 3; j++)
+			{
+				indexBuffer[ i * 3 + j ] = face->points[ j ];
+			}
+		}
+
+		delete normals;
+
+		GeomMesh* geomMesh = new GeomMesh( mesh->faces, mesh->points, vertexData, indexBuffer );
 		geomMesh->setBB(meshBBmin, meshBBmax);
 
-		if (meshCount > 1) {
+		if (meshCount > 1)
+		{
 			geomGroup->children.push_back(geomMesh);
-		} else {
+		}
+		else
+		{
 			geomGroup = geomMesh;
 		}
 	}
@@ -338,8 +368,8 @@ GeomType* GeometryFactory::load3DS(const std::string& fileName)
 	if (meshCount > 1)
 		geomGroup->setBB(geomGroupBBmin, geomGroupBBmax);
 	
-    lib3ds_file_free(GeometryFactoryData);
-      
+    lib3ds_file_free( geomData );
+
     cout << "LOADED ... " << fileName << endl;
     
     return geomGroup;
@@ -422,7 +452,8 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 	
 	MilkshapeGroup** groups = new MilkshapeGroup*[numGroups];
 
-	for (int i = 0; i < numGroups; i++) {
+	for (int i = 0; i < numGroups; i++)
+	{
 		groups[i] = new MilkshapeGroup;
 		memcpy(groups[i], bufferPointer, 35);
 		bufferPointer += 35;
@@ -438,32 +469,36 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 	word numMaterials = *((word*) bufferPointer);
 	bufferPointer += 2;
 
-	MilkshapeMaterial* materials = new MilkshapeMaterial[numMaterials];
+	MilkshapeMaterial* materials = new MilkshapeMaterial[ numMaterials ];
 	
-	for (int i = 0; i < numMaterials; i++) {
-		MilkshapeMaterial* material = (MilkshapeMaterial*) bufferPointer;
-		memcpy(&materials[i], material, sizeof(MilkshapeMaterial));
-		bufferPointer += sizeof(MilkshapeMaterial);
+	for ( int i = 0; i < numMaterials; i++ )
+	{
+		MilkshapeMaterial* material = ( MilkshapeMaterial* ) bufferPointer;
+		memcpy( &materials[ i ], material, sizeof( MilkshapeMaterial ) );
+		bufferPointer += sizeof( MilkshapeMaterial );
 	}
 
 	GeomType* geomGroup = 0;
 	
 	if (numGroups > 1)
 		geomGroup = new GeomType();
-		
-	for (int i = 0; i < numGroups; i++) {
+
+	for (int i = 0; i < numGroups; i++)
+	{
 		int numTriangles = groups[i]->numtriangles;
 		
-		GeomMesh::Vertex* GeometryFactoryVertices = new GeomMesh::Vertex[numTriangles * 3];
-		GeomMesh::Vertex* GeometryFactoryNormals = new GeomMesh::Vertex[numTriangles * 3];
+		int* indexBuffer = new int[ numTriangles * 3 ];
+		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ numTriangles * 3 ];
 		
 		Vector meshBBmin;
 		Vector meshBBmax;
 
-		for (int j = 0; j < groups[i]->numtriangles; j++) {
+		for (int j = 0; j < groups[i]->numtriangles; j++)
+		{
 			MilkshapeTriangle& triangle = triangles[groups[i]->triangleIndices[j]];
 			
-			for (int k = 0; k < 3; k++) {
+			for (int k = 0; k < 3; k++)
+			{
 				MilkshapeVertex& vertex = vertices[triangle.vertexIndices[k]];
 				         
 				if (vertex.vertex[0] > meshBBmax[0])
@@ -481,17 +516,17 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 				else if (vertex.vertex[2] < meshBBmin[2])
 					meshBBmin.data[2] = vertex.vertex[2];
 
-				GeometryFactoryVertices[j * 3 + k][0] = vertex.vertex[0];
-				GeometryFactoryVertices[j * 3 + k][1] = vertex.vertex[1];
-				GeometryFactoryVertices[j * 3 + k][2] = vertex.vertex[2];
+				vertexData[ j * 3 + k ].position[0] = vertex.vertex[0];
+				vertexData[ j * 3 + k ].position[1] = vertex.vertex[1];
+				vertexData[ j * 3 + k ].position[2] = vertex.vertex[2];
 				
-				GeometryFactoryNormals[j * 3 + k][0] = triangle.vertexNormals[k][0];
-				GeometryFactoryNormals[j * 3 + k][1] = triangle.vertexNormals[k][1];
-				GeometryFactoryNormals[j * 3 + k][2] = triangle.vertexNormals[k][2];
+				vertexData[ j * 3 + k ].normal[0] = triangle.vertexNormals[k][0];
+				vertexData[ j * 3 + k ].normal[1] = triangle.vertexNormals[k][1];
+				vertexData[ j * 3 + k ].normal[2] = triangle.vertexNormals[k][2];
 			}
 		}
 		
-		GeomMesh* geomMesh = new GeomMesh(numTriangles, GeometryFactoryVertices, GeometryFactoryNormals);
+		GeomMesh* geomMesh = new GeomMesh( numTriangles, 0, vertexData, indexBuffer );
 		geomMesh->setBB(meshBBmin, meshBBmax);
 		
 		if (numGroups > 1)
@@ -509,7 +544,7 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 	delete[] triangles;
 	delete buffer;
 	
-	 cout << "LOADED ... " << fileName << endl;
+	cout << "LOADED ... " << fileName << endl;
 
 	return geomGroup;
 }
@@ -586,19 +621,22 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
 
     cout << "we got " << faceCount << " faces and " << vertices.size() << " vertices " << endl;
 
-	GeomMesh::Vertex* GeometryFactoryVertices = new GeomMesh::Vertex[faceCount * 3];
-    GeomMesh::Vertex* GeometryFactoryNormals = new GeomMesh::Vertex[faceCount * 3];
+    int* indexBuffer = new int[ faceCount * 3 ];
+	GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ faceCount * 3 ];
 
-  	for (unsigned int i = 0; i < faceCount; i++) {
+  	for (unsigned int i = 0; i < faceCount; i++)
+  	{
 		PlyFace face = faces[i];
 
 		//cout << "face " << i << " has " << face.nverts << " vertices" << endl;
 
-		for (int j = 0; j < 3; j++) {
-			int index = htonl(face.vertexIndices[j]);
+		for (int j = 0; j < 3; j++)
+		{
+			int index = htonl( face.vertexIndices[j] );
 			//cout << "index = " << index << endl;
+			indexBuffer[ i * 3 + j ] = index;
 
-			PlyVertex vertex = vertices[index];
+			PlyVertex vertex = vertices[ index ];
 
 			float x = vertex.x;
 			float y = vertex.y;
@@ -623,17 +661,17 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
 			else if (z < meshBBmin[2])
 				meshBBmin.data[2] = z;
 
-			GeometryFactoryVertices[i * 3 + j][0] = x;
-			GeometryFactoryVertices[i * 3 + j][1] = y;
-			GeometryFactoryVertices[i * 3 + j][2] = z;
+			vertexData[ i * 3 + j ].position[ 0 ] = x;
+			vertexData[ i * 3 + j ].position[ 1 ] = y;
+			vertexData[ i * 3 + j ].position[ 2 ] = z;
 
-			GeometryFactoryNormals[i * 3 + j][0] = nx;
-			GeometryFactoryNormals[i * 3 + j][1] = ny;
-			GeometryFactoryNormals[i * 3 + j][2] = nz;
+			vertexData[ i * 3 + j ].normal[ 0] = nx;
+			vertexData[ i * 3 + j ].normal[ 1 ] = ny;
+			vertexData[ i * 3 + j ].normal[ 2 ] = nz;
 		}
 	}
 
-  	GeomMesh* geomMesh = new GeomMesh(faceCount, GeometryFactoryVertices, GeometryFactoryNormals);
+  	GeomMesh* geomMesh = new GeomMesh( faceCount, 0, vertexData, indexBuffer );
   	geomMesh->setBB(meshBBmin, meshBBmax);
 	
 	return geomMesh;

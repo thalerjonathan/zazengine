@@ -8,23 +8,28 @@
 class GeomMesh : public GeomType
 {
  public:
-	typedef float Vertex[3];
+	struct VertexData
+	{
+		float position[3];
+		float normal[3];
+	};
 
-	GeomMesh(int faces, Vertex*, Vertex*);
+	GeomMesh( int faceCount, int vertexCount, VertexData* data, int* indexBufer );
 	virtual ~GeomMesh();
 
-	virtual int getFaceCount() { return this->faces; };
+	virtual int getFaceCount() { return this->faceCount; };
 
 	void render();
 	
  private:
-	int faces;
+	int faceCount;
+	int vertexCount;
 
-	Vertex* vertices;
-	Vertex* normals;
- 
-	GLuint vertexVBO;
-	GLuint normalVBO;
+	int* indexBuffer;
+	VertexData* data;
+
+	GLuint dataVBO;
+	GLuint indexVBO;
 
 };
 
