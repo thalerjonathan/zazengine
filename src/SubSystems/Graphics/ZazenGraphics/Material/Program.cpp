@@ -117,11 +117,32 @@ Program::link()
 }
 
 bool
+Program::bindUniformBlock( UniformBlock* block )
+{
+	GLint status;
+
+	GLuint index = this->getUniformBlockIndex( block->getName() );
+	if ( GL_INVALID_INDEX == index )
+		return false;
+
+	glUniformBlockBinding( this->programObject, index, block->getID() );
+	status = glGetError();
+	if ( GL_NO_ERROR != status )
+	{
+		cout << "glUniformBlockBinding failed for name \"" << block->getName() << "\": " << gluErrorString( status )  << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool
 Program::bindAttribLocation( GLuint index, const std::string& name )
 {
-	glBindAttribLocation( this->programObject, index, name.c_str() );
+	GLint status;
 
-	GLenum status = glGetError();
+	glBindAttribLocation( this->programObject, index, name.c_str() );
+	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
 		cout << "glBindAttribLocation failed for name \"" << name << "\": " << gluErrorString( status )  << endl;
@@ -173,7 +194,7 @@ Program::setUniform4( const std::string& name, const float* value )
 	GLint status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "glUniform4fv failed: " << gluErrorString( status )  << endl;
+		cout << "glUniform4fv failed for " << name << ": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
@@ -192,11 +213,23 @@ Program::setUniformMatrix4( const std::string& name, const float* value )
 	GLint status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "glUniformMatrix4fv failed: " << gluErrorString( status )  << endl;
+		cout << "glUniformMatrix4fv failed for " << name << ": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
 	return true;
+}
+
+GLuint
+Program::getUniformBlockIndex( const std::string& name )
+{
+	GLuint index = 0;
+
+	index = glGetUniformBlockIndex( this->programObject, name.c_str() );
+	if ( GL_INVALID_INDEX == index )
+		cout << "glGetUniformBlockIndex failed for name \"" << name << "\". OpenGL-Error: GL_INVALID_INDEX" << endl;
+
+	return index;
 }
 
 GLint

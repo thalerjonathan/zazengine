@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "DRRenderer.h"
+#include "../Material/UniformBlock.h"
 
 #include <iostream>
 #include <algorithm>
@@ -20,6 +21,11 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	: Renderer(camera, skyBoxFolder)
 {
 	this->m_frameBuffer = 0;
+
+	this->m_fragShaderGeomStage = 0;
+	this->m_geomStageProg = 0;
+	this->m_transformBlock = 0;
+	this->m_vertShaderGeomStage = 0;
 
 	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
 }
@@ -39,9 +45,7 @@ DRRenderer::renderFrame(GeomInstance* root)
 	// clear window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// load modelviewmatrix
-	//glLoadMatrixf(this->camera.modelView.data);
-	if ( false == this->m_geomStageProg->setUniformMatrix4( "in_modelViewProj", this->camera.modelView.data ) )
+	if ( false == this->m_transformBlock->updateData( this->camera.modelView.data, 0, 64) )
 		return false;
 
 	//  start geometry pass
@@ -63,7 +67,7 @@ DRRenderer::renderFrame(GeomInstance* root)
 	while (iter != this->renderQueue.end()) {
 		GeomInstance* instance = *iter++;
 
-		if ( false == this->m_geomStageProg->setUniformMatrix4( "in_transform", instance->transform.data ) )
+		if ( false == this->m_transformBlock->updateData( instance->transform.data, 64, 64) )
 			return false;
 
 		instance->geom->render();
@@ -220,6 +224,19 @@ DRRenderer::initialize()
 	if ( false == this->m_geomStageProg->link() )
 	{
 		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
+		return false;
+	}
+
+	this->m_transformBlock = UniformBlock::createBlock( "transform_mat" );
+	if ( 0 == this->m_transformBlock )
+	{
+		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_geomStageProg->bindUniformBlock( this->m_transformBlock ) )
+	{
+		cout << "failed initializing Deferred Renderer - failed binding uniform block - exit" << endl;
 		return false;
 	}
 
