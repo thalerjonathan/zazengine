@@ -28,6 +28,7 @@ class DRRenderer : public Renderer
 	GLuint m_frameBuffer;
 	GLuint m_mrt[ MRT_COUNT ];
 
+	UniformBlock* m_transformBlock;
 	Program* m_geomStageProg;
 	Shader* m_vertShaderGeomStage;
 	Shader* m_fragShaderGeomStage;

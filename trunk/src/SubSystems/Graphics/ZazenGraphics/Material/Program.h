@@ -9,6 +9,7 @@
 #define PROGRAM_H_
 
 #include "Shader.h"
+#include "UniformBlock.h"
 
 class Program
 {
@@ -25,6 +26,8 @@ class Program
 	bool setUniformMatrix4( const std::string& name, const float* );
 	bool setUniform4( const std::string& name, const float* );
 
+	bool bindUniformBlock( UniformBlock* );
+
 	bool bindAttribLocation( GLuint index, const std::string& name );
 	bool bindFragDataLocation( GLuint colorNumber, const std::string& name );
 
@@ -37,6 +40,7 @@ class Program
 
 	GLuint programObject;
 
+	GLuint getUniformBlockIndex( const std::string& name );
 	GLint getUniformLocation( const std::string& name );
 	static void printInfoLog( GLuint obj );
 };
