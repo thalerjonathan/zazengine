@@ -3,7 +3,7 @@
 in vec4 in_vertPos;
 in vec4 in_vertNorm;
 
-uniform transform_mat
+layout(shared) uniform transform_mat
 {
     mat4 modelViewProj;
     mat4 transform;

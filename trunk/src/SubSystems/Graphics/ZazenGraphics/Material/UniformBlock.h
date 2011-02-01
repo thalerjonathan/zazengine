@@ -15,12 +15,17 @@
 class UniformBlock
 {
  public:
-	static UniformBlock* createBlock( const std::string& name );
+	static UniformBlock* createBlock( const std::string& name, int size );
 
 	virtual ~UniformBlock();
 
 	const std::string& getName() { return this->name; };
 	GLuint getID() { return this->id; };
+
+	bool bind( int index );
+
+	bool bindBuffer();
+	bool unbindBuffer();
 
 	bool updateData( void* data, int size );
 	bool updateData( void* data, int offset, int size );

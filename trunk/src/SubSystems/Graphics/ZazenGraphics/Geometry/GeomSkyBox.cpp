@@ -28,7 +28,8 @@ GeomSkyBox::~GeomSkyBox()
 {
 }
 
-void GeomSkyBox::render()
+bool
+GeomSkyBox::render()
 {
 //	GeomType::render();
 
@@ -114,4 +115,6 @@ void GeomSkyBox::render()
 	// activate z-buffering and face culling
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	return true;
 }

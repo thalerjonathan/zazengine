@@ -12,7 +12,7 @@ class GeomSphere : public GeomType
 	 GeomSphere(float radius) { this->radius = radius; };
 	virtual ~GeomSphere() {};
  
-	void render() { glutSolidSphere(this->radius, 50, 50); };
+	bool render() { glutSolidSphere(this->radius, 50, 50); return true; };
 
  private:
 	float radius;
