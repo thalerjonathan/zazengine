@@ -15,7 +15,7 @@
 class UniformBlock
 {
  public:
-	static UniformBlock* createBlock( const std::string& name, int size );
+	static UniformBlock* createBlock( const std::string& name );
 
 	virtual ~UniformBlock();
 

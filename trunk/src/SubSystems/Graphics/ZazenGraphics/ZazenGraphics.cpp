@@ -416,7 +416,7 @@ ZazenGraphics::initSDL()
 	}
 
 	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
-	if (this->drawContext == 0)
+	if ( 0 == this->drawContext )
 	{
 		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
 		return false;
@@ -430,9 +430,12 @@ ZazenGraphics::initSDL()
 bool
 ZazenGraphics::initGL()
 {
+	//int argc = 0;
+	//glutInit(&argc, NULL);
+
 	int major, minor;
 	GLenum err = glewInit();
-	if (err != GLEW_OK)
+	if ( GLEW_OK != err )
 	{
 		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
 		return false;
@@ -448,22 +451,19 @@ ZazenGraphics::initGL()
 	glGetIntegerv(GL_MINOR_VERSION, &minor); // minor = 2
 
 	// opengl 3.3 minimum
-	if ( major < 3 )
+	if ( 3 > major )
 	{
 		cout << "ERROR ... OpenGL3.3 or above required" << endl;
 		return false;
 	}
-	else if ( major == 3 )
+	else if ( 3 == major )
 	{
-		if ( minor < 3 )
+		if ( 3 > minor )
 		{
 			cout << "ERROR ... OpenGL3.3 or above required" << endl;
 			return false;
 		}
 	}
-
-	int argc = 0;
-	glutInit(&argc, NULL);
 
 	return true;
 }

@@ -249,6 +249,13 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
+	this->m_transformBlock = UniformBlock::createBlock( "transform_mat" );
+	if ( 0 == this->m_transformBlock )
+	{
+		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
+		return false;
+	}
+
 	if ( false == this->m_vertShaderGeomStage->compile() )
 	{
 		cout << "failed initializing Deferred Renderer - geometry-stage vertex shader compilation failed - exit" << endl;
@@ -296,13 +303,6 @@ DRRenderer::initGeomStage()
 	if ( false == this->m_geomStageProg->link() )
 	{
 		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
-		return false;
-	}
-
-	this->m_transformBlock = UniformBlock::createBlock( "transform_mat", 128 );
-	if ( 0 == this->m_transformBlock )
-	{
-		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
 		return false;
 	}
 

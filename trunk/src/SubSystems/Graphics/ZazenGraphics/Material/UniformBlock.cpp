@@ -12,18 +12,10 @@
 using namespace std;
 
 UniformBlock*
-UniformBlock::createBlock( const std::string& name, int size )
+UniformBlock::createBlock( const std::string& name )
 {
 	GLuint id;
-	GLint value;
 	GLint status;
-
-	glGetIntegerv( GL_MAX_UNIFORM_BLOCK_SIZE, &value );
-	if ( value < size )
-	{
-		cout << "UniformBlock::createBlock: GL_MAX_UNIFORM_BLOCK_SIZE too small for " << size << " for name: \"" << name << "\"" << endl;
-		return 0;
-	}
 
 	glGenBuffers( 1, &id );
 	status = glGetError();
@@ -35,12 +27,6 @@ UniformBlock::createBlock( const std::string& name, int size )
 
 	UniformBlock* block = new UniformBlock( name );
 	block->id = id;
-
-	if ( false == block->updateData( 0, size ) )
-	{
-		delete block;
-		block = 0;
-	}
 
 	return block;
 }
@@ -62,7 +48,7 @@ UniformBlock::bind( int index )
 {
 	GLint status;
 
-	glBindBufferBase( GL_UNIFORM_BUFFER, index, this->id );
+	glBindBufferBase( GL_UNIFORM_BUFFER, 0, this->id );
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{

@@ -302,7 +302,8 @@ GeometryFactory::load3DS(const std::string& fileName)
 	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL; mesh = mesh->next )
 	{
 		// indexbuffer for faces
-		int* indexBuffer = new int[ mesh->faces * 3 ];
+		GLuint* indexBuffer = new GLuint[ mesh->faces * 3 ];
+
 		// we cannot use vertexData for normals because they have to calculated first
 		Lib3dsVector* normals = new Lib3dsVector[ mesh->faces * 3 ];
 		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->points ];
@@ -340,7 +341,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			}
 		}
 
-		for(unsigned int i = 0; i < mesh->faces; i++)
+		for( unsigned int i = 0; i < mesh->faces; i++ )
 		{
 			Lib3dsFace* face = &mesh->faceL[ i ];
 
@@ -431,7 +432,7 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 		else if (vertex->vertex[2] < geomGroupBBmin[2])
 			geomGroupBBmin.data[2] = vertex->vertex[2];
 
-		memcpy(&vertices[i], vertex, sizeof(MilkshapeVertex));
+		memcpy( &vertices[i], vertex, sizeof(MilkshapeVertex) );
 		
 		bufferPointer += sizeof(MilkshapeVertex);
 	}
@@ -487,7 +488,7 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 	{
 		int numTriangles = groups[i]->numtriangles;
 		
-		int* indexBuffer = new int[ numTriangles * 3 ];
+		GLuint* indexBuffer = new GLuint[ numTriangles * 3 ];
 		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ numTriangles * 3 ];
 		
 		Vector meshBBmin;
@@ -576,7 +577,8 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
     	int elemCount = 0;
     	char* elem_name = setup_element_read_ply(plyFile, i, &elemCount);
 
-    	if (strcasecmp ("vertex", elem_name) == 0) {
+    	if (strcasecmp ("vertex", elem_name) == 0)
+    	{
     		ply_get_property (plyFile, elem_name, &ply_vert_props[0]);
 		    ply_get_property (plyFile, elem_name, &ply_vert_props[1]);
 		    ply_get_property (plyFile, elem_name, &ply_vert_props[2]);
@@ -585,7 +587,8 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
 		    ply_get_property (plyFile, elem_name, &ply_vert_props[4]);
 		    ply_get_property (plyFile, elem_name, &ply_vert_props[5]);
 
-		    for (int j = 0; j < elemCount; j++) {
+		    for (int j = 0; j < elemCount; j++)
+		    {
 				PlyVertex vertex;
 		        ply_get_element (plyFile, (void *) &vertex);
 		        vertices.push_back(vertex);
@@ -593,11 +596,14 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
 		        //cout << "vertex " << j << " at (" << vertex.x << "/" << vertex.y << "/" << vertex.z << ")" << endl;
 		    }
 
-    	} else if (strcasecmp ("face", elem_name) == 0) {
+    	}
+    	else if (strcasecmp ("face", elem_name) == 0)
+    	{
     		faceCount = elemCount;
     	    ply_get_property (plyFile, elem_name, &ply_face_props[0]);
 
-    	    for (unsigned int j = 0; j < faceCount; j++) {
+    	    for (unsigned int j = 0; j < faceCount; j++)
+    	    {
     	    	PlyFace plyFace;
     	    	plyFace.vertexIndices = 0;
     	    	ply_get_element(plyFile, (void*) &plyFace);
@@ -621,7 +627,7 @@ GeomType* GeometryFactory::loadPly(const std::string& fileName)
 
     cout << "we got " << faceCount << " faces and " << vertices.size() << " vertices " << endl;
 
-    int* indexBuffer = new int[ faceCount * 3 ];
+    GLuint* indexBuffer = new GLuint[ faceCount * 3 ];
 	GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ faceCount * 3 ];
 
   	for (unsigned int i = 0; i < faceCount; i++)

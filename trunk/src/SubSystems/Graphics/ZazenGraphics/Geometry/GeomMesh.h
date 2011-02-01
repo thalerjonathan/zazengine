@@ -14,7 +14,7 @@ class GeomMesh : public GeomType
 		float normal[3];
 	};
 
-	GeomMesh( int faceCount, int vertexCount, VertexData* data, int* indexBufer );
+	GeomMesh( int faceCount, int vertexCount, VertexData* data, GLuint* indices );
 	virtual ~GeomMesh();
 
 	virtual int getFaceCount() { return this->faceCount; };
@@ -25,8 +25,8 @@ class GeomMesh : public GeomType
 	int faceCount;
 	int vertexCount;
 
-	int* indexBuffer;
 	VertexData* data;
+	GLuint* indexBuffer;
 
 	GLuint dataVBO;
 	GLuint indexVBO;
