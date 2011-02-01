@@ -12,7 +12,7 @@ class GeomTeapot : public GeomType
 	GeomTeapot(float size) { this->size = size; };
 	virtual ~GeomTeapot() {};
  
-	void render() { glutSolidTeapot(this->size); };
+	bool render() { glutSolidTeapot(this->size); return true; };
 
  private:
 	float size;

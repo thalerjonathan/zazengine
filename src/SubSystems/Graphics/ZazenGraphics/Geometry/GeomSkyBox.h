@@ -20,7 +20,7 @@ class GeomSkyBox : public GeomType
 	GeomSkyBox( Camera& cam, std::string& textures );
 	virtual ~GeomSkyBox();
 	
-	void render();
+	bool render();
 	
  private:
 	Camera& cam;

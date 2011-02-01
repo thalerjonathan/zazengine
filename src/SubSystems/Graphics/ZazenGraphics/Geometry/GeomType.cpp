@@ -1,6 +1,5 @@
 #include "GeomType.h"
 
-
 GeomType::GeomType()
 {
 	this->parent = 0;
@@ -13,7 +12,8 @@ GeomType::~GeomType()
 {
 }
 
-void GeomType::compareBB(const Vector& bbMin, const Vector& bbMax)
+void
+GeomType::compareBB(const Vector& bbMin, const Vector& bbMax)
 {
 	if (bbMax[0] > this->bbMax[0])
 		this->bbMax.data[0] = bbMax[0];
@@ -33,7 +33,8 @@ void GeomType::compareBB(const Vector& bbMin, const Vector& bbMax)
 	this->setBB(this->bbMin, this->bbMax);
 }
  
-void GeomType::setBB(const Vector& bbMin, const Vector& bbMax)
+void
+GeomType::setBB(const Vector& bbMin, const Vector& bbMax)
 {
 	this->bbMin = bbMin;
 	this->bbMax = bbMax;
@@ -43,7 +44,8 @@ void GeomType::setBB(const Vector& bbMin, const Vector& bbMax)
 	this->center.data[2] = this->bbMin[2] + ((this->bbMax[2] - this->bbMin[2]) / 2);
 }
 
-void GeomType::renderBB()
+void
+GeomType::renderBB()
 {
 	/*
 	if (this->bbVBO == 0) {
@@ -207,7 +209,8 @@ void GeomType::renderBB()
 	glEnd();
 }
 
-void GeomType::render()
+bool
+GeomType::render()
 {
 	//if (ZENgine::getInstance().drawBoundingBox()) {
 		glBegin(GL_LINES);
@@ -250,4 +253,6 @@ void GeomType::render()
 		
 		this->renderBB();
 	//}
+
+	return true;
 }

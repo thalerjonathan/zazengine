@@ -19,7 +19,7 @@ class GeomMesh : public GeomType
 
 	virtual int getFaceCount() { return this->faceCount; };
 
-	void render();
+	bool render();
 	
  private:
 	int faceCount;

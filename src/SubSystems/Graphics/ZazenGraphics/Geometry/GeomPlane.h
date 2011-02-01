@@ -19,7 +19,7 @@ class GeomPlane : public GeomType
 
 	virtual ~GeomPlane() {};
 
-	void render()
+	bool render()
 	{
 		glBegin(GL_QUADS);
 			glNormal3f(0.0, 1.0, 0.0); glTexCoord2f(0.0f, 0.0f); glVertex3f(-this->length, 0, -this->width);	// Top Right Of The Texture and Quad
@@ -27,6 +27,8 @@ class GeomPlane : public GeomType
 			glNormal3f(0.0, 1.0, 0.0); glTexCoord2f(1.0f, 1.0f); glVertex3f( this->length, 0, this->width);	// Bottom Left Of The Texture and Quad
 			glNormal3f(0.0, 1.0, 0.0); glTexCoord2f(0.0f, 1.0f); glVertex3f(-this->length, 0, this->width);	// Bottom Right Of The Texture and Quad
 		glEnd();
+
+		return true;
 	};
 
  private:

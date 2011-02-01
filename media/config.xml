@@ -12,6 +12,7 @@
 		<subSystem file="media/input/config.xml"/>
 	</subSystemList>
 	
+	
 	<objectList>
 		<object name="WaterTower">
 			<graphics>

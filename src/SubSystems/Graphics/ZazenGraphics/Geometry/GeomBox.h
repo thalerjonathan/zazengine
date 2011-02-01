@@ -11,7 +11,7 @@ class GeomBox : public GeomType
 	GeomBox(float size) { this->size = size; };
 	virtual ~GeomBox() {};
  
-	void render() { glutSolidCube(this->size); };
+	bool render() { glutSolidCube(this->size); return true; };
 
  private:
 	float size;

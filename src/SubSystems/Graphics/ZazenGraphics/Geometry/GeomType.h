@@ -28,7 +28,7 @@ class GeomType
 	 virtual int getFaceCount() { return 0; };
 	 
 	 void renderBB();
-	 virtual void render();
+	 virtual bool render();
 
 	 GeomType* parent;
 	 std::vector<GeomType*> children;

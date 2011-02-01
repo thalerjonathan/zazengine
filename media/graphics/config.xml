@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <subSystem type="graphics">
-	<skyBoxdd folder="skyboxes/sahara"/>
-				
 	<geomClasses>
 		<class id="ClassWaterTower" modelType="MESH" file="media/graphics/models/3ds/watertower.3ds"/>
 	</geomClasses>

@@ -161,7 +161,7 @@ ZazenGraphics::process( double iterationFactor )
 		std::list<Event>::iterator eventsIter = entity->queuedEvents.begin();
 		while ( eventsIter != entity->queuedEvents.end() )
 		{
-			Event& e = *eventsIter++;
+			//Event& e = *eventsIter++;
 
 			//cout << "received Event '" << e.getID() << "' in ZazenGraphics from GO '" << entity->getParent()->getName() << endl;
 		}
@@ -447,10 +447,19 @@ ZazenGraphics::initGL()
 	glGetIntegerv(GL_MAJOR_VERSION, &major); // major = 3
 	glGetIntegerv(GL_MINOR_VERSION, &minor); // minor = 2
 
+	// opengl 3.3 minimum
 	if ( major < 3 )
 	{
-		cout << "ERROR ... OpenGL Version < 3" << endl;
+		cout << "ERROR ... OpenGL3.3 or above required" << endl;
 		return false;
+	}
+	else if ( major == 3 )
+	{
+		if ( minor < 3 )
+		{
+			cout << "ERROR ... OpenGL3.3 or above required" << endl;
+			return false;
+		}
 	}
 
 	int argc = 0;

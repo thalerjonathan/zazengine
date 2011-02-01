@@ -70,7 +70,8 @@ DRRenderer::renderFrame(GeomInstance* root)
 		if ( false == this->m_transformBlock->updateData( instance->transform.data, 64, 64) )
 			return false;
 
-		instance->geom->render();
+		if ( false == instance->geom->render() )
+			return false;
 	}
 
 	this->renderQueue.clear();
@@ -120,7 +121,72 @@ DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
 
+	if ( false == this->initFBO() )
+		return false;
+
+	if ( false == this->initGeomStage() )
+		return false;
+
+	if ( false == this->initLightingStage() )
+		return false;
+
+	if ( false == this->m_geomStageProg->use() )
+	{
+		cout << "failed initializing Deferred Renderer - using geom-stage program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "failed initializing Deferred Renderer - binding transformblock failed - exit" << endl;
+		return false;
+	}
+
+	cout << "Initializing Deferred Renderer finished" << endl;
+
+	return true;
+}
+
+bool
+DRRenderer::shutdown()
+{
+	cout << "Shutting down Deferred Renderer..." << endl;
+
+	if ( this->m_transformBlock )
+		delete this->m_transformBlock;
+
+	if ( this->m_geomStageProg )
+	{
+		if ( this->m_vertShaderGeomStage )
+		{
+			this->m_geomStageProg->detachShader( this->m_vertShaderGeomStage );
+
+			delete this->m_vertShaderGeomStage;
+			this->m_vertShaderGeomStage = NULL;
+		}
+
+		if ( this->m_fragShaderGeomStage )
+		{
+			this->m_geomStageProg->detachShader( this->m_fragShaderGeomStage );
+
+			delete this->m_fragShaderGeomStage;
+			this->m_fragShaderGeomStage = NULL;
+		}
+
+		delete this->m_geomStageProg;
+		this->m_geomStageProg = NULL;
+	}
+
+	cout << "Shutting down Deferred Renderer finished" << endl;
+
+	return true;
+}
+
+bool
+DRRenderer::initFBO()
+{
 	GLenum status;
+
 	glGenFramebuffersEXT(1, &this->m_frameBuffer);
 
 	for ( int i = 0; i < MRT_COUNT; i++ )
@@ -156,6 +222,12 @@ DRRenderer::initialize()
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 
+	return true;
+}
+
+bool
+DRRenderer::initGeomStage()
+{
 	this->m_geomStageProg = Program::createProgram( );
 	if ( 0 == this->m_geomStageProg )
 	{
@@ -227,7 +299,7 @@ DRRenderer::initialize()
 		return false;
 	}
 
-	this->m_transformBlock = UniformBlock::createBlock( "transform_mat" );
+	this->m_transformBlock = UniformBlock::createBlock( "transform_mat", 128 );
 	if ( 0 == this->m_transformBlock )
 	{
 		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
@@ -240,45 +312,11 @@ DRRenderer::initialize()
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->use() )
-	{
-		cout << "failed initializing Deferred Renderer - using geom-stage program failed - exit" << endl;
-		return false;
-	}
-
-	cout << "Initializing Deferred Renderer finished" << endl;
-
 	return true;
 }
 
 bool
-DRRenderer::shutdown()
+DRRenderer::initLightingStage()
 {
-	cout << "Shutting down Deferred Renderer..." << endl;
-
-	if ( this->m_geomStageProg )
-	{
-		if ( this->m_vertShaderGeomStage )
-		{
-			this->m_geomStageProg->detachShader( this->m_vertShaderGeomStage );
-
-			delete this->m_vertShaderGeomStage;
-			this->m_vertShaderGeomStage = NULL;
-		}
-
-		if ( this->m_fragShaderGeomStage )
-		{
-			this->m_geomStageProg->detachShader( this->m_fragShaderGeomStage );
-
-			delete this->m_fragShaderGeomStage;
-			this->m_fragShaderGeomStage = NULL;
-		}
-
-		delete this->m_geomStageProg;
-		this->m_geomStageProg = NULL;
-	}
-
-	cout << "Shutting down Deferred Renderer finished" << endl;
-
 	return true;
 }

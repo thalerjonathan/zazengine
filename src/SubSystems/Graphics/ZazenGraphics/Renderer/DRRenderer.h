@@ -32,6 +32,12 @@ class DRRenderer : public Renderer
 	Program* m_geomStageProg;
 	Shader* m_vertShaderGeomStage;
 	Shader* m_fragShaderGeomStage;
+
+	bool initFBO();
+
+	bool initGeomStage();
+	bool initLightingStage();
+
 };
 
 #endif /* DRRENDERER_H_ */
