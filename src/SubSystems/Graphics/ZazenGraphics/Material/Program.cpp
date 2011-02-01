@@ -120,12 +120,22 @@ bool
 Program::bindUniformBlock( UniformBlock* block )
 {
 	GLint status;
+	GLint uniformBlockSize;
 
 	GLuint index = this->getUniformBlockIndex( block->getName() );
 	if ( GL_INVALID_INDEX == index )
 		return false;
 
-	glUniformBlockBinding( this->programObject, index, block->getID() );
+	glGetActiveUniformBlockiv( this->programObject, index, GL_UNIFORM_BLOCK_DATA_SIZE, &uniformBlockSize);
+
+	// create the UBO
+	if ( false == block->updateData( 0, uniformBlockSize ) )
+		return false;
+
+	if ( false == block->bind( 0 ) )
+		return false;
+
+	glUniformBlockBinding( this->programObject, index, 0 );
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
