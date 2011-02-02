@@ -7,8 +7,7 @@
 		<class id="ClassGeoSphere" modelType="MESH" file="media/graphics/models/3ds/geoSphere.ms3d"/>
 		<class id="ClassSphere" modelType="MESH" file="media/graphics/models/3ds/sphere.ms3d"/>
 		<class id="ClassTerrain" modelType="MESH" file="media/graphics/models/3ds/terrain.ms3d"/>
-		-->
-
+		
 		<class id="ClassWaterTower" modelType="MESH" file="media/graphics/models/3ds/watertower.3ds"/>
 		<class id="ClassBrasilian" modelType="MESH" file="media/graphics/models/3ds/brasilianHouse.3ds"/>
 		<class id="ClassHouse6" modelType="MESH" file="media/graphics/models/3ds/house6.3ds"/>
@@ -21,5 +20,8 @@
 		<class id="ClassStarwars" modelType="MESH" file="media/graphics/models/3ds/starwars.3ds"/>
 		<class id="ClassHouseJapan" modelType="MESH" file="media/graphics/models/3ds/japanHouse.3ds"/>
 		<class id="ClassChess" modelType="MESH" file="media/graphics/models/3ds/chess-game-board.3ds"/>
+		-->
+		
+		<class id="ClassChess" modelType="MESH" file="media/graphics/models/3ds/34chess-game.3DS"/>
 	</geomClasses>
 </subSystem>

@@ -72,13 +72,11 @@ StandardRenderer::renderFrame( std::list<Instance*>& instances )
 	{
 		Instance* instance = *iter++;
 
-		cout << "Rendering instance" << endl;
+		//Matrix transf( this->camera.modelView );
+		//transf.multiplyInv( instance->transform.matrix.data );
 
-		//Matrix transf( instance->transform.matrix.data );
-		//transf.multiply( this->camera.modelView );
-
-		Matrix transf( this->camera.modelView );
-		transf.multiplyInv( instance->transform.matrix.data );
+		Matrix transf( instance->transform.matrix.data );
+		transf.multiply( this->camera.modelView );
 
 		if ( false == this->renderGeom( transf, instance->geom ) )
 			return false;
@@ -107,11 +105,8 @@ StandardRenderer::renderGeom( Matrix& transf, GeomType* geom )
 		//Matrix mat( transf );
 		//mat.multiplyInv( geom->model_transf );
 
-		cout << "geom: " << geom->name << endl;
-		geom->model_transf.print();
-
 		Matrix mat( geom->model_transf );
-		mat.multiply( geom->model_transf );
+		mat.multiply( transf );
 
 		glLoadMatrixf( mat.data );
 

@@ -16,7 +16,7 @@
 	<objectList>
 		<object name="Chess1">
 			<graphics>
-				<instance class="ClassStarwars" x="0" y="0" z="0"/>
+				<instance class="ClassChess" x="0" y="0" z="0"/>
 			</graphics>
 		</object>
 	</objectList>
