@@ -292,20 +292,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 		geomGroup->name = file->name;
 	}
 
-	/*
-	if( 0 == file->nodes )
-	{
-		for( int i = 0; i < file->meshes_size; i++ )
-		{
-			Lib3dsMesh* mesh;
-			Lib3dsNode* node = lib3ds_node_new_object();
-
-			strcpy( node->name, mesh->name );
-			node->parent_id = LIB3DS_NO_PARENT;
-			lib3ds_file_insert_node( file, node );
-	    }
-	}
-*/
+	lib3ds_file_create_nodes_for_meshes( file );
 
 	for ( Lib3dsNode* node = file->nodes; node != 0; node = node->next )
 	{

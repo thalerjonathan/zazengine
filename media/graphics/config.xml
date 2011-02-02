@@ -20,8 +20,9 @@
 		<class id="ClassStarwars" modelType="MESH" file="media/graphics/models/3ds/starwars.3ds"/>
 		<class id="ClassHouseJapan" modelType="MESH" file="media/graphics/models/3ds/japanHouse.3ds"/>
 		<class id="ClassChess" modelType="MESH" file="media/graphics/models/3ds/chess-game-board.3ds"/>
+		<class id="ClassChess" modelType="MESH" file="media/graphics/models/3ds/34chess-game.3DS"/>
 		-->
 		
-		<class id="ClassChess" modelType="MESH" file="media/graphics/models/3ds/34chess-game.3DS"/>
+		<class id="ClassHouseJapan" modelType="MESH" file="media/graphics/models/3ds/japanHouse.3ds"/>
 	</geomClasses>
 </subSystem>
