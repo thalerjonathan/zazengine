@@ -14,9 +14,9 @@
 	
 	
 	<objectList>
-		<object name="WaterTower">
+		<object name="Chess">
 			<graphics>
-				<instance class="ClassWaterTower" x="0" y="0" z="0"/>
+				<instance class="ClassChess" x="0" y="0" z="0"/>
 			</graphics>
 		</object>
 	</objectList>

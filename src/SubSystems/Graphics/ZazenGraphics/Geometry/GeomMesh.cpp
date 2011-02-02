@@ -37,7 +37,7 @@ GeomMesh::render()
 {
 	GLint status;
 
-	GeomType::render();
+	//GeomType::render();
 	
 	// lazy loading
 	if ( 0 == this->dataVBO )

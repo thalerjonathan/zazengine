@@ -9,7 +9,7 @@
 
 using namespace std;
 
-bool geomInstanceDistCmp(GeomInstance* a, GeomInstance* b)
+bool geomInstanceDistCmp( Instance* a, Instance* b)
 {
 	return a->distance < b->distance;
 }
@@ -36,14 +36,14 @@ StandardRenderer::shutdown()
 }
 
 bool
-StandardRenderer::renderFrame(GeomInstance* root)
+StandardRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glLoadMatrixf(this->camera.modelView.data);
+	glLoadMatrixf( this->camera.modelView.data );
 
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_LIGHTING);
@@ -69,8 +69,18 @@ StandardRenderer::renderFrame(GeomInstance* root)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 
-	this->processInstance(root);
-	this->processRenderQueue( true );
+	list<Instance*>::iterator iter = instances.begin();
+	while ( iter != instances.end() )
+	{
+		Instance* instance = *iter++;
+
+		glPushMatrix();
+		glLoadMatrixf( instance->transform.matrix.data );
+
+		this->renderGeom( instance->geom );
+
+		glPopMatrix();
+	}
 
 	SDL_GL_SwapBuffers();
 

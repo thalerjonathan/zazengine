@@ -29,7 +29,7 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 	private:
 		std::string type;
 
-		Scene::EntityInstance* instance;
+		Scene::InstanceDefinition* instance;
 };
 
 #endif /* ZAZENGRAPHICSENTITY_H_ */

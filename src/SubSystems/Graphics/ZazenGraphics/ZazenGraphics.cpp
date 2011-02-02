@@ -10,10 +10,6 @@
 #include <GL/glew.h>
 
 #include "Geometry/GeometryFactory.h"
-#include "Geometry/GeomPlane.h"
-#include "Geometry/GeomSphere.h"
-#include "Geometry/GeomTeapot.h"
-#include "Geometry/GeomBox.h"
 
 #include "../../../Core/Core.h"
 
@@ -51,11 +47,13 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 	
-	if (Material::loadMaterials() == false)
+	/*
+	if ( Material::loadMaterials() == false )
 	{
 		cout << "FAILED ... loading Materials" << endl;
 		return false;
 	}
+	*/
 	
 	this->camera = new Camera( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
 	this->camera->setPosition( 0, 10, 40 );
@@ -119,7 +117,7 @@ ZazenGraphics::shutdown()
 
 	SDL_Quit();
 
-	Material::freeAll();
+	//Material::freeAll();
 	Texture::freeAll();
 	GeometryFactory::freeAll();
 	
@@ -206,11 +204,11 @@ ZazenGraphics::sendEvent( Event& e )
 	}
 	else if ( e == "SDLK_w" )
 	{
-		this->camera->strafeForward( 0.01 * this->lastItFact );
+		this->camera->strafeForward( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_s" )
 	{
-		this->camera->strafeForward( -0.01 * this->lastItFact );
+		this->camera->strafeForward( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_d" )
 	{
@@ -238,7 +236,7 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	}
 
 	Vector v;
-	entity->instance = new Scene::EntityInstance();
+	entity->instance = new Scene::InstanceDefinition();
 	entity->instance->transform = new Transform();
 
 	const char* str = instanceNode->Attribute( "class" );
@@ -294,7 +292,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 
 		if ( 0 == strcmp( str, "class" ) )
 		{
-			Scene::Entity entity;
+			Scene::EntityDefinition entity;
 
 			string modelType;
 
@@ -307,13 +305,6 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 			else
 			{
 				entity.name = str;
-			}
-
-			str = classNode->Attribute( "material" );
-			if ( 0 != str )
-			{
-				// is optinal
-				entity.material = str;
 			}
 
 			str = classNode->Attribute( "modelType" );
@@ -343,18 +334,18 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 
 				if ( "SPHERE" == geomType )
 				{
-					GeomSphere* sphere = new GeomSphere( 1 );
-					GeometryFactory::registerGeom( sphere, entity.name );
+//					GeomSphere* sphere = new GeomSphere( 1 );
+//					GeometryFactory::registerGeom( sphere, entity.name );
 				}
 				else if ( "TEAPOT" == geomType )
 				{
-					GeomTeapot* teapot = new GeomTeapot( 1 );
-					GeometryFactory::registerGeom( teapot, entity.name );
+//					GeomTeapot* teapot = new GeomTeapot( 1 );
+//					GeometryFactory::registerGeom( teapot, entity.name );
 				}
 				else if ( "BOX" == geomType )
 				{
-					GeomBox* box = new GeomBox( 1 );
-					GeometryFactory::registerGeom( box, entity.name );
+//					GeomBox* box = new GeomBox( 1 );
+//					GeometryFactory::registerGeom( box, entity.name );
 				}
 				else if ( "PLANE" == geomType )
 				{
@@ -369,8 +360,8 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 					if (str != 0)
 						width = atof(str);
 
-					GeomPlane* plane = new GeomPlane( length, width );
-					GeometryFactory::registerGeom( plane, entity.name );
+//					GeomPlane* plane = new GeomPlane( length, width );
+//					GeometryFactory::registerGeom( plane, entity.name );
 				}
 			}
 			else if ( "MESH" == modelType)

@@ -30,7 +30,8 @@ OCRenderer::~OCRenderer()
 {
 }
 
-bool OCRenderer::renderFrame(GeomInstance* root)
+bool
+OCRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	this->renderedFaces = 0;
 	this->renderedInstances = 0;

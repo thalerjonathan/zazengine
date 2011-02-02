@@ -1,7 +1,7 @@
 #ifndef SCENE_H_
 #define SCENE_H_
 
-#include "../Geometry/GeomInstance.h"
+#include "Instance.h"
 #include "../Renderer/Renderer.h"
 
 #include <string>
@@ -14,26 +14,25 @@ class Scene
 	 typedef struct {
 		 std::string name;
 		 std::string modelFile;
-		 std::string material;
-	 } Entity;
+	 } EntityDefinition;
  
 	 typedef struct {
 		 std::string entity;
 		 float size;
 		 Transform* transform;
-	 } EntityInstance;
+	 } InstanceDefinition;
 
 	 Scene( const std::string&, Camera* );
 	 ~Scene();
 	 
-	 void setSkyBoxFolder(std::string& f) { this->skyBoxFolder = f; };
-	 void setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax);
+	 void setSkyBoxFolder( std::string& f ) { this->skyBoxFolder = f; };
+	 void setSceneBB( const Vector& sceneBBMin, const Vector& sceneBBMax );
 
-	 bool processFrame(double);
-	 bool load(bool, int, int, int);
+	 bool processFrame( double );
+	 bool load( bool, int, int, int );
 	 
-	 void addEntity(Entity& e) { this->entities[e.name] = e; };
-	 void addInstance(EntityInstance* i) { this->instances.push_back(i); };
+	 void addEntity( EntityDefinition& e ) { this->entitiesDef[e.name] = e; };
+	 void addInstance( InstanceDefinition* i ) { this->instanceDef.push_back(i); };
 	 
 	 void printInfo();
 	 
@@ -46,22 +45,15 @@ class Scene
 
 	 std::string skyBoxFolder;
 
-	 std::map<std::string, Entity> entities;
-	 std::vector<EntityInstance*> instances;
+	 std::map<std::string, EntityDefinition> entitiesDef;
+	 std::vector<InstanceDefinition*> instanceDef;
 	 
 	 Camera* camera;
 	 Renderer* renderer;
 
-	 GeomInstance* sceneRoot;
-	 GeomInstance* skyBoxInstance;
+	 std::list<Instance*> instances;
 
-	 void processTransforms(GeomInstance*);
-	 
-	 GeomInstance* buildChildren(GeomType*);
-	 
-	 void randomizeInstances(int, int, int);
-
-	Entity getRandomEntity();
+	 //void processTransforms( Instance* );
 
 };
 

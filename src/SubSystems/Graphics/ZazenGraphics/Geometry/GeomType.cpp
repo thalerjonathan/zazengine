@@ -4,8 +4,6 @@ GeomType::GeomType()
 {
 	this->parent = 0;
 	this->bbVBO = 0;
-
-	this->material = 0;
 }
 
 GeomType::~GeomType()
