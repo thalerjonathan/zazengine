@@ -20,9 +20,9 @@
 
 #include "Loaders/Ply/ply.h"
 
-#include <lib3ds/file.h>
-#include <lib3ds/mesh.h>
-#include <lib3ds/matrix.h>
+extern "C" {
+#include <lib3ds.h>
+}
 
 #include <stdlib.h>
 #include <string.h>
@@ -269,19 +269,16 @@ GeometryFactory::loadFolder(const std::string& folderName)
 GeomType*
 GeometryFactory::load3DS(const std::string& fileName)
 {
-	int meshCount = 0;
-	int totalFaces = 0;
-
 	Vector geomGroupBBmin;
 	Vector geomGroupBBmax;
 
-	Lib3dsFile* geomData = 0;
+	Lib3dsFile* file = 0;
 	GeomType* geomGroup = 0;
 
 	string fullFilename = fileName;
 
-	geomData = lib3ds_file_load( fullFilename.c_str() );
-	if ( 0 == geomData )
+	file = lib3ds_file_open( fullFilename.c_str() );
+	if ( 0 == file )
 	{
 		cout << "ERROR ... couldnt load GeometryFactory " << fullFilename << endl;
 		return 0;
@@ -289,97 +286,142 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 	cout << "LOADING ... " << fileName << endl;
 
-	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL;mesh = mesh->next )
-	{
-		totalFaces += mesh->faces;
-		meshCount++;
-	}
-	
-	if (meshCount > 1)
+	if ( file->nmeshes > 1 )
 	{
 		geomGroup = new GeomType();
-		geomGroup->name = geomData->name;
+		geomGroup->name = file->name;
 	}
-	
-	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL; mesh = mesh->next )
+
+	/*
+	if( 0 == file->nodes )
 	{
-		// indexbuffer for faces
-		GLuint* indexBuffer = new GLuint[ mesh->faces * 3 ];
-
-		// we cannot use vertexData for normals because they have to calculated first
-		Lib3dsVector* normals = new Lib3dsVector[ mesh->faces * 3 ];
-		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->points ];
-
-		Vector meshBBmin;
-		Vector meshBBmax;
-		lib3ds_mesh_bounding_box( mesh, meshBBmin.data, meshBBmax.data );
-		
-		if (meshCount > 1)
+		for( int i = 0; i < file->meshes_size; i++ )
 		{
-			for ( int i = 0; i < 3; i++ )
+			Lib3dsMesh* mesh;
+			Lib3dsNode* node = lib3ds_node_new_object();
+
+			strcpy( node->name, mesh->name );
+			node->parent_id = LIB3DS_NO_PARENT;
+			lib3ds_file_insert_node( file, node );
+	    }
+	}
+*/
+
+	for ( Lib3dsNode* node = file->nodes; node != 0; node = node->next )
+	{
+		if ( node->type == LIB3DS_NODE_MESH_INSTANCE )
+		{
+			Lib3dsMesh* mesh = lib3ds_file_mesh_for_node( file, node );
+			if ( NULL == mesh )
 			{
-				if (meshBBmin[ i ] < geomGroupBBmin[ i ])
-					geomGroupBBmin.data[ i ] = meshBBmin[ i ];
-				else if (meshBBmax[ i ] > geomGroupBBmax[ i ])
-					geomGroupBBmax.data[ i ] = meshBBmax[ i ];
+				cout << "Corrupted file \"" << fileName << "\" : coulnd't find mesh " << node->name << endl;
+				continue;
 			}
-		}
-		
-		lib3ds_mesh_calculate_normals( mesh, normals );
 
-		for ( unsigned int i = 0; i < mesh->points; i++ )
-		{
-			for ( unsigned int j = 0; j < 3; j++ )
+			// indexbuffer for faces
+			GLuint* indexBuffer = new GLuint[ mesh->nfaces * 3 ];
+			// we cannot use vertexData for normals because they have to calculated first
+			//GeomMesh::Vertex* normals = new GeomMesh::Vertex[ mesh->nvertices ];
+			// allocate vertexdata
+			GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->nvertices ];
+
+			Vector meshBBmin;
+			Vector meshBBmax;
+			lib3ds_mesh_bounding_box( mesh, meshBBmin.data, meshBBmax.data );
+
+			if ( file->nmeshes > 1 )
 			{
-				vertexData[ i ].position[ j ] = mesh->pointL[ i ].pos[ j ];
-				//vertexData[ i ].normal[ j ] = normals[ i ][ j ];
+				for ( int i = 0; i < 3; i++ )
+				{
+					if (meshBBmin[ i ] < geomGroupBBmin[ i ])
+						geomGroupBBmin.data[ i ] = meshBBmin[ i ];
+					else if (meshBBmax[ i ] > geomGroupBBmax[ i ])
+						geomGroupBBmax.data[ i ] = meshBBmax[ i ];
+				}
 			}
-		}
 
-		for( unsigned int i = 0; i < mesh->faces; i++ )
-		{
-			Lib3dsFace* face = &mesh->faceL[ i ];
+			//lib3ds_mesh_calculate_vertex_normals( mesh, normals );
 
-			for(unsigned int j = 0; j < 3; j++)
+			for ( unsigned int i = 0; i < mesh->nvertices; i++ )
 			{
-				indexBuffer[ i * 3 + j ] = face->points[ j ];
+				for ( unsigned int j = 0; j < 3; j++ )
+				{
+					vertexData[ i ].position[ j ] = mesh->vertices[ i ][ j ];
+					//vertexData[ i ].normal[ j ] = normals[ i ][ j ];
+				}
 			}
-		}
+	
+			//delete[] normals;
 
-		delete normals;
-
-		GeomMesh* geomMesh = new GeomMesh( mesh->faces, mesh->points, vertexData, indexBuffer );
-		geomMesh->setBB(meshBBmin, meshBBmax);
-		geomMesh->name = mesh->name;
-
-		Lib3dsMatrix transfMat;
-		lib3ds_matrix_copy( transfMat, mesh->matrix );
-        lib3ds_matrix_inv( transfMat ); // need to invert to make openGL compatible
-
-		int index = 0;
-		for ( int i = 0; i < 4; i++ )
-		{
-			for ( int j = 0; j < 4; j++ )
+			for( unsigned int i = 0; i < mesh->nfaces; i++ )
 			{
-				geomMesh->model_transf.data[ index ] = transfMat[ i ][ j ];
-				index++;
-			}
-		}
+				Lib3dsFace* face = &mesh->faces[ i ];
 
-		if ( 1 < meshCount )
-		{
-			geomGroup->children.push_back( geomMesh );
+				for(unsigned int j = 0; j < 3; j++)
+				{
+					indexBuffer[ i * 3 + j ] = face->index[ j ];
+				}
+			}
+
+			GeomMesh* geomMesh = new GeomMesh( mesh->nfaces, mesh->nvertices, vertexData, indexBuffer );
+			geomMesh->setBB(meshBBmin, meshBBmax);
+			geomMesh->name = node->name;
+
+			Lib3dsMeshInstanceNode* typedNode = (Lib3dsMeshInstanceNode*) node;
+
+			Matrix transl;
+			Matrix meshTransf;
+			Matrix instanceTransf;
+			float tmpMat[4][4];
+
+			 // need to invert to make openGL compatible
+			lib3ds_matrix_copy( tmpMat, mesh->matrix );
+			lib3ds_matrix_inv( tmpMat );
+			memcpy( meshTransf.data, &tmpMat[0][0], sizeof(float) * 16 );
+
+			lib3ds_matrix_copy( tmpMat, typedNode->base.matrix );
+			lib3ds_matrix_inv( tmpMat );
+			memcpy( instanceTransf.data, &tmpMat[0][0], sizeof(float) * 16 );
+
+			transl.data[ 12 ] = typedNode->pivot[0];
+			transl.data[ 13 ] = typedNode->pivot[1];
+			transl.data[ 14 ] = typedNode->pivot[2];
+
+			cout << "instance " <<  typedNode->base.name << ":" << endl;
+			cout << "Mesh Transform:" << endl;
+			meshTransf.print();
+			cout << "Instance Transform" << endl;
+			instanceTransf.print();
+			cout << "Instance Translation:" << endl;
+			transl.print();
+
+			transl.multiply( meshTransf );
+			transl.multiply( instanceTransf );
+
+			cout << "Combined Transform:" << endl;
+			transl.print();
+
+			geomMesh->model_transf = transl;
+
+			if ( file->nmeshes > 1 )
+			{
+				geomGroup->children.push_back( geomMesh );
+			}
+			else
+			{
+				geomGroup = geomMesh;
+			}
 		}
 		else
 		{
-			geomGroup = geomMesh;
+			cout << "unsupported node type" << endl;
 		}
 	}
 	
-	if ( 1 < meshCount )
+	if ( file->nmeshes > 1 )
 		geomGroup->setBB(geomGroupBBmin, geomGroupBBmax);
 	
-    lib3ds_file_free( geomData );
+    lib3ds_file_free( file );
 
     cout << "LOADED ... " << fileName << endl;
     

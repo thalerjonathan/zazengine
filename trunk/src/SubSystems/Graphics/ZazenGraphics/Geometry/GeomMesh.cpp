@@ -26,10 +26,10 @@ GeomMesh::~GeomMesh()
 		glDeleteBuffers( 1, &this->indexVBO );
 
 	if ( this->data )
-		delete this->data;
+		delete[] this->data;
 
 	if ( this->indexBuffer )
-		delete this->indexBuffer;
+		delete[] this->indexBuffer;
 }
 
 bool

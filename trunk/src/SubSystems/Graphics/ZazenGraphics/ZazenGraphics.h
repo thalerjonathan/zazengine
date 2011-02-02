@@ -19,10 +19,7 @@
 
 /* TODO:
  * - switch to opengl3.3 CORE (no more compatibility)
- * - remove GLUT
- * - because no more GLUT: replace geometry-types with real meshes: only geom-mesh
  * - basic rendering pipeline with opengl3.3:
- * 		- use VBOs for meshes in GL3.3 way (glVertexAttribPointer & IndexBufferObjects)
  * 		- vertex-shader with GLSL 3.3 (input-blocks)
  * 		- fragment-shader with GLSL 3.3 (output to a framebuffer)
  */
