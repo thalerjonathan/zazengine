@@ -62,14 +62,16 @@ Renderer::printInfo()
 }
 
 // geomnodes are the children of a transformnode or a geomnode
+/*
 void
-Renderer::processInstance(GeomInstance* instance)
+Renderer::processInstance( Instance* instance )
 {
 	instance->recalculateDistance();
 
 	bool backupFlag = this->parentIntersectingFrustum;
 
-	if (instance->parent == 0 || this->parentIntersectingFrustum) {
+	if ( instance->parent == 0 || this->parentIntersectingFrustum )
+	{
 		Vector bbMinWorld(instance->geom->getBBMin());
 		Vector bbMaxWorld(instance->geom->getBBMax());
 
@@ -77,75 +79,83 @@ Renderer::processInstance(GeomInstance* instance)
 		instance->transform.transform(bbMaxWorld);
 
 		CullResult result = this->camera.cullBB(bbMinWorld, bbMaxWorld);
-		if (result == OUTSIDE) {
+		if (result == OUTSIDE)
 			return;
-		}
 
-		if (result == INTERSECTING) {
+		if (result == INTERSECTING)
 			this->parentIntersectingFrustum = true;
-		} else {
+		else
 			this->parentIntersectingFrustum = false;
-		}
 	}
 
-	this->traverseInstance(instance);
+	this->traverseInstance( instance );
 
 	this->parentIntersectingFrustum = backupFlag;
 }
 
 void
-Renderer::traverseInstance(GeomInstance* instance)
+Renderer::traverseInstance( Instance* instance )
 {
 	// not a leaf-node
-	if (instance->children.size() > 0) {
+	if ( instance->children.size() > 0 )
+	{
 		instance->visible = false;
 
 		// also sort children in front-to-back
-		sort(instance->children.begin(), instance->children.end(), Renderer::geomInstanceDistCmp);
+		sort( instance->children.begin(), instance->children.end(), Renderer::geomInstanceDistCmp );
 
-		for (unsigned int i = 0; i < instance->children.size(); i++) {
+		for (unsigned int i = 0; i < instance->children.size(); i++)
 			this->processInstance(instance->children[i]);
-		}
 
 	// is a leaf-node => render
-	} else {
+	}
+	else
+	{
 		this->renderQueue.push_back(instance);
 	}
 }
 
 void
-Renderer::processRenderQueue( bool useMaterial )
+Renderer::processRenderQueue()
 {
 	if (this->skyBox)
 		this->skyBox->render();
 
-	list<GeomInstance*>::iterator iter = this->renderQueue.begin();
-	while (iter != this->renderQueue.end()) {
-		GeomInstance* instance = *iter++;
-		Material* material = instance->geom->material;
+	list<Instance*>::iterator iter = this->renderQueue.begin();
+	while ( iter != this->renderQueue.end() )
+	{
+		Instance* instance = *iter++;
 
-		if ( useMaterial )
-		{
-			if (material) {
-				if (material->isTransparent())
-					continue;
-				else
-					material->activate();
-			}
-		}
-
-		glLoadMatrixf(instance->transform.data);
+		glLoadMatrixf( instance->transform.data );
 		instance->geom->render();
-
-		if ( useMaterial )
-		{
-			if ( material)
-				material->deactivate();
-		}
 
 		this->renderedFaces += instance->geom->getFaceCount();
 		this->renderedInstances++;
 	}
 
 	this->renderQueue.clear();
+}
+*/
+
+void
+Renderer::renderGeom( GeomType* geom )
+{
+	if ( geom->children.size() )
+	{
+		for ( unsigned int i = 0; i < geom->children.size(); i++ )
+		{
+			GeomType* child = geom->children[ i ];
+
+			glPushMatrix();
+			glLoadMatrixf( child->model_transf.data );
+
+			child->render();
+
+			glPopMatrix();
+		}
+	}
+	else
+	{
+		geom->render();
+	}
 }

@@ -5,17 +5,16 @@
 
 #include "../../../../Core/Utils/Math/Vector.h"
 #include "../../../../Core/Utils/Math/Matrix.h"
-#include "../Material/Material.h"
+#include "../../../../Core/Utils/Math/Transform.h"
 
 #include <vector>
+#include <string>
 
 class GeomType
 {
  public:
 	 GeomType();
 	 virtual ~GeomType();
-
-	 Material* material;
 
 	 void compareBB(const Vector&, const Vector&);
 	 
@@ -33,6 +32,9 @@ class GeomType
 	 GeomType* parent;
 	 std::vector<GeomType*> children;
 	 
+	 Matrix model_transf;
+	 std::string name;
+
  private:
 	 GLuint bbVBO;
 		

@@ -2,7 +2,7 @@
 #define RENDERER_H_
 
 #include "../Scene/Camera.h"
-#include "../Geometry/GeomInstance.h"
+#include "../Scene/Instance.h"
 #include "../Geometry/GeomSkyBox.h"
 
 #include <list>
@@ -60,7 +60,7 @@ class Renderer
 
 	virtual bool initialize() = 0;
 	virtual bool shutdown() = 0;
-	virtual bool renderFrame( GeomInstance* ) = 0;
+	virtual bool renderFrame( std::list<Instance*>& instances ) = 0;
 
 	void printInfo();
 
@@ -77,17 +77,20 @@ class Renderer
 	 Camera& camera;
 	 GeomSkyBox* skyBox;
 
-	 std::list<GeomInstance*> instancesQueue;
-	 std::list<GeomInstance*> renderQueue;
+	 std::list<GeomType*> renderQueue;
 
-	 static bool geomInstanceDistCmp( GeomInstance* a, GeomInstance* b )
+	 static bool geomInstanceDistCmp( Instance* a, Instance* b )
 	 {
 	 	return a->distance < b->distance;
 	 }
 
-	 void processRenderQueue( bool useMaterial );
-	 void traverseInstance(GeomInstance*);
-	 void processInstance(GeomInstance*);
+	 /*
+	 void processRenderQueue();
+	 void traverseInstance( Instance* );
+	 void processInstance( Instance* );
+	 */
+
+	 void renderGeom( GeomType* );
 };
 
 #endif /*STANDARDTRAVERSAL_H_*/

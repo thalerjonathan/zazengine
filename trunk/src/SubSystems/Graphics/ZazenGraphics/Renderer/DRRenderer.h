@@ -12,6 +12,10 @@
 
 #include "Renderer.h"
 
+#include "../Material/UniformBlock.h"
+#include "../Material/Program.h"
+#include "../Material/Shader.h"
+
 class DRRenderer : public Renderer
 {
  public:
@@ -22,7 +26,7 @@ class DRRenderer : public Renderer
 	virtual bool shutdown();
 
 	// renders this list of geominstances which must be in front-to-back order
-	bool renderFrame(GeomInstance*);
+	bool renderFrame( std::list<Instance*>& instances );
 
  private:
 	GLuint m_frameBuffer;

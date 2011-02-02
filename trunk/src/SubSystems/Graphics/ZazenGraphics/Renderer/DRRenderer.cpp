@@ -35,7 +35,7 @@ DRRenderer::~DRRenderer()
 }
 
 bool
-DRRenderer::renderFrame(GeomInstance* root)
+DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	//GLenum buffers[MRT_COUNT];
 
@@ -61,6 +61,7 @@ DRRenderer::renderFrame(GeomInstance* root)
 	 */
 
 	// draw all geometry
+	/*
 	this->processInstance(root);
 
 	list<GeomInstance*>::iterator iter = this->renderQueue.begin();
@@ -73,6 +74,7 @@ DRRenderer::renderFrame(GeomInstance* root)
 		if ( false == instance->geom->render() )
 			return false;
 	}
+*/
 
 	this->renderQueue.clear();
 

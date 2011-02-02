@@ -8,14 +8,14 @@
 class StandardRenderer : public Renderer
 {
  public:
-	StandardRenderer(Camera& camera, std::string&);
+	StandardRenderer( Camera& camera, std::string& );
 	virtual ~StandardRenderer();
 
 	virtual bool initialize();
 	virtual bool shutdown();
 
 	 // renders this list of geominstances which must be in front-to-back order
-	 bool renderFrame(GeomInstance*);
+	 bool renderFrame( std::list<Instance*>& instances );
 
 };
 

@@ -12,31 +12,31 @@ class OCRenderer : public Renderer
 	virtual ~OCRenderer();
 
 	 // renders this list of geominstances which must be in front-to-back order
-	 bool renderFrame(GeomInstance*);
+	 bool renderFrame( std::list<Instance*>& instances );
 
  private:
 	 bool parentIntersectingFrustum;
 
 	  typedef struct {
 		 GLuint id;
-		 std::list<GeomInstance*> items;	// used for multiqueries: when size > 1 => multiqueries, otherwise single-query
+		 std::list<Instance*> items;	// used for multiqueries: when size > 1 => multiqueries, otherwise single-query
 	 } QueryItem;
 
-	 std::list<GeomInstance*> distanceQueue;
+	 std::list<Instance*> distanceQueue;
 
-	 std::list<GeomInstance*> iQueries;
-	 std::list<GeomInstance*> vQueries;
+	 std::list<Instance*> iQueries;
+	 std::list<Instance*> vQueries;
 
 	 std::list<QueryItem> queries;
 
 	 bool firstQueryFinished();
-	 void traverseInstance(GeomInstance*);
-	 void handleReturnedQuery(QueryItem);
-	 void pullUpVisibility(GeomInstance*);
+	 void traverseInstance( Instance* );
+	 void handleReturnedQuery( QueryItem );
+	 void pullUpVisibility( Instance* );
 	 void queryIndividualNodes(QueryItem);
-	 void issueQuery(GeomInstance*);
+	 void issueQuery( Instance* );
 	 void issueMultiQueries();
-	 void issuePreviouslyInvisibleNode(GeomInstance*);
+	 void issuePreviouslyInvisibleNode( Instance* );
 };
 
 #endif /*OCRENDERER_H_*/

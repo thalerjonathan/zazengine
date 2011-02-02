@@ -10,8 +10,6 @@
 #include "GeometryFactory.h"
 
 #include "GeomMesh.h"
-#include "GeomTeapot.h"
-#include "GeomPlane.h"
 
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -281,7 +279,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 	string fullFilename = fileName;
 
-	geomData = lib3ds_file_load(fullFilename.c_str());
+	geomData = lib3ds_file_load( fullFilename.c_str() );
 	if ( 0 == geomData )
 	{
 		cout << "ERROR ... couldnt load GeometryFactory " << fullFilename << endl;
@@ -297,7 +295,10 @@ GeometryFactory::load3DS(const std::string& fileName)
 	}
 	
 	if (meshCount > 1)
+	{
 		geomGroup = new GeomType();
+		geomGroup->name = geomData->name;
+	}
 	
 	for( Lib3dsMesh* mesh = geomData->meshes; mesh != NULL; mesh = mesh->next )
 	{
@@ -314,20 +315,13 @@ GeometryFactory::load3DS(const std::string& fileName)
 		
 		if (meshCount > 1)
 		{
-			if (meshBBmin[0] < geomGroupBBmin[0])
-				geomGroupBBmin.data[0] = meshBBmin[0];
-			else if (meshBBmax[0] > geomGroupBBmax[0])
-				geomGroupBBmax.data[0] = meshBBmax[0];
-			
-			if (meshBBmin[1] < geomGroupBBmin[1])
-				geomGroupBBmin.data[1] = meshBBmin[1];
-			else if (meshBBmax[1] > geomGroupBBmax[1])
-				geomGroupBBmax.data[1] = meshBBmax[1];
-			
-			if (meshBBmin[2] < geomGroupBBmin[2])
-				geomGroupBBmin.data[2] = meshBBmin[2];
-			else if (meshBBmax[2] > geomGroupBBmax[2])
-				geomGroupBBmax.data[2] = meshBBmax[2];
+			for ( int i = 0; i < 3; i++ )
+			{
+				if (meshBBmin[ i ] < geomGroupBBmin[ i ])
+					geomGroupBBmin.data[ i ] = meshBBmin[ i ];
+				else if (meshBBmax[ i ] > geomGroupBBmax[ i ])
+					geomGroupBBmax.data[ i ] = meshBBmax[ i ];
+			}
 		}
 		
 		lib3ds_mesh_calculate_normals( mesh, normals );
@@ -337,7 +331,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			for ( unsigned int j = 0; j < 3; j++ )
 			{
 				vertexData[ i ].position[ j ] = mesh->pointL[ i ].pos[ j ];
-				vertexData[ i ].normal[ j ] = normals[ i ][ j ];
+				//vertexData[ i ].normal[ j ] = normals[ i ][ j ];
 			}
 		}
 
@@ -355,10 +349,21 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 		GeomMesh* geomMesh = new GeomMesh( mesh->faces, mesh->points, vertexData, indexBuffer );
 		geomMesh->setBB(meshBBmin, meshBBmax);
+		geomMesh->name = mesh->name;
 
-		if (meshCount > 1)
+		int index = 0;
+		for ( int i = 0; i < 4; i++ )
 		{
-			geomGroup->children.push_back(geomMesh);
+			for ( int j = 0; j < 4; j++ )
+			{
+				geomMesh->model_transf.data[ index ] = mesh->matrix[ i ][ j ];
+				index++;
+			}
+		}
+
+		if ( 1 < meshCount )
+		{
+			geomGroup->children.push_back( geomMesh );
 		}
 		else
 		{
@@ -366,7 +371,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 		}
 	}
 	
-	if (meshCount > 1)
+	if ( 1 < meshCount )
 		geomGroup->setBB(geomGroupBBmin, geomGroupBBmax);
 	
     lib3ds_file_free( geomData );
@@ -376,8 +381,21 @@ GeometryFactory::load3DS(const std::string& fileName)
     return geomGroup;
 }
 
-GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
+// TODO: rework, not properly working?
+GeomType*
+GeometryFactory::loadMs3D(const std::string& fileName)
 {
+	GeomType* geom = 0;
+
+	GLuint* indexBuffer = 0;
+	GeomMesh::VertexData* vertexData = 0;
+
+	word numVertices = 0;
+	word numTriangles = 0;
+
+	Vector meshBBmin;
+	Vector meshBBmax;
+
 	string fullFilename = fileName;
 	ifstream fileStream(fullFilename.c_str(), ios::in | ios::binary);
 	
@@ -406,48 +424,53 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 			
 	bufferPointer += 14;
 
-	word numVertices = *((word*) bufferPointer);
+	numVertices = *((word*) bufferPointer);
 	bufferPointer += 2;
 
-	Vector geomGroupBBmin;
-	Vector geomGroupBBmax;
-
-	MilkshapeVertex* vertices = new MilkshapeVertex[numVertices];
+	vertexData = new GeomMesh::VertexData[ numVertices ];
+	memset( vertexData, 0, sizeof( GeomMesh::VertexData ) * numVertices );
 	
-	for (int i = 0; i < numVertices; i++) {
+	for (int i = 0; i < numVertices; i++)
+	{
 		MilkshapeVertex* vertex = (MilkshapeVertex*) bufferPointer;
 
-		if (vertex->vertex[0] > geomGroupBBmax[0])
-			geomGroupBBmax.data[0] = vertex->vertex[0];
-		else if (vertex->vertex[0] < geomGroupBBmin[0])
-			geomGroupBBmin.data[0] = vertex->vertex[0];
+		for ( int j = 0; j < 3; j++ )
+		{
+			if (vertex->vertex[ j ] > meshBBmax[ j ])
+				meshBBmax.data[ j ] = vertex->vertex[ j ];
+			else if (vertex->vertex[ j ] < meshBBmin[ j ])
+				meshBBmin.data[ j ] = vertex->vertex[ j ];
 
-		if (vertex->vertex[1] > geomGroupBBmax[1])
-			geomGroupBBmax.data[1] = vertex->vertex[1];
-		else if (vertex->vertex[1] < geomGroupBBmin[1])
-			geomGroupBBmin.data[1] = vertex->vertex[1];
-		
-		if (vertex->vertex[2] > geomGroupBBmax[2])
-			geomGroupBBmax.data[2] = vertex->vertex[2];
-		else if (vertex->vertex[2] < geomGroupBBmin[2])
-			geomGroupBBmin.data[2] = vertex->vertex[2];
-
-		memcpy( &vertices[i], vertex, sizeof(MilkshapeVertex) );
+			vertexData[ i ].position[ j ] = vertex->vertex[ j ];
+		}
 		
 		bufferPointer += sizeof(MilkshapeVertex);
 	}
 
-	word numTriangles = *((word*) bufferPointer);
+	indexBuffer = new GLuint[ numTriangles * 3 ];
+	memset( indexBuffer, 0, sizeof( GLuint ) * numTriangles * 3 );
+
+	numTriangles = *((word*) bufferPointer);
 	bufferPointer += 2;
 
-	MilkshapeTriangle* triangles = new MilkshapeTriangle[numTriangles];
-	
-	for (int i = 0; i < numTriangles; i++) {
+	for (int i = 0; i < numTriangles; i++)
+	{
 		MilkshapeTriangle* triangle = (MilkshapeTriangle*) bufferPointer;
-		memcpy(&triangles[i], triangle, sizeof(MilkshapeTriangle));
+
+		for ( int j = 0; j < 3; j++ )
+		{
+			indexBuffer[ i * 3 + j ] = triangle->vertexIndices[ j ];
+			//vertexData[ i * 3 + j ].normal[ j ] = triangle->vertexNormals[ j ][ j ];
+		}
+
 		bufferPointer += sizeof(MilkshapeTriangle);
 	}
 	
+	geom = new GeomMesh( numVertices, numTriangles, vertexData, indexBuffer );
+	geom->setBB( meshBBmin, meshBBmax );
+
+
+/*
 	word numGroups = *((word*) bufferPointer);
 	bufferPointer += 2;
 	
@@ -489,8 +512,11 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 		int numTriangles = groups[i]->numtriangles;
 		
 		GLuint* indexBuffer = new GLuint[ numTriangles * 3 ];
-		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ numTriangles * 3 ];
-		
+		memset( indexBuffer, 0, sizeof( GLuint ) * numTriangles * 3 );
+
+		GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ numVertices ];
+		memset( vertexData, 0, sizeof( GeomMesh::VertexData ) * numVertices );
+
 		Vector meshBBmin;
 		Vector meshBBmax;
 
@@ -538,19 +564,25 @@ GeomType* GeometryFactory::loadMs3D(const std::string& fileName)
 	
 	if (numGroups > 1)
 		geomGroup->setBB(geomGroupBBmin, geomGroupBBmax);
+	*/
 
+	/*
 	delete[] materials;
 	delete[] groups;
 	delete[] vertices;
 	delete[] triangles;
+	*/
+
 	delete buffer;
 	
 	cout << "LOADED ... " << fileName << endl;
 
-	return geomGroup;
+	return geom;
 }
 
-GeomType* GeometryFactory::loadPly(const std::string& fileName)
+// TODO: rework, not properly working?
+GeomType*
+GeometryFactory::loadPly(const std::string& fileName)
 {	
 	string fullFilename = fileName;
 
