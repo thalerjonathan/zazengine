@@ -3,13 +3,12 @@
 in vec4 in_vertPos;
 in vec4 in_vertNorm;
 
-layout(shared) uniform transform_mat
+layout(shared) uniform transform
 {
-    mat4 modelViewProj;
-    mat4 transform;
+    mat4 mvp_mat;
 };
 
 void main()
 {
-	gl_Position = modelViewProj * transform * in_vertPos;
+	gl_Position = mvp_mat * in_vertPos;
 }

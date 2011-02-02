@@ -22,6 +22,7 @@
 
 #include <lib3ds/file.h>
 #include <lib3ds/mesh.h>
+#include <lib3ds/matrix.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -351,12 +352,16 @@ GeometryFactory::load3DS(const std::string& fileName)
 		geomMesh->setBB(meshBBmin, meshBBmax);
 		geomMesh->name = mesh->name;
 
+		Lib3dsMatrix transfMat;
+		lib3ds_matrix_copy( transfMat, mesh->matrix );
+        lib3ds_matrix_inv( transfMat ); // need to invert to make openGL compatible
+
 		int index = 0;
 		for ( int i = 0; i < 4; i++ )
 		{
 			for ( int j = 0; j < 4; j++ )
 			{
-				geomMesh->model_transf.data[ index ] = mesh->matrix[ i ][ j ];
+				geomMesh->model_transf.data[ index ] = transfMat[ i ][ j ];
 				index++;
 			}
 		}

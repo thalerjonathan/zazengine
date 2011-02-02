@@ -42,6 +42,8 @@ class DRRenderer : public Renderer
 	bool initGeomStage();
 	bool initLightingStage();
 
+	bool renderGeom( Matrix& transf, GeomType* );
+
 };
 
 #endif /* DRRENDERER_H_ */

@@ -204,11 +204,11 @@ ZazenGraphics::sendEvent( Event& e )
 	}
 	else if ( e == "SDLK_w" )
 	{
-		this->camera->strafeForward( 0.1 * this->lastItFact );
+		this->camera->strafeForward( 1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_s" )
 	{
-		this->camera->strafeForward( -0.1 * this->lastItFact );
+		this->camera->strafeForward( -1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_d" )
 	{

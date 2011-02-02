@@ -62,7 +62,7 @@ Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		iter++;
 	}
 
-	for (unsigned int i = 0; i < this->instances.size(); i++)
+	for (unsigned int i = 0; i < this->instanceDef.size(); i++)
 	{
 		InstanceDefinition* instanceDef = this->instanceDef[ i ];
 		EntityDefinition entityDef = this->entitiesDef[ instanceDef->entity ];
@@ -78,30 +78,6 @@ Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		newInstance->transform.matrix = instanceDef->transform->matrix;
 
 		this->instances.push_back( newInstance );
-
-		/*
-		model->material = Material::get( entity.material );
-
-		GeomInstance* geomInstance = this->buildChildren(model);
-
-		if (model->getBBMin()[0] < this->sceneBBMin[0])
-			this->sceneBBMin.data[0] = model->getBBMin()[0];
-
-		if (model->getBBMin()[1] < this->sceneBBMin[1])
-			this->sceneBBMin.data[1] = model->getBBMin()[1];
-
-		if (model->getBBMin()[2] < this->sceneBBMin[2])
-			this->sceneBBMin.data[2] = model->getBBMin()[2];
-
-		if (model->getBBMax()[0] > this->sceneBBMax[0])
-			this->sceneBBMax.data[0] = model->getBBMax()[0];
-
-		if (model->getBBMax()[1] > this->sceneBBMax[1])
-			this->sceneBBMax.data[1] = model->getBBMax()[1];
-
-		if (model->getBBMax()[2] > this->sceneBBMax[2])
-			this->sceneBBMax.data[2] = model->getBBMax()[2];
-*/
 	}
 		
 	this->sceneMeasures.data[0] = this->sceneBBMax[0] - this->sceneBBMin[0];
@@ -125,39 +101,10 @@ Scene::setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax)
 bool
 Scene::processFrame(double loopFactor)
 {	
-	//this->processTransforms( this->sceneRoot );
-	
 	return this->renderer->renderFrame( this->instances );
 }
-
-/*
-void
-Scene::processTransforms( GeomInstance* instance )
-{	
-	if ( instance->parent )
-		instance->transform = instance->parent->transform;
-
-	cout << instance->geom->name << " has " << instance->transforms.size() << " transforms" << endl;
-
-	if ( instance->geom->model_transf )
-		instance->transform.multiplyInv( instance->geom->model_transf->matrix.data );
-
-	for (unsigned int i = 0; i < instance->transforms.size(); i++)
-	{
-		Transform* transform = instance->transforms[i];
-		instance->transform.multiplyInv( transform->matrix.data );
-	}
-	
-	cout << instance->geom->name << " has " << instance->children.size() << " children" << endl;
-
-	for (unsigned int i = 0; i < instance->children.size(); i++)
-		this->processTransforms(instance->children[i]);
-}
-*/
 
 void
 Scene::printInfo()
 {
-	if (this->renderer)
-		this->renderer->printInfo();
 }

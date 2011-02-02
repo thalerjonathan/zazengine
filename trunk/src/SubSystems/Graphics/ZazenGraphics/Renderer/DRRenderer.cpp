@@ -39,14 +39,37 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	//GLenum buffers[MRT_COUNT];
 
-	this->renderedFaces = 0;
-	this->renderedInstances = 0;
-
 	// clear window
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	if ( false == this->m_transformBlock->updateData( this->camera.modelView.data, 0, 64) )
 		return false;
+
+	this->m_geomStageProg->use();
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+
+	glColor4f(1, 0, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(100, 0, 0);
+		glVertex3f(-100, 0, 0);
+	glEnd();
+
+	glColor4f(0, 1, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 100, 0);
+		glVertex3f(0, -100, 0);
+	glEnd();
+
+	glColor4f(0, 0, 1, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 0, 100);
+		glVertex3f(0, 0, -100);
+	glEnd();
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
 
 	//  start geometry pass
 	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
@@ -61,22 +84,16 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	 */
 
 	// draw all geometry
-	/*
-	this->processInstance(root);
+	list<Instance*>::iterator iter = instances.begin();
+	while ( iter != instances.end() )
+	{
+		Instance* instance = *iter++;
 
-	list<GeomInstance*>::iterator iter = this->renderQueue.begin();
-	while (iter != this->renderQueue.end()) {
-		GeomInstance* instance = *iter++;
+		Matrix transf( instance->transform.matrix.data );
+		transf.multiply( this->camera.modelView );
 
-		if ( false == this->m_transformBlock->updateData( instance->transform.data, 64, 64) )
-			return false;
-
-		if ( false == instance->geom->render() )
-			return false;
+		this->renderGeom( transf, instance->geom );
 	}
-*/
-
-	this->renderQueue.clear();
 
 	/*
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -123,8 +140,8 @@ DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
 
-	if ( false == this->initFBO() )
-		return false;
+	//if ( false == this->initFBO() )
+	//	return false;
 
 	if ( false == this->initGeomStage() )
 		return false;
@@ -251,7 +268,7 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	this->m_transformBlock = UniformBlock::createBlock( "transform_mat" );
+	this->m_transformBlock = UniformBlock::createBlock( "transform" );
 	if ( 0 == this->m_transformBlock )
 	{
 		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
@@ -320,5 +337,29 @@ DRRenderer::initGeomStage()
 bool
 DRRenderer::initLightingStage()
 {
+	return true;
+}
+
+bool
+DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
+{
+	if ( geom->children.size() )
+	{
+		for ( unsigned int i = 0; i < geom->children.size(); i++ )
+		{
+			return this->renderGeom( transf, geom->children[ i ] );
+		}
+	}
+	else
+	{
+		Matrix mat( geom->model_transf );
+		mat.multiply( transf );
+
+		if ( false == this->m_transformBlock->updateData( mat.data, 0, 64) )
+			return false;
+
+		return geom->render();
+	}
+
 	return true;
 }
