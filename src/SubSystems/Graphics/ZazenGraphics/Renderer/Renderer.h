@@ -65,32 +65,15 @@ class Renderer
 	void printInfo();
 
  protected:
-	 long long renderedFaces;
-	 int renderedInstances;
-	 int occludedInstances;
-	 int culledInstances;
-
 	 long long frame;
-
-	 bool parentIntersectingFrustum;
 
 	 Camera& camera;
 	 GeomSkyBox* skyBox;
-
-	 std::list<GeomType*> renderQueue;
 
 	 static bool geomInstanceDistCmp( Instance* a, Instance* b )
 	 {
 	 	return a->distance < b->distance;
 	 }
-
-	 /*
-	 void processRenderQueue();
-	 void traverseInstance( Instance* );
-	 void processInstance( Instance* );
-	 */
-
-	 void renderGeom( GeomType* );
 };
 
 #endif /*STANDARDTRAVERSAL_H_*/

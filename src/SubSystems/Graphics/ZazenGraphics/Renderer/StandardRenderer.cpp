@@ -38,9 +38,6 @@ StandardRenderer::shutdown()
 bool
 StandardRenderer::renderFrame( std::list<Instance*>& instances )
 {
-	this->renderedFaces = 0;
-	this->renderedInstances = 0;
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadMatrixf( this->camera.modelView.data );
@@ -69,22 +66,57 @@ StandardRenderer::renderFrame( std::list<Instance*>& instances )
 	glEnable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 
+
 	list<Instance*>::iterator iter = instances.begin();
 	while ( iter != instances.end() )
 	{
 		Instance* instance = *iter++;
 
-		glPushMatrix();
-		glLoadMatrixf( instance->transform.matrix.data );
+		cout << "Rendering instance" << endl;
 
-		this->renderGeom( instance->geom );
+		//Matrix transf( instance->transform.matrix.data );
+		//transf.multiply( this->camera.modelView );
 
-		glPopMatrix();
+		Matrix transf( this->camera.modelView );
+		transf.multiplyInv( instance->transform.matrix.data );
+
+		if ( false == this->renderGeom( transf, instance->geom ) )
+			return false;
 	}
 
 	SDL_GL_SwapBuffers();
 
 	this->frame++;
+
+	return true;
+}
+
+bool
+StandardRenderer::renderGeom( Matrix& transf, GeomType* geom )
+{
+	if ( geom->children.size() )
+	{
+		for ( unsigned int i = 0; i < geom->children.size(); i++ )
+		{
+			if ( false == this->renderGeom( transf, geom->children[ i ] ) )
+				return false;
+		}
+	}
+	else
+	{
+		//Matrix mat( transf );
+		//mat.multiplyInv( geom->model_transf );
+
+		cout << "geom: " << geom->name << endl;
+		geom->model_transf.print();
+
+		Matrix mat( geom->model_transf );
+		mat.multiply( geom->model_transf );
+
+		glLoadMatrixf( mat.data );
+
+		return geom->render();
+	}
 
 	return true;
 }

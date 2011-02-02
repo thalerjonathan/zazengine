@@ -13,16 +13,11 @@ using namespace std;
 Renderer::Renderer( Camera& camera, std::string& skyBoxFolder )
 	: camera( camera )
 {
-	this->renderedFaces = 0;
-	this->renderedInstances = 0;
-
-	this->culledInstances = 0;
-	this->occludedInstances = 0;
-
 	this->frame = 1;
+
 	this->skyBox = 0;
 	
-	if (skyBoxFolder != "")
+	if ( "" != skyBoxFolder )
 		this->skyBox = new GeomSkyBox(this->camera, skyBoxFolder);
 
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
@@ -47,115 +42,4 @@ Renderer::Renderer( Camera& camera, std::string& skyBoxFolder )
 
 Renderer::~Renderer()
 {
-
-}
-
-void
-Renderer::printInfo()
-{
-	cout << "--------------------------------------- SCENE-INFO ---------------------------------------" << endl;
-	cout << "Rendered Faces:          " << this->renderedFaces << endl << endl;
-	cout << "Rendered Instances:      " << this->renderedInstances << endl;
-	cout << "Culled Instances:        " << this->culledInstances << endl;
-	cout << "Occluded Instances:      " << this->occludedInstances << endl;
-	cout << "------------------------------------------------------------------------------------------" << endl;
-}
-
-// geomnodes are the children of a transformnode or a geomnode
-/*
-void
-Renderer::processInstance( Instance* instance )
-{
-	instance->recalculateDistance();
-
-	bool backupFlag = this->parentIntersectingFrustum;
-
-	if ( instance->parent == 0 || this->parentIntersectingFrustum )
-	{
-		Vector bbMinWorld(instance->geom->getBBMin());
-		Vector bbMaxWorld(instance->geom->getBBMax());
-
-		instance->transform.transform(bbMinWorld);
-		instance->transform.transform(bbMaxWorld);
-
-		CullResult result = this->camera.cullBB(bbMinWorld, bbMaxWorld);
-		if (result == OUTSIDE)
-			return;
-
-		if (result == INTERSECTING)
-			this->parentIntersectingFrustum = true;
-		else
-			this->parentIntersectingFrustum = false;
-	}
-
-	this->traverseInstance( instance );
-
-	this->parentIntersectingFrustum = backupFlag;
-}
-
-void
-Renderer::traverseInstance( Instance* instance )
-{
-	// not a leaf-node
-	if ( instance->children.size() > 0 )
-	{
-		instance->visible = false;
-
-		// also sort children in front-to-back
-		sort( instance->children.begin(), instance->children.end(), Renderer::geomInstanceDistCmp );
-
-		for (unsigned int i = 0; i < instance->children.size(); i++)
-			this->processInstance(instance->children[i]);
-
-	// is a leaf-node => render
-	}
-	else
-	{
-		this->renderQueue.push_back(instance);
-	}
-}
-
-void
-Renderer::processRenderQueue()
-{
-	if (this->skyBox)
-		this->skyBox->render();
-
-	list<Instance*>::iterator iter = this->renderQueue.begin();
-	while ( iter != this->renderQueue.end() )
-	{
-		Instance* instance = *iter++;
-
-		glLoadMatrixf( instance->transform.data );
-		instance->geom->render();
-
-		this->renderedFaces += instance->geom->getFaceCount();
-		this->renderedInstances++;
-	}
-
-	this->renderQueue.clear();
-}
-*/
-
-void
-Renderer::renderGeom( GeomType* geom )
-{
-	if ( geom->children.size() )
-	{
-		for ( unsigned int i = 0; i < geom->children.size(); i++ )
-		{
-			GeomType* child = geom->children[ i ];
-
-			glPushMatrix();
-			glLoadMatrixf( child->model_transf.data );
-
-			child->render();
-
-			glPopMatrix();
-		}
-	}
-	else
-	{
-		geom->render();
-	}
 }

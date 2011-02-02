@@ -53,8 +53,6 @@ class Scene
 
 	 std::list<Instance*> instances;
 
-	 //void processTransforms( Instance* );
-
 };
 
 #endif /*SCENE_H_*/
