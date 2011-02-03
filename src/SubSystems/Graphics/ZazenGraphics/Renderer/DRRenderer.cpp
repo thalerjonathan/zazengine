@@ -24,8 +24,9 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 
 	this->m_fragShaderGeomStage = 0;
 	this->m_geomStageProg = 0;
-	this->m_transformBlock = 0;
 	this->m_vertShaderGeomStage = 0;
+
+	this->m_transformBlock = 0;
 
 	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
 }
@@ -42,10 +43,11 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	// clear window
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	if ( false == this->m_transformBlock->updateData( this->camera.modelView.data, 0, 64) )
+	if ( false == this->m_transformBlock->updateData( this->camera.projection , 0, 64) )
 		return false;
 
-	this->m_geomStageProg->use();
+	if ( false == this->m_transformBlock->updateData( this->camera.modelView.data, 64, 64) )
+			return false;
 
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_LIGHTING);
@@ -355,8 +357,10 @@ DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
 		Matrix mat( geom->model_transf );
 		mat.multiply( transf );
 
+		/*
 		if ( false == this->m_transformBlock->updateData( mat.data, 0, 64) )
 			return false;
+		 */
 
 		return geom->render();
 	}
