@@ -19,6 +19,9 @@ class Camera
 	// the modelviewmatrix for the worldtransform
     Matrix modelView;
 
+    // the projectionmatrix
+    float projection[16];
+
     void setupPerspective();
     void setupOrtho();
 
@@ -56,7 +59,6 @@ class Camera
 	float nearDist;
 	float farDist;
 	
-	float projection[16];
 	float frustum[6][4];
 	
 	void recalculateFrustum();
