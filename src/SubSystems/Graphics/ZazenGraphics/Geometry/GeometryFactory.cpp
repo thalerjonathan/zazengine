@@ -308,7 +308,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			// indexbuffer for faces
 			GLuint* indexBuffer = new GLuint[ mesh->nfaces * 3 ];
 			// we cannot use vertexData for normals because they have to calculated first
-			//GeomMesh::Vertex* normals = new GeomMesh::Vertex[ mesh->nvertices ];
+			GeomMesh::Normal* normals = new GeomMesh::Normal[ mesh->nfaces * 3 ];
 			// allocate vertexdata
 			GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->nvertices ];
 
@@ -327,8 +327,6 @@ GeometryFactory::load3DS(const std::string& fileName)
 				}
 			}
 
-			//lib3ds_mesh_calculate_vertex_normals( mesh, normals );
-
 			for ( unsigned int i = 0; i < mesh->nvertices; i++ )
 			{
 				for ( unsigned int j = 0; j < 3; j++ )
@@ -338,7 +336,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 				}
 			}
 	
-			//delete[] normals;
+			lib3ds_mesh_calculate_vertex_normals( mesh, normals );
 
 			for( unsigned int i = 0; i < mesh->nfaces; i++ )
 			{
@@ -347,8 +345,11 @@ GeometryFactory::load3DS(const std::string& fileName)
 				for(unsigned int j = 0; j < 3; j++)
 				{
 					indexBuffer[ i * 3 + j ] = face->index[ j ];
+					vertexData[ face->index[ j ] ].normal[ j ] = normals[ i * 3 + j ][ j ];
 				}
 			}
+
+			delete[] normals;
 
 			GeomMesh* geomMesh = new GeomMesh( mesh->nfaces, mesh->nvertices, vertexData, indexBuffer );
 			geomMesh->setBB(meshBBmin, meshBBmax);
