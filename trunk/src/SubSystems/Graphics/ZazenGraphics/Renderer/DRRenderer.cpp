@@ -21,14 +21,23 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	: Renderer(camera, skyBoxFolder)
 {
 	this->m_frameBuffer = 0;
+	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
 
-	this->m_fragShaderGeomStage = 0;
-	this->m_geomStageProg = 0;
+	this->m_progGeomStage = 0;
 	this->m_vertShaderGeomStage = 0;
+	this->m_fragShaderGeomStage = 0;
+
+	this->m_progLightingStage = 0;
+	this->m_vertShaderLightingStage = 0;
+	this->m_fragShaderLightingStage = 0;
+
+	this->m_progShadowMapping = 0;
+	this->m_vertShaderhadowMapping = 0;
+	this->m_fragShaderhadowMapping = 0;
 
 	this->m_transformBlock = 0;
 
-	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
+	this->m_light = 0;
 }
 
 DRRenderer::~DRRenderer()
@@ -43,14 +52,11 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	// clear window
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	if ( false == this->m_transformBlock->updateData( this->camera.projection , 0, 64) )
+	Matrix mvp( this->camera.modelView.data );
+	mvp.multiply( this->camera.projection  );
+
+	if ( false == this->m_transformBlock->updateData( mvp.data , 0, 64) )
 		return false;
-
-	if ( false == this->m_transformBlock->updateData( this->camera.modelView.data, 64, 64) )
-			return false;
-
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_LIGHTING);
 
 	glColor4f(1, 0, 0, 0);
 	glBegin(GL_LINES);
@@ -69,9 +75,6 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 		glVertex3f(0, 0, 100);
 		glVertex3f(0, 0, -100);
 	glEnd();
-
-	glEnable(GL_LIGHTING);
-	glEnable(GL_TEXTURE_2D);
 
 	//  start geometry pass
 	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
@@ -92,7 +95,7 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 		Instance* instance = *iter++;
 
 		Matrix transf( instance->transform.matrix.data );
-		transf.multiply( this->camera.modelView );
+		transf.multiply( mvp );
 
 		this->renderGeom( transf, instance->geom );
 	}
@@ -151,7 +154,10 @@ DRRenderer::initialize()
 	if ( false == this->initLightingStage() )
 		return false;
 
-	if ( false == this->m_geomStageProg->use() )
+	if ( false == this->initShadowMapping() )
+		return false;
+
+	if ( false == this->m_progGeomStage->use() )
 	{
 		cout << "failed initializing Deferred Renderer - using geom-stage program failed - exit" << endl;
 		return false;
@@ -176,11 +182,11 @@ DRRenderer::shutdown()
 	if ( this->m_transformBlock )
 		delete this->m_transformBlock;
 
-	if ( this->m_geomStageProg )
+	if ( this->m_progGeomStage )
 	{
 		if ( this->m_vertShaderGeomStage )
 		{
-			this->m_geomStageProg->detachShader( this->m_vertShaderGeomStage );
+			this->m_progGeomStage->detachShader( this->m_vertShaderGeomStage );
 
 			delete this->m_vertShaderGeomStage;
 			this->m_vertShaderGeomStage = NULL;
@@ -188,14 +194,14 @@ DRRenderer::shutdown()
 
 		if ( this->m_fragShaderGeomStage )
 		{
-			this->m_geomStageProg->detachShader( this->m_fragShaderGeomStage );
+			this->m_progGeomStage->detachShader( this->m_fragShaderGeomStage );
 
 			delete this->m_fragShaderGeomStage;
 			this->m_fragShaderGeomStage = NULL;
 		}
 
-		delete this->m_geomStageProg;
-		this->m_geomStageProg = NULL;
+		delete this->m_progGeomStage;
+		this->m_progGeomStage = NULL;
 	}
 
 	cout << "Shutting down Deferred Renderer finished" << endl;
@@ -249,21 +255,23 @@ DRRenderer::initFBO()
 bool
 DRRenderer::initGeomStage()
 {
-	this->m_geomStageProg = Program::createProgram( );
-	if ( 0 == this->m_geomStageProg )
+	cout << "Initializing Deferred Rendering Geometry-Stage..." << endl;
+
+	this->m_progGeomStage = Program::createProgram( );
+	if ( 0 == this->m_progGeomStage )
 	{
 		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
 		return false;
 	}
 
-	this->m_vertShaderGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/geomDRVert.glsl" );
+	this->m_vertShaderGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
 	if ( 0 == this->m_vertShaderGeomStage )
 	{
 		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage vertex-shader - exit" << endl;
 		return false;
 	}
 
-	this->m_fragShaderGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/geomDRFrag.glsl" );
+	this->m_fragShaderGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/geomFrag.glsl" );
 	if ( 0 == this->m_fragShaderGeomStage )
 	{
 		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage fragment-shader - exit" << endl;
@@ -289,13 +297,13 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->attachShader( this->m_vertShaderGeomStage ) )
+	if ( false == this->m_progGeomStage->attachShader( this->m_vertShaderGeomStage ) )
 	{
 		cout << "failed initializing Deferred Renderer - attaching vertex shader to geom-stage program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->attachShader( this->m_fragShaderGeomStage ) )
+	if ( false == this->m_progGeomStage->attachShader( this->m_fragShaderGeomStage ) )
 	{
 		cout << "failed initializing Deferred Renderer - attaching fragment shader to geom-stage program failed - exit" << endl;
 		return false;
@@ -303,35 +311,37 @@ DRRenderer::initGeomStage()
 
 	// setting frag-data location is done bevore linking
 	/*
-	this->m_geomStageProg->bindFragDataLocation( 0, "out_diffuse" );
-	this->m_geomStageProg->bindFragDataLocation( 1, "out_normal" );
-	this->m_geomStageProg->bindFragDataLocation( 2, "out_depth" );
-	this->m_geomStageProg->bindFragDataLocation( 3, "out_generic" );
+	this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" );
+	this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" );
+	this->m_progGeomStage->bindFragDataLocation( 2, "out_depth" );
+	this->m_progGeomStage->bindFragDataLocation( 3, "out_generic" );
 	*/
 
-	if ( false == this->m_geomStageProg->bindAttribLocation( 0, "in_vertPos" ) )
+	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
 		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->bindAttribLocation( 1, "in_vertNorm" ) )
+	if ( false == this->m_progGeomStage->bindAttribLocation( 1, "in_vertNorm" ) )
 	{
 		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->link() )
+	if ( false == this->m_progGeomStage->link() )
 	{
 		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_geomStageProg->bindUniformBlock( this->m_transformBlock ) )
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformBlock ) )
 	{
 		cout << "failed initializing Deferred Renderer - failed binding uniform block - exit" << endl;
 		return false;
 	}
+
+	cout << "Initializing Deferred Rendering Geometry-Stage finished" << endl;
 
 	return true;
 }
@@ -339,6 +349,24 @@ DRRenderer::initGeomStage()
 bool
 DRRenderer::initLightingStage()
 {
+	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
+
+	this->m_light = new Light();
+
+	this->m_light->viewingTransf.setPosition( 0, 500, 0 );
+
+	cout << "Initializing Deferred Rendering Lighting-Stage finished" << endl;
+
+	return true;
+}
+
+bool
+DRRenderer::initShadowMapping()
+{
+	cout << "Initializing Deferred Rendering Shadow-Mapping..." << endl;
+
+	cout << "Initializing Deferred Rendering Shadow-Mapping finished" << endl;
+
 	return true;
 }
 
@@ -357,10 +385,8 @@ DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
 		Matrix mat( geom->model_transf );
 		mat.multiply( transf );
 
-		/*
 		if ( false == this->m_transformBlock->updateData( mat.data, 0, 64) )
 			return false;
-		 */
 
 		return geom->render();
 	}
