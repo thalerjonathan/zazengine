@@ -11,6 +11,9 @@
 // number of rendering targets for deferred renderer
 #define MRT_COUNT 4
 
+#define SHADOW_MAP_WIDTH 	2048
+#define SHADOW_MAP_HEIGHT	2048
+
 #include "Renderer.h"
 
 #include "../Material/UniformBlock.h"
@@ -32,7 +35,7 @@ class DRRenderer : public Renderer
 
  private:
 	// Multiple-Render-Targes & Framebuffer for Deferred Rendering
-	GLuint m_frameBuffer;
+	GLuint m_drFB;
 	GLuint m_mrt[ MRT_COUNT ];
 	////////////////////////////////////////
 
@@ -52,6 +55,9 @@ class DRRenderer : public Renderer
 	Program* m_progShadowMapping;
 	Shader* m_vertShaderhadowMapping;
 	Shader* m_fragShaderhadowMapping;
+
+	GLuint m_shadowMap;
+	GLuint m_shadowMappingFB;
 	////////////////////////////////////////
 
 	// Uniform-Blocks
@@ -62,11 +68,15 @@ class DRRenderer : public Renderer
 	Light* m_light;
 	////////////////////////////////////////
 
+	Matrix m_modelViewProjection;
+
 	bool initFBO();
 	bool initGeomStage();
-	bool initShadowMapping();
 	bool initLightingStage();
+	bool initShadowMapping();
+	bool initUniformBlocks();
 
+	bool renderInstances( std::list<Instance*>& instances );
 	bool renderGeom( Matrix& transf, GeomType* );
 
 };
