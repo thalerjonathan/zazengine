@@ -375,6 +375,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			transl.data[ 13 ] = typedNode->pivot[1];
 			transl.data[ 14 ] = typedNode->pivot[2];
 
+			/*
 			cout << "instance " <<  typedNode->base.name << ":" << endl;
 			cout << "Mesh Transform:" << endl;
 			meshTransf.print();
@@ -383,6 +384,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			cout << "Instance Translation:" << endl;
 			transl.print();
 
+
 			transl.multiply( meshTransf );
 			transl.multiply( instanceTransf );
 
@@ -390,6 +392,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			transl.print();
 
 			geomMesh->model_transf = transl;
+			 */
 
 			if ( file->nmeshes > 1 )
 			{

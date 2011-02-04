@@ -20,7 +20,7 @@ using namespace std;
 DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	: Renderer(camera, skyBoxFolder)
 {
-	this->m_frameBuffer = 0;
+	this->m_drFB = 0;
 	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
 
 	this->m_progGeomStage = 0;
@@ -35,6 +35,9 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	this->m_vertShaderhadowMapping = 0;
 	this->m_fragShaderhadowMapping = 0;
 
+	this->m_shadowMap = 0;
+	this->m_shadowMappingFB = 0;
+
 	this->m_transformBlock = 0;
 
 	this->m_light = 0;
@@ -47,17 +50,40 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
+	//Rendering offscreen
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
+
+	if ( false == this->m_progShadowMapping->use() )
+		return false;
+
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
+
+	if ( false == this->m_progGeomStage->use() )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
+		return false;
+	}
+
+	// seems also to work when not calling this method...
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
 	//GLenum buffers[MRT_COUNT];
 
 	// clear window
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	Matrix mvp( this->camera.modelView.data );
-	mvp.multiply( this->camera.projection  );
-
-	if ( false == this->m_transformBlock->updateData( mvp.data , 0, 64) )
+	// calculate the model-view-projection matrix
+	this->m_modelViewProjection = this->camera.modelView.data;
+	this->m_modelViewProjection.multiply( this->camera.projection  );
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 0, 64) )
 		return false;
 
+	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
 	glBegin(GL_LINES);
 		glVertex3f(100, 0, 0);
@@ -77,7 +103,7 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	glEnd();
 
 	//  start geometry pass
-	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
+	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
 
 	// clear fbo
 	//glClear(GL_COLOR_BUFFER_BIT);
@@ -89,16 +115,8 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	 */
 
 	// draw all geometry
-	list<Instance*>::iterator iter = instances.begin();
-	while ( iter != instances.end() )
-	{
-		Instance* instance = *iter++;
-
-		Matrix transf( instance->transform.matrix.data );
-		transf.multiply( mvp );
-
-		this->renderGeom( transf, instance->geom );
-	}
+	if ( false == this->renderInstances( instances ) )
+		return false;
 
 	/*
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -157,17 +175,8 @@ DRRenderer::initialize()
 	if ( false == this->initShadowMapping() )
 		return false;
 
-	if ( false == this->m_progGeomStage->use() )
-	{
-		cout << "failed initializing Deferred Renderer - using geom-stage program failed - exit" << endl;
+	if ( false == this->initUniformBlocks() )
 		return false;
-	}
-
-	if ( false == this->m_transformBlock->bind( 0 ) )
-	{
-		cout << "failed initializing Deferred Renderer - binding transformblock failed - exit" << endl;
-		return false;
-	}
 
 	cout << "Initializing Deferred Renderer finished" << endl;
 
@@ -179,9 +188,67 @@ DRRenderer::shutdown()
 {
 	cout << "Shutting down Deferred Renderer..." << endl;
 
+	// cleaning up uniform blocks
 	if ( this->m_transformBlock )
 		delete this->m_transformBlock;
 
+	if ( this->m_shadowMap )
+	{
+		glDeleteTextures( 1, &this->m_shadowMap );
+	}
+
+	if ( this->m_shadowMappingFB )
+	{
+		glDeleteFramebuffers( 1, &this->m_shadowMappingFB );
+	}
+
+	// cleaning up shadow mapping
+	if ( this->m_progShadowMapping )
+	{
+		if ( this->m_vertShaderhadowMapping )
+		{
+			this->m_progShadowMapping->detachShader( this->m_vertShaderhadowMapping );
+
+			delete this->m_vertShaderhadowMapping;
+			this->m_vertShaderhadowMapping = NULL;
+		}
+
+		if ( this->m_fragShaderhadowMapping )
+		{
+			this->m_progShadowMapping->detachShader( this->m_fragShaderhadowMapping );
+
+			delete this->m_fragShaderhadowMapping;
+			this->m_fragShaderhadowMapping = NULL;
+		}
+
+		delete this->m_progShadowMapping;
+		this->m_progShadowMapping = NULL;
+	}
+
+	// cleaning up lighting stage
+	if ( this->m_progLightingStage )
+	{
+		if ( this->m_vertShaderLightingStage )
+		{
+			this->m_progLightingStage->detachShader( this->m_vertShaderLightingStage );
+
+			delete this->m_vertShaderLightingStage;
+			this->m_vertShaderLightingStage = NULL;
+		}
+
+		if ( this->m_fragShaderLightingStage )
+		{
+			this->m_progLightingStage->detachShader( this->m_fragShaderLightingStage );
+
+			delete this->m_fragShaderLightingStage;
+			this->m_fragShaderLightingStage = NULL;
+		}
+
+		delete this->m_progLightingStage;
+		this->m_progLightingStage = NULL;
+	}
+
+	// cleaning up geometry-stage
 	if ( this->m_progGeomStage )
 	{
 		if ( this->m_vertShaderGeomStage )
@@ -204,6 +271,22 @@ DRRenderer::shutdown()
 		this->m_progGeomStage = NULL;
 	}
 
+	// cleaning up framebuffer
+	if ( this->m_drFB )
+	{
+		glDeleteFramebuffers( 1, &this->m_drFB );
+	}
+
+	// cleaning up mrts
+	for ( int i = 0; i < MRT_COUNT; i++ )
+	{
+		if ( this->m_mrt[ i ] )
+		{
+			glDeleteTextures( 1, &this->m_mrt[ i ] );
+			this->m_mrt[ i ] = 0;
+		}
+	}
+
 	cout << "Shutting down Deferred Renderer finished" << endl;
 
 	return true;
@@ -214,35 +297,47 @@ DRRenderer::initFBO()
 {
 	GLenum status;
 
-	glGenFramebuffersEXT(1, &this->m_frameBuffer);
+	glGenFramebuffersEXT(1, &this->m_drFB);
+	if ( GL_NO_ERROR != ( status = glGetError() )  )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
 
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
-		glGenTextures(1, &this->m_mrt[i]);
-
-		if ( glGetError() != GL_NO_ERROR )
+		glGenTextures( 1, &this->m_mrt[ i ] );
+		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
-			cout << "glGenTextures failed with " << gluErrorString(glGetError()) << " - exit" << endl;
+			cout << "ERROR in DRRenderer::initFBO: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
 
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_frameBuffer);
-		glBindTexture(GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i]);
-		glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-		if (glGetError() != GL_NO_ERROR)
+		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_drFB );
+		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
-			cout << "glTexImage2D failed with " << gluErrorString(glGetError()) << " - exit" << endl;
+			cout << "ERROR in DRRenderer::initFBO: glBindFramebufferEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+			return false;
+		}
+		glBindTexture( GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i] );
+		if ( GL_NO_ERROR != ( status = glGetError() )  )
+		{
+			cout << "ERROR in DRRenderer::initFBO: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
+			return false;
+		}
+		glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+		if ( GL_NO_ERROR != ( status = glGetError() )  )
+		{
+			cout << "ERROR in DRRenderer::initFBO: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
 
 		glClearColor(0, 0, 0, 0);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i], 0);
-
-		CHECK_FRAMEBUFFER_STATUS( status )
+		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE_EXT != status )
 		{
-			cout << "framebuffer error: " << gluErrorString(glGetError()) << " - exit" << endl;
+			cout << "ERROR in DRRenderer::initFBO: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
 
@@ -260,52 +355,45 @@ DRRenderer::initGeomStage()
 	this->m_progGeomStage = Program::createProgram( );
 	if ( 0 == this->m_progGeomStage )
 	{
-		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage program - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create program - exit" << endl;
 		return false;
 	}
 
 	this->m_vertShaderGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
 	if ( 0 == this->m_vertShaderGeomStage )
 	{
-		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage vertex-shader - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create vertex-shader - exit" << endl;
 		return false;
 	}
 
 	this->m_fragShaderGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/geomFrag.glsl" );
 	if ( 0 == this->m_fragShaderGeomStage )
 	{
-		cout << "failed initializing Deferred Renderer - coulnd't create geometry-stage fragment-shader - exit" << endl;
-		return false;
-	}
-
-	this->m_transformBlock = UniformBlock::createBlock( "transform" );
-	if ( 0 == this->m_transformBlock )
-	{
-		cout << "failed initializing Deferred Renderer - creating uniform block failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create fragment-shader - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_vertShaderGeomStage->compile() )
 	{
-		cout << "failed initializing Deferred Renderer - geometry-stage vertex shader compilation failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: vertex shader compilation failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_fragShaderGeomStage->compile() )
 	{
-		cout << "failed initializing Deferred Renderer - geometry-stage fragment shader compilation failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: fragment shader compilation failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_progGeomStage->attachShader( this->m_vertShaderGeomStage ) )
 	{
-		cout << "failed initializing Deferred Renderer - attaching vertex shader to geom-stage program failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: attaching vertex shader to program failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_progGeomStage->attachShader( this->m_fragShaderGeomStage ) )
 	{
-		cout << "failed initializing Deferred Renderer - attaching fragment shader to geom-stage program failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: attaching fragment shader to program failed - exit" << endl;
 		return false;
 	}
 
@@ -319,25 +407,19 @@ DRRenderer::initGeomStage()
 
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
-		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_progGeomStage->bindAttribLocation( 1, "in_vertNorm" ) )
 	{
-		cout << "failed initializing Deferred Renderer - binding attribute location for geom-stage program failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_progGeomStage->link() )
 	{
-		cout << "failed initializing Deferred Renderer - linking geom-stage program failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformBlock ) )
-	{
-		cout << "failed initializing Deferred Renderer - failed binding uniform block - exit" << endl;
+		cout << "ERROR in DRRenderer::initGeomStage: linking program failed - exit" << endl;
 		return false;
 	}
 
@@ -365,7 +447,161 @@ DRRenderer::initShadowMapping()
 {
 	cout << "Initializing Deferred Rendering Shadow-Mapping..." << endl;
 
+	GLenum status;
+
+	// Try to use a texture depth component
+	glGenTextures( 1, &this->m_shadowMap );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	// GL_LINEAR does not make sense for depth texture. However, next tutorial shows usage of GL_LINEAR and PCF
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+	// Remove artifact on the edges of the shadowmap
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+
+	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::glTexImage2D: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	// create a framebuffer object
+	glGenFramebuffersEXT( 1, &this->m_shadowMappingFB );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: glBindFramebufferEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	// Instruct openGL that we won't bind a color texture with the currently binded FBO
+	glDrawBuffer( GL_NONE );
+	glReadBuffer( GL_NONE );
+
+	// attach the texture to FBO depth attachment point
+	glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D, this->m_shadowMap, 0 );
+	CHECK_FRAMEBUFFER_STATUS( status );
+	if ( GL_FRAMEBUFFER_COMPLETE_EXT != status )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glFramebufferTexture2DEXT error: " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	// switch back to window-system-provided framebuffer
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
+
+	this->m_progShadowMapping = Program::createProgram( );
+	if ( 0 == this->m_progShadowMapping )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping program - exit" << endl;
+		return false;
+	}
+
+	this->m_vertShaderhadowMapping = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/shadow/shadowVert.glsl" );
+	if ( 0 == this->m_vertShaderhadowMapping )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping vertex shader - exit" << endl;
+		return false;
+	}
+
+	this->m_fragShaderhadowMapping = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/shadow/shadowFrag.glsl" );
+	if ( 0 == this->m_fragShaderhadowMapping )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping fragment shader - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_vertShaderhadowMapping->compile() )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: geometry-stage vertex shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_fragShaderhadowMapping->compile() )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: geometry-stage fragment shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progShadowMapping->attachShader( this->m_vertShaderhadowMapping ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: attaching vertex shader to program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progShadowMapping->attachShader( this->m_fragShaderhadowMapping ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: attaching fragment shader to program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progShadowMapping->link() )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: linking program failed - exit" << endl;
+		return false;
+	}
+
 	cout << "Initializing Deferred Rendering Shadow-Mapping finished" << endl;
+
+	return true;
+}
+
+bool
+DRRenderer::initUniformBlocks()
+{
+	this->m_transformBlock = UniformBlock::createBlock( "transform" );
+	if ( 0 == this->m_transformBlock )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: creating uniform block failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool
+DRRenderer::renderInstances( std::list<Instance*>& instances )
+{
+	list<Instance*>::iterator iter = instances.begin();
+	while ( iter != instances.end() )
+	{
+		Instance* instance = *iter++;
+
+		Matrix transf( instance->transform.matrix.data );
+		transf.multiply( this->m_modelViewProjection );
+
+		if ( false == this->renderGeom( transf, instance->geom ) )
+			return false;
+	}
 
 	return true;
 }
