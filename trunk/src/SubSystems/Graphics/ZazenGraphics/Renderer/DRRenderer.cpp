@@ -24,16 +24,16 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
 
 	this->m_progGeomStage = 0;
-	this->m_vertShaderGeomStage = 0;
-	this->m_fragShaderGeomStage = 0;
+	this->m_vertGeomStage = 0;
+	this->m_fragGeomStage = 0;
 
 	this->m_progLightingStage = 0;
-	this->m_vertShaderLightingStage = 0;
-	this->m_fragShaderLightingStage = 0;
+	this->m_vertLightingStage = 0;
+	this->m_fragLightingStage = 0;
 
 	this->m_progShadowMapping = 0;
-	this->m_vertShaderhadowMapping = 0;
-	this->m_fragShaderhadowMapping = 0;
+	this->m_vertShadowMapping = 0;
+	this->m_fragShadowMapping = 0;
 
 	this->m_shadowMap = 0;
 	this->m_shadowMappingFB = 0;
@@ -50,21 +50,58 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
+	GLint status;
+
+	// calculate the model-view-projection matrix
+	this->m_modelViewProjection = this->camera.modelView.data;
+	this->m_modelViewProjection.multiply( this->camera.projection  );
+
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 0, 64) )
+		return false;
+
+	glUseProgram( 0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	glLoadMatrixf( this->camera.modelView.data );
+
 	//Rendering offscreen
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
-	if ( false == this->m_progShadowMapping->use() )
+	glClear( GL_DEPTH_BUFFER_BIT );
+	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+
+	if ( false == this->renderInstances( instances ) )
 		return false;
 
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	// clear window
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	/*
 	if ( false == this->m_progGeomStage->use() )
 	{
 		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
 		return false;
 	}
 
-	// seems also to work when not calling this method...
 	if ( false == this->m_transformBlock->bind( 0 ) )
 	{
 		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
@@ -72,16 +109,6 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	}
 
 	//GLenum buffers[MRT_COUNT];
-
-	// clear window
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-	// calculate the model-view-projection matrix
-	this->m_modelViewProjection = this->camera.modelView.data;
-	this->m_modelViewProjection.multiply( this->camera.projection  );
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 0, 64) )
-		return false;
 
 	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
@@ -109,14 +136,16 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	//glClear(GL_COLOR_BUFFER_BIT);
 
 	// activate drawing to targets
-	/*for ( int i = 0; i < MRT_COUNT; i++)
-		buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
-	glDrawBuffers(MRT_COUNT, buffers);
-	 */
+	//for ( int i = 0; i < MRT_COUNT; i++)
+	//	buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
+	//glDrawBuffers(MRT_COUNT, buffers);
+
 
 	// draw all geometry
 	if ( false == this->renderInstances( instances ) )
 		return false;
+*/
+	this->showShadowMap();
 
 	/*
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -131,24 +160,10 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 
 	// activate lighting-stage shader
 	//this->m_lightStageProg->activate();
-
-	// set up orthogonal projection to render quad
-	this->camera.setupOrtho();
-
-	// render quad
-	glBegin( GL_QUADS );
-		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 );
-		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() );
-		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth(), this->camera.getHeight() );
-		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth(), 0 );
-	glEnd();
+*/
 
 	// finish lighting stage
 	//this->m_lightStageProg->deactivate();
-
-	// switch back to perspective projection
-	this->camera.setupPerspective();
-*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -205,20 +220,20 @@ DRRenderer::shutdown()
 	// cleaning up shadow mapping
 	if ( this->m_progShadowMapping )
 	{
-		if ( this->m_vertShaderhadowMapping )
+		if ( this->m_vertShadowMapping )
 		{
-			this->m_progShadowMapping->detachShader( this->m_vertShaderhadowMapping );
+			this->m_progShadowMapping->detachShader( this->m_vertShadowMapping );
 
-			delete this->m_vertShaderhadowMapping;
-			this->m_vertShaderhadowMapping = NULL;
+			delete this->m_vertShadowMapping;
+			this->m_vertShadowMapping = NULL;
 		}
 
-		if ( this->m_fragShaderhadowMapping )
+		if ( this->m_fragShadowMapping )
 		{
-			this->m_progShadowMapping->detachShader( this->m_fragShaderhadowMapping );
+			this->m_progShadowMapping->detachShader( this->m_fragShadowMapping );
 
-			delete this->m_fragShaderhadowMapping;
-			this->m_fragShaderhadowMapping = NULL;
+			delete this->m_fragShadowMapping;
+			this->m_fragShadowMapping = NULL;
 		}
 
 		delete this->m_progShadowMapping;
@@ -228,20 +243,20 @@ DRRenderer::shutdown()
 	// cleaning up lighting stage
 	if ( this->m_progLightingStage )
 	{
-		if ( this->m_vertShaderLightingStage )
+		if ( this->m_vertLightingStage )
 		{
-			this->m_progLightingStage->detachShader( this->m_vertShaderLightingStage );
+			this->m_progLightingStage->detachShader( this->m_vertLightingStage );
 
-			delete this->m_vertShaderLightingStage;
-			this->m_vertShaderLightingStage = NULL;
+			delete this->m_vertLightingStage;
+			this->m_vertLightingStage = NULL;
 		}
 
-		if ( this->m_fragShaderLightingStage )
+		if ( this->m_fragLightingStage )
 		{
-			this->m_progLightingStage->detachShader( this->m_fragShaderLightingStage );
+			this->m_progLightingStage->detachShader( this->m_fragLightingStage );
 
-			delete this->m_fragShaderLightingStage;
-			this->m_fragShaderLightingStage = NULL;
+			delete this->m_fragLightingStage;
+			this->m_fragLightingStage = NULL;
 		}
 
 		delete this->m_progLightingStage;
@@ -251,20 +266,20 @@ DRRenderer::shutdown()
 	// cleaning up geometry-stage
 	if ( this->m_progGeomStage )
 	{
-		if ( this->m_vertShaderGeomStage )
+		if ( this->m_vertLightingStage )
 		{
-			this->m_progGeomStage->detachShader( this->m_vertShaderGeomStage );
+			this->m_progGeomStage->detachShader( this->m_vertLightingStage );
 
-			delete this->m_vertShaderGeomStage;
-			this->m_vertShaderGeomStage = NULL;
+			delete this->m_vertLightingStage;
+			this->m_vertLightingStage = NULL;
 		}
 
-		if ( this->m_fragShaderGeomStage )
+		if ( this->m_fragGeomStage )
 		{
-			this->m_progGeomStage->detachShader( this->m_fragShaderGeomStage );
+			this->m_progGeomStage->detachShader( this->m_fragGeomStage );
 
-			delete this->m_fragShaderGeomStage;
-			this->m_fragShaderGeomStage = NULL;
+			delete this->m_fragGeomStage;
+			this->m_fragGeomStage = NULL;
 		}
 
 		delete this->m_progGeomStage;
@@ -359,39 +374,39 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	this->m_vertShaderGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
-	if ( 0 == this->m_vertShaderGeomStage )
+	this->m_vertLightingStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
+	if ( 0 == this->m_vertLightingStage )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create vertex-shader - exit" << endl;
 		return false;
 	}
 
-	this->m_fragShaderGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/geomFrag.glsl" );
-	if ( 0 == this->m_fragShaderGeomStage )
+	this->m_fragGeomStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/geomFrag.glsl" );
+	if ( 0 == this->m_fragGeomStage )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create fragment-shader - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_vertShaderGeomStage->compile() )
+	if ( false == this->m_vertLightingStage->compile() )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: vertex shader compilation failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_fragShaderGeomStage->compile() )
+	if ( false == this->m_fragGeomStage->compile() )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: fragment shader compilation failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progGeomStage->attachShader( this->m_vertShaderGeomStage ) )
+	if ( false == this->m_progGeomStage->attachShader( this->m_vertLightingStage ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: attaching vertex shader to program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progGeomStage->attachShader( this->m_fragShaderGeomStage ) )
+	if ( false == this->m_progGeomStage->attachShader( this->m_fragGeomStage ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: attaching fragment shader to program failed - exit" << endl;
 		return false;
@@ -516,43 +531,43 @@ DRRenderer::initShadowMapping()
 	this->m_progShadowMapping = Program::createProgram( );
 	if ( 0 == this->m_progShadowMapping )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping program - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create program - exit" << endl;
 		return false;
 	}
 
-	this->m_vertShaderhadowMapping = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/shadow/shadowVert.glsl" );
-	if ( 0 == this->m_vertShaderhadowMapping )
+	this->m_vertShadowMapping = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/shadow/shadowVert.glsl" );
+	if ( 0 == this->m_vertShadowMapping )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping vertex shader - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create vertex shader - exit" << endl;
 		return false;
 	}
 
-	this->m_fragShaderhadowMapping = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/shadow/shadowFrag.glsl" );
-	if ( 0 == this->m_fragShaderhadowMapping )
+	this->m_fragShadowMapping = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/shadow/shadowFrag.glsl" );
+	if ( 0 == this->m_fragShadowMapping )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create shadow-mapping fragment shader - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create fragment shader - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_vertShaderhadowMapping->compile() )
+	if ( false == this->m_vertShadowMapping->compile() )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: geometry-stage vertex shader compilation failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: vertex shader compilation failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_fragShaderhadowMapping->compile() )
+	if ( false == this->m_fragShadowMapping->compile() )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: geometry-stage fragment shader compilation failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: fragment shader compilation failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progShadowMapping->attachShader( this->m_vertShaderhadowMapping ) )
+	if ( false == this->m_progShadowMapping->attachShader( this->m_vertShadowMapping ) )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: attaching vertex shader to program failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progShadowMapping->attachShader( this->m_fragShaderhadowMapping ) )
+	if ( false == this->m_progShadowMapping->attachShader( this->m_fragShadowMapping ) )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: attaching fragment shader to program failed - exit" << endl;
 		return false;
@@ -626,6 +641,42 @@ DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
 
 		return geom->render();
 	}
+
+	return true;
+}
+
+bool
+DRRenderer::showShadowMap()
+{
+	GLint status;
+
+	glUseProgram( 0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	// set up orthogonal projection to render quad
+	this->camera.setupOrtho();
+
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+
+	// render quad
+	glBegin( GL_QUADS );
+		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 );
+		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() );
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth(), this->camera.getHeight() );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth(), 0 );
+	glEnd();
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glDisable(GL_TEXTURE_2D);
+
+	// switch back to perspective projection
+	this->camera.setupPerspective();
 
 	return true;
 }

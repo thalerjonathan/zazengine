@@ -41,20 +41,20 @@ class DRRenderer : public Renderer
 
 	// Program and shaders for geometry-stage
 	Program* m_progGeomStage;
-	Shader* m_vertShaderGeomStage;
-	Shader* m_fragShaderGeomStage;
+	Shader* m_vertGeomStage;
+	Shader* m_fragGeomStage;
 	////////////////////////////////////////
 
 	// Program and shaders for lighting-stage
 	Program* m_progLightingStage;
-	Shader* m_vertShaderLightingStage;
-	Shader* m_fragShaderLightingStage;
+	Shader* m_vertLightingStage;
+	Shader* m_fragLightingStage;
 	////////////////////////////////////////
 
 	// Program and shaders for shadow-mapping
 	Program* m_progShadowMapping;
-	Shader* m_vertShaderhadowMapping;
-	Shader* m_fragShaderhadowMapping;
+	Shader* m_vertShadowMapping;
+	Shader* m_fragShadowMapping;
 
 	GLuint m_shadowMap;
 	GLuint m_shadowMappingFB;
@@ -78,6 +78,8 @@ class DRRenderer : public Renderer
 
 	bool renderInstances( std::list<Instance*>& instances );
 	bool renderGeom( Matrix& transf, GeomType* );
+
+	bool showShadowMap();
 
 };
 
