@@ -37,6 +37,32 @@ void Matrix::identiy()
 	this->data[15] = 1;
 }
 
+void Matrix::inverse()
+{
+	float inv[16]; // The inverse will go here
+
+	inv[0] = this->data[0];
+	inv[1] = this->data[4];
+	inv[2] = this->data[8];
+	inv[4] = this->data[1];
+	inv[5] = this->data[5];
+	inv[6] = this->data[9];
+	inv[8] = this->data[2];
+	inv[9] = this->data[6];
+	inv[10] = this->data[10];
+
+	inv[12] = inv[0]*-this->data[12]+inv[4]*-this->data[13]+inv[8]*-this->data[14];
+	inv[13] = inv[1]*-this->data[12]+inv[5]*-this->data[13]+inv[9]*-this->data[14];
+	inv[14] = inv[2]*-this->data[12]+inv[6]*-this->data[13]+inv[10]*-this->data[14];
+
+	inv[3] = 0.0f;
+	inv[7] = 0.0f;
+	inv[11] = 0.0f;
+	inv[15] = 1.0f;
+
+	memcpy(this->data,inv,64);
+}
+
 void Matrix::transpose3x3()
 {
 	float tmp = this->data[1];
