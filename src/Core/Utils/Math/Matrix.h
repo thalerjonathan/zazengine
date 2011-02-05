@@ -15,6 +15,7 @@ public:
 	
 	void set(float*);
 	
+	void inverse();
 	void identiy();
 	void transpose3x3();
 	
