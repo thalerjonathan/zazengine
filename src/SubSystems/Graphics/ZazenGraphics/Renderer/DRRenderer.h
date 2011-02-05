@@ -11,8 +11,8 @@
 // number of rendering targets for deferred renderer
 #define MRT_COUNT 4
 
-#define SHADOW_MAP_WIDTH 	2048
-#define SHADOW_MAP_HEIGHT	2048
+#define SHADOW_MAP_WIDTH 	800
+#define SHADOW_MAP_HEIGHT	600
 
 #include "Renderer.h"
 

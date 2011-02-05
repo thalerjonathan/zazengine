@@ -25,6 +25,7 @@ class Program
 
 	bool setUniformMatrix4( const std::string& name, const float* );
 	bool setUniform4( const std::string& name, const float* );
+	bool setUniformInt( const std::string& name, int );
 
 	bool bindUniformBlock( UniformBlock* );
 
