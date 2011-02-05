@@ -95,21 +95,6 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	// clear window
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	/*
-	if ( false == this->m_progGeomStage->use() )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_transformBlock->bind( 0 ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
-		return false;
-	}
-
-	//GLenum buffers[MRT_COUNT];
-
 	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
 	glBegin(GL_LINES);
@@ -129,6 +114,31 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 		glVertex3f(0, 0, -100);
 	glEnd();
 
+	if ( false == this->m_progGeomStage->use() )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
+	// update the shadow-transform matrix
+	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 64, 64) )
+		return false;
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
+		return false;
+
+	//GLenum buffers[MRT_COUNT];
+
 	//  start geometry pass
 	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
 
@@ -144,7 +154,7 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	// draw all geometry
 	if ( false == this->renderInstances( instances ) )
 		return false;
-*/
+
 	this->showShadowMap();
 
 	/*
@@ -450,7 +460,8 @@ DRRenderer::initLightingStage()
 
 	this->m_light = new Light();
 
-	this->m_light->viewingTransf.setPosition( 0, 500, 0 );
+	this->m_light->viewingTransf.setPosition( 0, 50, 50 );
+	this->m_light->viewingTransf.changePitch( -0.3 );
 
 	cout << "Initializing Deferred Rendering Lighting-Stage finished" << endl;
 
@@ -488,7 +499,7 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::glTexImage2D: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -611,10 +622,7 @@ DRRenderer::renderInstances( std::list<Instance*>& instances )
 	{
 		Instance* instance = *iter++;
 
-		Matrix transf( instance->transform.matrix.data );
-		transf.multiply( this->m_modelViewProjection );
-
-		if ( false == this->renderGeom( transf, instance->geom ) )
+		if ( false == this->renderGeom( instance->transform.matrix, instance->geom ) )
 			return false;
 	}
 
@@ -633,10 +641,16 @@ DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
 	}
 	else
 	{
-		Matrix mat( geom->model_transf );
-		mat.multiply( transf );
+		Matrix mat( this->camera.modelView );
+		mat.multiplyInv( geom->model_transf );
+		mat.multiplyInv( transf );
 
-		if ( false == this->m_transformBlock->updateData( mat.data, 0, 64) )
+		Matrix mvpTransf( transf );
+		mvpTransf.multiplyInv( this->m_modelViewProjection );
+
+		glLoadMatrixf( mat.data );
+
+		if ( false == this->m_transformBlock->updateData( mvpTransf.data, 0, 64) )
 			return false;
 
 		return geom->render();
@@ -660,16 +674,16 @@ DRRenderer::showShadowMap()
 	// set up orthogonal projection to render quad
 	this->camera.setupOrtho();
 
-	glEnable(GL_TEXTURE_2D);
+	glEnable( GL_TEXTURE_2D );
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 
 	// render quad
 	glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 );
-		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() );
-		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth(), this->camera.getHeight() );
-		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth(), 0 );
+		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() / 2 );
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth() / 2, this->camera.getHeight() / 2 );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth() / 2, 0 );
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );

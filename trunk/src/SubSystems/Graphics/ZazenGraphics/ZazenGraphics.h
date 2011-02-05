@@ -17,13 +17,6 @@
 
 #include <SDL/SDL.h>
 
-/* TODO:
- * - switch to opengl3.3 CORE (no more compatibility)
- * - basic rendering pipeline with opengl3.3:
- * 		- vertex-shader with GLSL 3.3 (input-blocks)
- * 		- fragment-shader with GLSL 3.3 (output to a framebuffer)
- */
-
 class ZazenGraphics : public IGraphics
 {
 	public:

@@ -206,6 +206,24 @@ Program::setUniform4( const std::string& name, const float* value )
 }
 
 bool
+Program::setUniformInt( const std::string& name, int value )
+{
+	GLint status;
+	GLint location = this->getUniformLocation( name );
+	if ( -1 == location )
+		return false;
+
+	glUniform1i( location, value );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "glUniform1i failed for " << name << ": " << gluErrorString( status )  << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool
 Program::setUniformMatrix4( const std::string& name, const float* value )
 {
 	GLint status;

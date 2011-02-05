@@ -56,8 +56,10 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	*/
 	
 	this->camera = new Camera( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPosition( 0, 10, 40 );
-	this->camera->changePitch( -0.2 );
+	//this->camera->setPosition( 0, 10, 40 );
+	//this->camera->changePitch( -0.2 );
+	//this->camera->setPosition( 0, 0, 0 );
+	//this->camera->changePitch( -0.3 );
 	
 	this->activeScene = new Scene( "NullScene", this->camera );
 

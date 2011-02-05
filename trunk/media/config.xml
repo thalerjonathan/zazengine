@@ -12,11 +12,16 @@
 		<subSystem file="media/input/config.xml"/>
 	</subSystemList>
 	
-	
 	<objectList>
-		<object name="Chess1">
+		<object name="House">
 			<graphics>
 				<instance class="ClassHouseJapan" x="0" y="0" z="0"/>
+			</graphics>
+		</object>
+		
+		<object name="Terrain">
+			<graphics>
+				<instance class="ClassTerrain" x="0" y="0" z="0"/>
 			</graphics>
 		</object>
 	</objectList>

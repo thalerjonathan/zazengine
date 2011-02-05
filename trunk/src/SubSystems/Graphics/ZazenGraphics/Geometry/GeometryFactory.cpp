@@ -419,7 +419,6 @@ GeometryFactory::load3DS(const std::string& fileName)
     return geomGroup;
 }
 
-// TODO: rework, not properly working?
 GeomType*
 GeometryFactory::loadMs3D(const std::string& fileName)
 {
@@ -443,7 +442,7 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 	long fileSize = fileStream.tellg();
 	fileStream.seekg( 0, ios::beg );
 
-	char* buffer = (char*) malloc(sizeof(char) * fileSize);
+	char* buffer = (char*) malloc( sizeof(char) * fileSize );
 	fileStream.read(buffer, fileSize);
 	fileStream.close();
 
@@ -482,14 +481,14 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 			vertexData[ i ].position[ j ] = vertex->vertex[ j ];
 		}
 		
-		bufferPointer += sizeof(MilkshapeVertex);
+		bufferPointer += sizeof( MilkshapeVertex );
 	}
-
-	indexBuffer = new GLuint[ numTriangles * 3 ];
-	memset( indexBuffer, 0, sizeof( GLuint ) * numTriangles * 3 );
 
 	numTriangles = *((word*) bufferPointer);
 	bufferPointer += 2;
+
+	indexBuffer = new GLuint[ numTriangles * 3 ];
+	memset( indexBuffer, 0, sizeof( GLuint ) * numTriangles * 3 );
 
 	for (int i = 0; i < numTriangles; i++)
 	{
@@ -501,7 +500,7 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 			//vertexData[ i * 3 + j ].normal[ j ] = triangle->vertexNormals[ j ][ j ];
 		}
 
-		bufferPointer += sizeof(MilkshapeTriangle);
+		bufferPointer += sizeof( MilkshapeTriangle );
 	}
 	
 	geom = new GeomMesh( numVertices, numTriangles, vertexData, indexBuffer );
@@ -611,7 +610,7 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 	delete[] triangles;
 	*/
 
-	delete buffer;
+	free( buffer );
 	
 	cout << "LOADED ... " << fileName << endl;
 
