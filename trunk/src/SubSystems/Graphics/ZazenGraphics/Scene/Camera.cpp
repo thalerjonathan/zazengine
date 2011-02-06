@@ -12,6 +12,7 @@
 using namespace std;
 
 Camera::Camera(float angle, int width, int height)
+	: Orientation( m_viewingMatrix )
 {
 	this->width = width;
 	this->height = height;
