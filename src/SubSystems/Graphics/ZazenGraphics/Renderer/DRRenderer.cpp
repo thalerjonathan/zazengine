@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #include "SDL/SDL.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "DRRenderer.h"
 #include "../Material/UniformBlock.h"
 
@@ -41,7 +43,15 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 
 	this->m_light = 0;
 
+	float* data = glm::value_ptr( this->m_unitCubeMatrix );
 
+	float unitCube[] = {
+			0.5, 0.0, 0.0, 0.0,
+			0.0, 0.5, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0};
+
+	memcpy( data, unitCube, sizeof(unitCube) );
 }
 
 DRRenderer::~DRRenderer()
@@ -53,11 +63,18 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	GLint status;
 
-	// calculate the model-view-projection matrix
+	// calculate the view-projection matrix
 	this->m_viewProjection = this->camera.m_projectionMatrix * this->camera.m_viewingMatrix;
+
+	// calculate the light-space projection matrix
+	this->m_lightSpace = this->m_viewProjection * this->m_unitCubeMatrix;
 
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_transformBlock->updateData( &this->m_viewProjection[ 0 ][ 0 ], 0, 64) )
+		return false;
+
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_transformBlock->updateData( &this->m_lightSpace[ 0 ][ 0 ], 64, 64) )
 		return false;
 
 	glUseProgram( 0 );
@@ -156,7 +173,7 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderInstances( instances ) )
 		return false;
 
-	this->showShadowMap();
+	//this->showShadowMap();
 
 	/*
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);

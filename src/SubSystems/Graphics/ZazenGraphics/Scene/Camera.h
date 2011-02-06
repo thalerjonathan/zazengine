@@ -3,16 +3,18 @@
 
 #include <glm/glm.hpp>
 
+#include "../../../../Core/Utils/Math/Orientation.h"
+
 enum CullResult {
 	INSIDE = 0,
 	OUTSIDE,
 	INTERSECTING
 };
 
-class Camera
+class Camera : public Orientation
 {
  public:
-	Camera(float, int, int);
+	Camera( float, int, int );
 	~Camera();
 
 	glm::mat4 m_viewingMatrix;
@@ -21,11 +23,8 @@ class Camera
     void setupPerspective();
     void setupOrtho();
 
-    glm::vec3 getPosition();
-
     int getHeight() { return this->height; };
     int getWidth() { return this->width; };
-
 
 	void changeNearClip(float);
 	void changeFarClip(float);
@@ -34,16 +33,6 @@ class Camera
 	void changeFov(float);
 	
 	/*
-	void setPosition(float, float, float);
-
-	void changeHeading(float);
-	void changePitch(float);
-	void changeRoll(float);
-	void strafeForward(float);
-	void strafeRight(float);
-	void strafeUp(float);
-	void strafe(float*, float);
-
 	CullResult cullBB( const glm::vec3&, const glm::vec3& );
 	CullResult cullSphere( const glm::vec3&, float );
 	*/

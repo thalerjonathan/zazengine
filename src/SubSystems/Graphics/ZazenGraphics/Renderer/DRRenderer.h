@@ -70,6 +70,7 @@ class DRRenderer : public Renderer
 
 	glm::mat4 m_viewProjection;
 
+	glm::mat4 m_unitCubeMatrix;
 	glm::mat4 m_lightSpace;
 
 	bool initFBO();
