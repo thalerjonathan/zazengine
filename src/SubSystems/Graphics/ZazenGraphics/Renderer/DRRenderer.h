@@ -68,7 +68,9 @@ class DRRenderer : public Renderer
 	Light* m_light;
 	////////////////////////////////////////
 
-	Matrix m_modelViewProjection;
+	glm::mat4 m_viewProjection;
+
+	glm::mat4 m_lightSpace;
 
 	bool initFBO();
 	bool initGeomStage();
@@ -77,7 +79,7 @@ class DRRenderer : public Renderer
 	bool initUniformBlocks();
 
 	bool renderInstances( std::list<Instance*>& instances );
-	bool renderGeom( Matrix& transf, GeomType* );
+	bool renderGeom( Instance*, GeomType* );
 
 	bool showShadowMap();
 

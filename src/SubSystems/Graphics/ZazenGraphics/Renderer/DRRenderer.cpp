@@ -7,7 +7,6 @@
 
 #include <GL/glew.h>
 #include "SDL/SDL.h"
-#include <glm/glm.hpp>
 
 #include "DRRenderer.h"
 #include "../Material/UniformBlock.h"
@@ -41,6 +40,8 @@ DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
 	this->m_transformBlock = 0;
 
 	this->m_light = 0;
+
+
 }
 
 DRRenderer::~DRRenderer()
@@ -53,11 +54,10 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	GLint status;
 
 	// calculate the model-view-projection matrix
-	this->m_modelViewProjection = this->camera.modelView.data;
-	this->m_modelViewProjection.multiply( this->camera.projection  );
+	this->m_viewProjection = this->camera.m_projectionMatrix * this->camera.m_viewingMatrix;
 
 	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 0, 64) )
+	if ( false == this->m_transformBlock->updateData( &this->m_viewProjection[ 0 ][ 0 ], 0, 64) )
 		return false;
 
 	glUseProgram( 0 );
@@ -67,7 +67,7 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 		return false;
 	}
 
-	glLoadMatrixf( this->camera.modelView.data );
+	glLoadMatrixf( &this->camera.m_viewingMatrix[ 0 ][ 0 ] );
 
 	//Rendering offscreen
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
@@ -95,6 +95,19 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	// clear window
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+
+	if ( false == this->m_progGeomStage->use() )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
 	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
 	glBegin(GL_LINES);
@@ -114,20 +127,8 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 		glVertex3f(0, 0, -100);
 	glEnd();
 
-	if ( false == this->m_progGeomStage->use() )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_transformBlock->bind( 0 ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
-		return false;
-	}
-
 	// update the shadow-transform matrix
-	if ( false == this->m_transformBlock->updateData( this->m_modelViewProjection.data, 64, 64) )
+	if ( false == this->m_transformBlock->updateData( &this->m_lightSpace[ 0 ][ 0 ], 64, 64) )
 		return false;
 
 	glActiveTexture( GL_TEXTURE0 );
@@ -622,7 +623,7 @@ DRRenderer::renderInstances( std::list<Instance*>& instances )
 	{
 		Instance* instance = *iter++;
 
-		if ( false == this->renderGeom( instance->transform.matrix, instance->geom ) )
+		if ( false == this->renderGeom( instance, instance->geom ) )
 			return false;
 	}
 
@@ -630,27 +631,25 @@ DRRenderer::renderInstances( std::list<Instance*>& instances )
 }
 
 bool
-DRRenderer::renderGeom( Matrix& transf, GeomType* geom )
+DRRenderer::renderGeom( Instance* parent, GeomType* geom )
 {
 	if ( geom->children.size() )
 	{
 		for ( unsigned int i = 0; i < geom->children.size(); i++ )
 		{
-			return this->renderGeom( transf, geom->children[ i ] );
+			return this->renderGeom( parent, geom->children[ i ] );
 		}
 	}
 	else
 	{
-		Matrix mat( this->camera.modelView );
-		mat.multiplyInv( geom->model_transf );
-		mat.multiplyInv( transf );
+		// no projection for fixed functionality - already there
+		glm::mat4 mat = this->camera.m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
 
-		Matrix mvpTransf( transf );
-		mvpTransf.multiplyInv( this->m_modelViewProjection );
+		glm::mat4 mvp = this->m_viewProjection * *parent->m_modelMatrix * geom->m_modelMatrix;
 
-		glLoadMatrixf( mat.data );
+		glLoadMatrixf( &mat[ 0 ][ 0 ] );
 
-		if ( false == this->m_transformBlock->updateData( mvpTransf.data, 0, 64) )
+		if ( false == this->m_transformBlock->updateData( &mvp[ 0 ][ 0 ], 0, 64) )
 			return false;
 
 		return geom->render();

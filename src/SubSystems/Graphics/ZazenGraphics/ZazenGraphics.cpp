@@ -8,6 +8,7 @@
 #include "ZazenGraphics.h"
 
 #include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Geometry/GeometryFactory.h"
 
@@ -131,7 +132,7 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
-	return this->activeScene->load(false, 0, 0, 0);
+	return this->activeScene->load();
 }
 
 bool
@@ -188,6 +189,7 @@ ZazenGraphics::finalizeProcess()
 bool
 ZazenGraphics::sendEvent( Event& e )
 {
+	/*
 	if ( e == "SDLK_RIGHT" )
 	{
 		this->camera->changeHeading( -0.005 * this->lastItFact );
@@ -220,6 +222,7 @@ ZazenGraphics::sendEvent( Event& e )
 	{
 		this->camera->changeRoll( 0.005 * this->lastItFact );
 	}
+	*/
 
 	return true;
 }
@@ -237,9 +240,9 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 		return 0;
 	}
 
-	Vector v;
+	glm::vec3 v;
 	entity->instance = new Scene::InstanceDefinition();
-	entity->instance->transform = new Transform();
+	entity->instance->modelMatrix = new glm::mat4();
 
 	const char* str = instanceNode->Attribute( "class" );
 	if ( 0 != str )
@@ -250,24 +253,24 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	str = instanceNode->Attribute( "x" );
 	if ( 0 != str )
 	{
-		v.data[0] = atof( str );
+		v[ 0 ] = atof( str );
 	}
 
 	str = instanceNode->Attribute( "y" );
 	if ( 0 != str )
 	{
-		v.data[1] = atof( str );
+		v[ 1 ] = atof( str );
 	}
 
 	str = instanceNode->Attribute( "z" );
 	if ( 0 != str )
 	{
-		v.data[2] = atof( str );
+		v[ 2 ] = atof( str );
 	}
 
 	entity->instance->size = 1.0;
 
-	entity->instance->transform->setPosition(v);
+	*entity->instance->modelMatrix = glm::translate( glm::mat4(1.0f), v );
 
 	this->activeScene->addInstance( entity->instance );
 

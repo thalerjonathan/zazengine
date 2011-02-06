@@ -15,7 +15,7 @@ class Instance
 
 	GeomType* geom;
 
-	Transform transform;
+	glm::mat4* m_modelMatrix;
 
 	float recalculateDistance();
 

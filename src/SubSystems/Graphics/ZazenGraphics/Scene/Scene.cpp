@@ -1,15 +1,6 @@
 #include "Scene.h"
 
-#ifdef OCCLUSION_CULLING
-	#include "../Renderer/OCRenderer.h"
-#elif SFX_RENDERING
-	#include "../Renderer/SFXRenderer.h"
-#elif DR_RENDERING
-	#include "../Renderer/DRRenderer.h"
-#else
-	#include "../Renderer/StandardRenderer.h"
-#endif
-
+#include "../Renderer/DRRenderer.h"
 #include "../Geometry/GeometryFactory.h"
 
 #include <iostream>
@@ -30,20 +21,12 @@ Scene::~Scene()
 }
 
 bool
-Scene::load(bool randomizeInstances, int rows, int columns, int density)
+Scene::load()
 {
 	if (this->renderer)
 		delete this->renderer;
 
-#ifdef OCCLUSION_CULLING
-	this->renderer = new OCRenderer(*this->camera, this->skyBoxFolder);
-#elif SFX_RENDERING
-	this->renderer = new SFXRenderer(*this->camera, this->skyBoxFolder);
-#elif DR_RENDERING
-	this->renderer = new DRRenderer(*this->camera, this->skyBoxFolder);
-#else
-	this->renderer = new StandardRenderer( *this->camera, this->skyBoxFolder );
-#endif
+	this->renderer = new DRRenderer( *this->camera, this->skyBoxFolder );
 	
 	if ( false == this->renderer->initialize() )
 	{
@@ -75,31 +58,16 @@ Scene::load(bool randomizeInstances, int rows, int columns, int density)
 		}
 
 		Instance* newInstance = new Instance( model );
-		newInstance->transform.matrix = instanceDef->transform->matrix;
+		newInstance->m_modelMatrix = instanceDef->modelMatrix;
 
 		this->instances.push_back( newInstance );
 	}
 		
-	this->sceneMeasures.data[0] = this->sceneBBMax[0] - this->sceneBBMin[0];
-	this->sceneMeasures.data[1] = this->sceneBBMax[1] - this->sceneBBMin[1];
-	this->sceneMeasures.data[2] = this->sceneBBMax[2] - this->sceneBBMin[2];
-	
 	return true;
 }
 
-void
-Scene::setSceneBB(const Vector& sceneBBMin, const Vector& sceneBBMax)
-{
-	this->sceneBBMax = sceneBBMax;
-	this->sceneBBMin = sceneBBMin;
-
-	this->sceneMeasures.data[0] = this->sceneBBMax[0] - this->sceneBBMin[0];
-	this->sceneMeasures.data[1] = this->sceneBBMax[1] - this->sceneBBMin[1];
-	this->sceneMeasures.data[2] = this->sceneBBMax[2] - this->sceneBBMin[2];
-}
-
 bool
-Scene::processFrame(double loopFactor)
+Scene::processFrame( double loopFactor )
 {	
 	return this->renderer->renderFrame( this->instances );
 }

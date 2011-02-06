@@ -32,19 +32,19 @@ bool
 GeomSkyBox::render()
 {
 //	GeomType::render();
-
+/*
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	float xPos = this->cam.modelView.data[12];
-	float yPos = this->cam.modelView.data[13];
-	float zPos = this->cam.modelView.data[14];
+	float xPos = this->cam.viewingMatrix[12];
+	float yPos = this->cam.viewingMatrix.data[13];
+	float zPos = this->cam.viewingMatrix.data[14];
 
-	this->cam.modelView.data[12] = 0;
-	this->cam.modelView.data[13] = 0;
-	this->cam.modelView.data[14] = 0;
+	this->cam.viewingMatrix.data[12] = 0;
+	this->cam.viewingMatrix.data[13] = 0;
+	this->cam.viewingMatrix.data[14] = 0;
 
-	glLoadMatrixf(this->cam.modelView.data);
+	glLoadMatrixf(this->cam.viewingMatrix.data);
 
 	// Front Face
 	this->east->activate();
@@ -106,15 +106,16 @@ GeomSkyBox::render()
 	glEnd();
 	this->north->deactivate();
 
-	this->cam.modelView.data[12] = xPos;
-	this->cam.modelView.data[13] = yPos;
-	this->cam.modelView.data[14] = zPos;
+	this->cam.viewingMatrix.data[12] = xPos;
+	this->cam.viewingMatrix.data[13] = yPos;
+	this->cam.viewingMatrix.data[14] = zPos;
 
-	glLoadMatrixf(this->cam.modelView.data);
+	glLoadMatrixf(this->cam.viewingMatrix.data);
 
 	// activate z-buffering and face culling
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+*/
 
 	return true;
 }

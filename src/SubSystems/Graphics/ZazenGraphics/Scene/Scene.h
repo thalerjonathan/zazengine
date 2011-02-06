@@ -19,17 +19,16 @@ class Scene
 	 typedef struct {
 		 std::string entity;
 		 float size;
-		 Transform* transform;
+		 glm::mat4* modelMatrix; // is contained within a graphics entity and allows the instance to be moved externally
 	 } InstanceDefinition;
 
 	 Scene( const std::string&, Camera* );
 	 ~Scene();
 	 
 	 void setSkyBoxFolder( std::string& f ) { this->skyBoxFolder = f; };
-	 void setSceneBB( const Vector& sceneBBMin, const Vector& sceneBBMax );
 
 	 bool processFrame( double );
-	 bool load( bool, int, int, int );
+	 bool load();
 	 
 	 void addEntity( EntityDefinition& e ) { this->entitiesDef[e.name] = e; };
 	 void addInstance( InstanceDefinition* i ) { this->instanceDef.push_back(i); };
@@ -39,17 +38,13 @@ class Scene
  private:
 	 const std::string name;
 	 
-	 Vector sceneBBMin;
-	 Vector sceneBBMax;
-	 Vector sceneMeasures;
+	 Camera* camera;
+	 Renderer* renderer;
 
 	 std::string skyBoxFolder;
 
 	 std::map<std::string, EntityDefinition> entitiesDef;
 	 std::vector<InstanceDefinition*> instanceDef;
-	 
-	 Camera* camera;
-	 Renderer* renderer;
 
 	 std::list<Instance*> instances;
 

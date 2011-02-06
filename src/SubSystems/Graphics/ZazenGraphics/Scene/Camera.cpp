@@ -1,6 +1,9 @@
-#include <GL/glew.h>
-#include <SDL/SDL.h>
 #include "Camera.h"
+
+#include <GL/glew.h>
+
+#include <glm/gtc/matrix_projection.hpp>
+
 #include <math.h>
 #include <iostream>
 
@@ -26,14 +29,15 @@ Camera::~Camera()
 {
 }
 
-void Camera::setupPerspective()
+void
+Camera::setupPerspective()
 {
-	glMatrixMode(GL_PROJECTION);
+	this->m_projectionMatrix = glm::perspective( this->angle, this->ratio, this->nearDist, this->farDist );
+
+	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	gluPerspective(this->angle, this->ratio, this->nearDist, this->farDist);
-
-	glGetFloatv(GL_PROJECTION_MATRIX, this->projection);
+	glLoadMatrixf( &this->m_projectionMatrix[ 0 ][ 0 ] );
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -41,49 +45,52 @@ void Camera::setupPerspective()
 
 void Camera::setupOrtho()
 {
-	glMatrixMode(GL_PROJECTION);
+	this->m_projectionMatrix = glm::ortho( 0.0f, this->width, this->height, 0.0f, -1.0f, 1.0f );
+
+	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	// need orthogonal projection with the plane matching the width and height of our viewport
-	glOrtho(0.0f, this->width, this->height, 0.0f, -1.0f, 1.0f);
+	glLoadMatrixf( &this->m_projectionMatrix[ 0 ][ 0 ] );
 
-	glGetFloatv(GL_PROJECTION_MATRIX, this->projection);
-
-	// reset the modelview matrix
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
 
-void Camera::changeNearClip(float dist)
+void
+Camera::changeNearClip(float dist)
 {
 	this->nearDist = dist;
 	
 	this->setupPerspective();
 }
 
-void Camera::changeFarClip(float dist)
+void
+Camera::changeFarClip(float dist)
 {
 	this->farDist = dist;
 	
 	this->setupPerspective();
 }
 
-void Camera::resize(int width, int height)
+void
+Camera::resize(int width, int height)
 {
 	this->ratio = (float) width / (float) height;
 	
 	this->setupPerspective();
 }
 
-void Camera::changeFov(float angle)
+void
+Camera::changeFov(float angle)
 {
 	this->angle = angle;
 	
 	this->setupPerspective();
 }
 
-// culling occurs in worldspace
-CullResult Camera::cullBB(const Vector& bbMin, const Vector& bbMax)
+/*
+CullResult
+Camera::cullBB(const Vector& bbMin, const Vector& bbMax)
 {
 	return INSIDE;
 
@@ -120,7 +127,8 @@ CullResult Camera::cullBB(const Vector& bbMin, const Vector& bbMax)
 	return (c2 == 6) ? INSIDE : INTERSECTING;
 }
 
-CullResult Camera::cullSphere(const Vector& pos, float radius)
+CullResult
+Camera::cullSphere(const Vector& pos, float radius)
 {
 	int c = 0;
 	float d;
@@ -136,59 +144,61 @@ CullResult Camera::cullSphere(const Vector& pos, float radius)
 	return (c == 6) ? INSIDE : INTERSECTING;
 }
 
-Vector Camera::getPosition()
+
+Vector
+Camera::getPosition()
 {
-	return Vector(this->modelView.data[12], this->modelView.data[13], this->modelView.data[14]);
+	return Vector( this->viewingMatrix.data[12], this->viewingMatrix.data[13], this->viewingMatrix.data[14] );
 }
 
-void Camera::setPosition(float x, float y, float z)
+void Camera::setPosition( float x, float y, float z )
 {
 	// inverse: change the sign
-	this->modelView.data[12] = -x;
-	this->modelView.data[13] = -y;
-	this->modelView.data[14] = -z;
+	this->viewingMatrix.data[12] = -x;
+	this->viewingMatrix.data[13] = -y;
+	this->viewingMatrix.data[14] = -z;
 	
 	//this->recalculateFrustum();
 }
 
 void Camera::changePitch(float angle)
 {
-	this->modelView.rotateInverse(1, 0, 0, angle);
+	this->viewingMatrix.rotateInverse(1, 0, 0, angle);
 	
 	this->recalculateFrustum();
 }
 
 void Camera::changeHeading(float angle)
 {	
-	this->modelView.rotateInverse(0, 1, 0, angle);
+	this->viewingMatrix.rotateInverse(0, 1, 0, angle);
 	
 	this->recalculateFrustum();
 }
 
 void Camera::changeRoll(float angle)
 {
-	this->modelView.rotateInverse(0, 0, 1, angle);
+	this->viewingMatrix.rotateInverse(0, 0, 1, angle);
 	
 	this->recalculateFrustum();
 }
 
 void Camera::strafeForward(float units)
 {
-	this->modelView.data[14] += units;
+	this->viewingMatrix.data[14] += units;
 	
 	this->recalculateFrustum();
 }
 
 void Camera::strafeRight(float units)
 {
-	this->modelView.data[12] += units;
+	this->viewingMatrix.data[12] += units;
 	
 	this->recalculateFrustum();
 }
 
 void Camera::strafeUp(float units)
 {
-	this->modelView.data[13] += units;
+	this->viewingMatrix.data[13] += units;
 	
 	this->recalculateFrustum();
 }
@@ -196,10 +206,10 @@ void Camera::strafeUp(float units)
 void Camera::recalculateFrustum()
 {
 	float t;
-	Matrix clip(this->modelView);
+	Matrix clip(this->viewingMatrix);
 	clip.multiply(this->projection);
 		
-	/* RIGHT plane */
+	// RIGHT plane
 	this->frustum[0][0] = clip[3] - clip[0];
 	this->frustum[0][1] = clip[7] - clip[4];
 	this->frustum[0][2] = clip[11] - clip[8];
@@ -211,7 +221,7 @@ void Camera::recalculateFrustum()
 	this->frustum[0][2] *= t;
 	this->frustum[0][3] *= t;
 
-	/* LEFT plane */
+	// LEFT plane
 	this->frustum[1][0] = clip[3] + clip[0];
 	this->frustum[1][1] = clip[7] + clip[4];
 	this->frustum[1][2] = clip[11] + clip[8];
@@ -223,7 +233,7 @@ void Camera::recalculateFrustum()
 	this->frustum[1][2] *= t;
 	this->frustum[1][3] *= t;
 
-	/* BOTTOM plane */
+	// BOTTOM plane
 	this->frustum[2][0] = clip[3] + clip[1];
 	this->frustum[2][1] = clip[7] + clip[5];
 	this->frustum[2][2] = clip[11] + clip[9];
@@ -235,7 +245,7 @@ void Camera::recalculateFrustum()
 	this->frustum[2][2] *= t;
 	this->frustum[2][3] *= t;
 
-	/* TOP plane */
+	// TOP plane
 	this->frustum[3][0] = clip[3] - clip[1];
 	this->frustum[3][1] = clip[7] - clip[5];
 	this->frustum[3][2] = clip[11] - clip[9];
@@ -247,7 +257,7 @@ void Camera::recalculateFrustum()
 	this->frustum[3][2] *= t;
 	this->frustum[3][3] *= t;
 
-	/* FAR plane */
+	// FAR plane
 	this->frustum[4][0] = clip[3] - clip[2];
 	this->frustum[4][1] = clip[7] - clip[6];
 	this->frustum[4][2] = clip[11] - clip[10];
@@ -259,7 +269,7 @@ void Camera::recalculateFrustum()
 	this->frustum[4][2] *= t;
 	this->frustum[4][3] *= t;
 
-	/* NEAR plane */
+	// NEAR plane
 	this->frustum[5][0] = clip[3] + clip[2];
 	this->frustum[5][1] = clip[7] + clip[6];
 	this->frustum[5][2] = clip[11] + clip[10];
@@ -271,7 +281,6 @@ void Camera::recalculateFrustum()
 	this->frustum[5][2] *= t;
 	this->frustum[5][3] *= t;
 
-	/*
 	cout << "RIGHT Plane" << endl;
 	cout << this->frustum[0][0] << "/" << this->frustum[0][1] << "/" << this->frustum[0][2] << ") d=" << this->frustum[0][3] << endl;
 
@@ -289,5 +298,6 @@ void Camera::recalculateFrustum()
 
 	cout << "NEAR Plane" << endl;
 	cout << this->frustum[5][0] << "/" << this->frustum[5][1] << "/" << this->frustum[5][2] << ") d=" << this->frustum[5][3] << endl;
-	*/
+
 }
+*/

@@ -1,8 +1,7 @@
 #ifndef CAMERA_H_
 #define CAMERA_H_
 
-#include "../../../../Core/Utils/Math/Vector.h"
-#include "../../../../Core/Utils/Math/Matrix.h"
+#include <glm/glm.hpp>
 
 enum CullResult {
 	INSIDE = 0,
@@ -16,29 +15,17 @@ class Camera
 	Camera(float, int, int);
 	~Camera();
 
-	// the modelviewmatrix for the worldtransform
-    Matrix modelView;
-
-    // the projectionmatrix
-    float projection[16];
+	glm::mat4 m_viewingMatrix;
+	glm::mat4 m_projectionMatrix;
 
     void setupPerspective();
     void setupOrtho();
 
-    Vector getPosition();
+    glm::vec3 getPosition();
 
     int getHeight() { return this->height; };
     int getWidth() { return this->width; };
 
-	void setPosition(float, float, float);
-
-	void changeHeading(float); /**< \brief Changes heading of object (i.e. turn left-right) */
-	void changePitch(float); /**< \brief Changes Pitch of object (i.e.up-down) */
-	void changeRoll(float); /**< \brief Changes roll of object (i.e. roll left-right) */
-	void strafeForward(float); /**< \brief Moves the object forward */
-	void strafeRight(float); /**< \brief Moves the object to its right */
-	void strafeUp(float); /**< \brief Moves the object upwards */
-	void strafe(float*, float); /**< \brief Moves the object into given direction */
 
 	void changeNearClip(float);
 	void changeFarClip(float);
@@ -46,12 +33,24 @@ class Camera
 	void resize(int, int);
 	void changeFov(float);
 	
-	CullResult cullBB(const Vector&, const Vector&);
-	CullResult cullSphere(const Vector&, float);
+	/*
+	void setPosition(float, float, float);
+
+	void changeHeading(float);
+	void changePitch(float);
+	void changeRoll(float);
+	void strafeForward(float);
+	void strafeRight(float);
+	void strafeUp(float);
+	void strafe(float*, float);
+
+	CullResult cullBB( const glm::vec3&, const glm::vec3& );
+	CullResult cullSphere( const glm::vec3&, float );
+	*/
 	
  private:
-	int width;
-	int height;
+	float width;
+	float height;
 
 	float angle;
 	float ratio;
