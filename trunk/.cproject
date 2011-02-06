@@ -25,9 +25,7 @@
 							<tool command="g++" id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.813905546" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug">
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.1826558440" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.1161671274" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.1212033056" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="DR_RENDERING"/>
-								</option>
+								<option id="gnu.cpp.compiler.option.preprocessor.def.1212033056" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.873116798" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.175049838" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
@@ -62,7 +60,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/SubSystems/Graphics/ZazenGraphics/Renderer/StandardRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/StandardRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -527,7 +525,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/SubSystems/Graphics/ZazenGraphics/Renderer/StandardRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/StandardRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.h|src/SubSystems/Graphics/ZazenGraphics/Renderer/SFXRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.cpp|src/SubSystems/Graphics/ZazenGraphics/Renderer/OCRenderer.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

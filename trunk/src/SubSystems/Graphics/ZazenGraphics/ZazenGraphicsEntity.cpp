@@ -7,7 +7,9 @@
 
 #include "ZazenGraphicsEntity.h"
 
-#include "../../../Core/SubSystems/IFaces/IPhysicsEntity.h"
+#include <glm/gtc/type_ptr.hpp>
+
+//#include "../../../Core/SubSystems/IFaces/IPhysicsEntity.h"
 
 #include <iostream>
 
@@ -45,8 +47,8 @@ ZazenGraphicsEntity::sendEvent( Event& e )
 void
 ZazenGraphicsEntity::setOrientation( const float* pos, const float* rot)
 {
-	memcpy( this->instance->transform->matrix.data, rot, 11 * sizeof( float ) );
-	memcpy( &this->instance->transform->matrix.data[12], pos, 3 * sizeof( float ) );
+	memcpy( glm::value_ptr( *this->instance->modelMatrix ), rot, 11 * sizeof( float ) );
+	memcpy( &glm::value_ptr( *this->instance->modelMatrix )[12], pos, 3 * sizeof( float ) );
 
 	//cout << "Graphics: " << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
 	//cout << "Graphics: resulting matrix: " << endl;

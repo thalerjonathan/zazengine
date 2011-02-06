@@ -20,6 +20,9 @@
 
 #include "Loaders/Ply/ply.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
+
 extern "C" {
 #include <lib3ds.h>
 }
@@ -269,8 +272,8 @@ GeometryFactory::loadFolder(const std::string& folderName)
 GeomType*
 GeometryFactory::load3DS(const std::string& fileName)
 {
-	Vector geomGroupBBmin;
-	Vector geomGroupBBmax;
+	glm::vec3 geomGroupBBmin;
+	glm::vec3 geomGroupBBmax;
 
 	Lib3dsFile* file = 0;
 	GeomType* geomGroup = 0;
@@ -312,18 +315,18 @@ GeometryFactory::load3DS(const std::string& fileName)
 			// allocate vertexdata
 			GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->nvertices ];
 
-			Vector meshBBmin;
-			Vector meshBBmax;
-			lib3ds_mesh_bounding_box( mesh, meshBBmin.data, meshBBmax.data );
+			glm::vec3 meshBBmin;
+			glm::vec3 meshBBmax;
+			lib3ds_mesh_bounding_box( mesh, glm::value_ptr( meshBBmin ), glm::value_ptr( meshBBmax ) );
 
 			if ( file->nmeshes > 1 )
 			{
 				for ( int i = 0; i < 3; i++ )
 				{
 					if (meshBBmin[ i ] < geomGroupBBmin[ i ])
-						geomGroupBBmin.data[ i ] = meshBBmin[ i ];
+						geomGroupBBmin[ i ] = meshBBmin[ i ];
 					else if (meshBBmax[ i ] > geomGroupBBmax[ i ])
-						geomGroupBBmax.data[ i ] = meshBBmax[ i ];
+						geomGroupBBmax[ i ] = meshBBmax[ i ];
 				}
 			}
 
@@ -357,6 +360,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 			Lib3dsMeshInstanceNode* typedNode = (Lib3dsMeshInstanceNode*) node;
 
+			/*
 			Matrix transl;
 			Matrix meshTransf;
 			Matrix instanceTransf;
@@ -375,7 +379,7 @@ GeometryFactory::load3DS(const std::string& fileName)
 			transl.data[ 13 ] = typedNode->pivot[1];
 			transl.data[ 14 ] = typedNode->pivot[2];
 
-			/*
+
 			cout << "instance " <<  typedNode->base.name << ":" << endl;
 			cout << "Mesh Transform:" << endl;
 			meshTransf.print();
@@ -430,8 +434,8 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 	word numVertices = 0;
 	word numTriangles = 0;
 
-	Vector meshBBmin;
-	Vector meshBBmax;
+	glm::vec3 meshBBmin;
+	glm::vec3 meshBBmax;
 
 	string fullFilename = fileName;
 	ifstream fileStream(fullFilename.c_str(), ios::in | ios::binary);
@@ -474,9 +478,9 @@ GeometryFactory::loadMs3D(const std::string& fileName)
 		for ( int j = 0; j < 3; j++ )
 		{
 			if (vertex->vertex[ j ] > meshBBmax[ j ])
-				meshBBmax.data[ j ] = vertex->vertex[ j ];
+				meshBBmax[ j ] = vertex->vertex[ j ];
 			else if (vertex->vertex[ j ] < meshBBmin[ j ])
-				meshBBmin.data[ j ] = vertex->vertex[ j ];
+				meshBBmin[ j ] = vertex->vertex[ j ];
 
 			vertexData[ i ].position[ j ] = vertex->vertex[ j ];
 		}
@@ -691,8 +695,8 @@ GeometryFactory::loadPly(const std::string& fileName)
     close_ply(plyFile);
 	free_ply(plyFile);
 
-    Vector meshBBmin;
-    Vector meshBBmax;
+	glm::vec3 meshBBmin;
+	glm::vec3 meshBBmax;
 
     cout << "we got " << faceCount << " faces and " << vertices.size() << " vertices " << endl;
 
@@ -722,19 +726,19 @@ GeometryFactory::loadPly(const std::string& fileName)
 			float nz = vertex.nz;
 
 			if (x > meshBBmax[0])
-				meshBBmax.data[0] = x;
+				meshBBmax[0] = x;
 			else if (x < meshBBmin[0])
-				meshBBmin.data[0] = x;
+				meshBBmin[0] = x;
 
 			if (y > meshBBmax[1])
-				meshBBmax.data[1] = y;
+				meshBBmax[1] = y;
 			else if (y < meshBBmin[1])
-				meshBBmin.data[1] = y;
+				meshBBmin[1] = y;
 
 			if (z > meshBBmax[2])
-				meshBBmax.data[2] = z;
+				meshBBmax[2] = z;
 			else if (z < meshBBmin[2])
-				meshBBmin.data[2] = z;
+				meshBBmin[2] = z;
 
 			vertexData[ i * 3 + j ].position[ 0 ] = x;
 			vertexData[ i * 3 + j ].position[ 1 ] = y;

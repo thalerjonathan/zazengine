@@ -3,9 +3,7 @@
 
 #include <GL/glew.h>
 
-#include "../../../../Core/Utils/Math/Vector.h"
-#include "../../../../Core/Utils/Math/Matrix.h"
-#include "../../../../Core/Utils/Math/Transform.h"
+#include <glm/glm.hpp>
 
 #include <vector>
 #include <string>
@@ -16,13 +14,13 @@ class GeomType
 	 GeomType();
 	 virtual ~GeomType();
 
-	 void compareBB(const Vector&, const Vector&);
+	 void compareBB(const glm::vec3&, const glm::vec3&);
 	 
-	 const Vector& getCenter() { return this->center; };
-	 const Vector& getBBMin() { return this->bbMin; };
-	 const Vector& getBBMax() { return this->bbMax; };
+	 const glm::vec3& getCenter() { return this->center; };
+	 const glm::vec3& getBBMin() { return this->bbMin; };
+	 const glm::vec3& getBBMax() { return this->bbMax; };
 	 
-	 void setBB(const Vector&, const Vector&);
+	 void setBB(const glm::vec3&, const glm::vec3&);
 	 
 	 virtual int getFaceCount() { return 0; };
 	 
@@ -32,15 +30,15 @@ class GeomType
 	 GeomType* parent;
 	 std::vector<GeomType*> children;
 	 
-	 Matrix model_transf;
+	 glm::mat4 m_modelMatrix;
 	 std::string name;
 
  private:
 	 GLuint bbVBO;
 		
-	 Vector bbMin;
-	 Vector bbMax;
-	 Vector center;
+	 glm::vec3 bbMin;
+	 glm::vec3 bbMax;
+	 glm::vec3 center;
 
 };
 
