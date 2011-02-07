@@ -3,6 +3,8 @@
 #include <GL/glew.h>
 
 #include <glm/gtc/matrix_projection.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <math.h>
 #include <iostream>
@@ -11,8 +13,7 @@
 
 using namespace std;
 
-Camera::Camera(float angle, int width, int height)
-	: Orientation( m_viewingMatrix )
+Camera::Camera( float angle, int width, int height )
 {
 	this->width = width;
 	this->height = height;
@@ -89,123 +90,81 @@ Camera::changeFov(float angle)
 	this->setupPerspective();
 }
 
-/*
-CullResult
-Camera::cullBB(const Vector& bbMin, const Vector& bbMax)
+void
+Camera::setPosition( const glm::vec3& pos )
 {
-	return INSIDE;
+	float* data = glm::value_ptr( this->m_viewingMatrix );
+	data[ 12 ] = -pos[ 0 ];
+	data[ 13 ] = -pos[ 1 ];
+	data[ 14 ] = -pos[ 2 ];
 
-	int c;
-	int c2 = 0;
-
-	for(int p = 0; p < 6; p++) {
-		c = 0;
-		
-		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMin[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
-			c++;
-		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
-			c++;
-	      
-		if(c == 0)
-			return OUTSIDE;
-		
-		if(c == 8)
-			c2++;
-	}
-
-	return (c2 == 6) ? INSIDE : INTERSECTING;
-}
-
-CullResult
-Camera::cullSphere(const Vector& pos, float radius)
-{
-	int c = 0;
-	float d;
-
-	for(int p = 0; p < 6; p++ ) {
-		d = frustum[p][0] * pos[0] + frustum[p][1] * pos[1] + frustum[p][2] * pos[2] + frustum[p][3];
-		if(d <= -radius)
-			return OUTSIDE;
-		if(d > radius)
-	         c++;
-	}
-	
-	return (c == 6) ? INSIDE : INTERSECTING;
-}
-
-
-Vector
-Camera::getPosition()
-{
-	return Vector( this->viewingMatrix.data[12], this->viewingMatrix.data[13], this->viewingMatrix.data[14] );
-}
-
-void Camera::setPosition( float x, float y, float z )
-{
-	// inverse: change the sign
-	this->viewingMatrix.data[12] = -x;
-	this->viewingMatrix.data[13] = -y;
-	this->viewingMatrix.data[14] = -z;
-	
-	//this->recalculateFrustum();
-}
-
-void Camera::changePitch(float angle)
-{
-	this->viewingMatrix.rotateInverse(1, 0, 0, angle);
-	
 	this->recalculateFrustum();
 }
 
-void Camera::changeHeading(float angle)
+// x-achsis rotation
+void
+Camera::changePitch( float angle )
+{
+	// need to do inverse matrix rotation
+	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 1, 0, 0 ) );
+	this->m_viewingMatrix = mat * this->m_viewingMatrix;
+
+	this->recalculateFrustum();
+}
+
+// y-achsis rotation
+void
+Camera::changeHeading(float angle)
 {	
-	this->viewingMatrix.rotateInverse(0, 1, 0, angle);
+	// need to do inverse matrix rotation
+	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 0, 1, 0 ) );
+	this->m_viewingMatrix = mat * this->m_viewingMatrix;
 	
 	this->recalculateFrustum();
 }
 
-void Camera::changeRoll(float angle)
+// z-achsis rotation
+void
+Camera::changeRoll(float angle)
 {
-	this->viewingMatrix.rotateInverse(0, 0, 1, angle);
+	// need to do inverse matrix rotation
+	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 0, 0, 1 ) );
+	this->m_viewingMatrix = mat * this->m_viewingMatrix;
+
+	this->recalculateFrustum();
+}
+
+void
+Camera::strafeRight(float units)
+{
+	float* data = glm::value_ptr( this->m_viewingMatrix );
+	data[ 12 ] += units;
 	
 	this->recalculateFrustum();
 }
 
-void Camera::strafeForward(float units)
+void
+Camera::strafeUp(float units)
 {
-	this->viewingMatrix.data[14] += units;
+	float* data = glm::value_ptr( this->m_viewingMatrix );
+	data[ 13 ] += units;
 	
 	this->recalculateFrustum();
 }
 
-void Camera::strafeRight(float units)
+void
+Camera::strafeForward(float units)
 {
-	this->viewingMatrix.data[12] += units;
+	float* data = glm::value_ptr( this->m_viewingMatrix );
+	data[ 14 ] += units;
 	
 	this->recalculateFrustum();
 }
 
-void Camera::strafeUp(float units)
+void
+Camera::recalculateFrustum()
 {
-	this->viewingMatrix.data[13] += units;
-	
-	this->recalculateFrustum();
-}
-
-void Camera::recalculateFrustum()
-{
+	/*
 	float t;
 	Matrix clip(this->viewingMatrix);
 	clip.multiply(this->projection);
@@ -299,6 +258,60 @@ void Camera::recalculateFrustum()
 
 	cout << "NEAR Plane" << endl;
 	cout << this->frustum[5][0] << "/" << this->frustum[5][1] << "/" << this->frustum[5][2] << ") d=" << this->frustum[5][3] << endl;
-
+	*/
 }
-*/
+
+CullResult
+Camera::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
+{
+	return INSIDE;
+
+	int c;
+	int c2 = 0;
+
+	for(int p = 0; p < 6; p++) {
+		c = 0;
+
+		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMin[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMin[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMin[0] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMin[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
+			c++;
+		if(frustum[p][0] * bbMax[0] + frustum[p][1] * bbMax[1] + frustum[p][2] * bbMax[2] + frustum[p][3] > 0 )
+			c++;
+
+		if(c == 0)
+			return OUTSIDE;
+
+		if(c == 8)
+			c2++;
+	}
+
+	return (c2 == 6) ? INSIDE : INTERSECTING;
+}
+
+CullResult
+Camera::cullSphere( const glm::vec3& pos, float radius )
+{
+	int c = 0;
+	float d;
+
+	for(int p = 0; p < 6; p++ ) {
+		d = frustum[p][0] * pos[0] + frustum[p][1] * pos[1] + frustum[p][2] * pos[2] + frustum[p][3];
+		if(d <= -radius)
+			return OUTSIDE;
+		if(d > radius)
+	         c++;
+	}
+
+	return (c == 6) ? INSIDE : INTERSECTING;
+}
