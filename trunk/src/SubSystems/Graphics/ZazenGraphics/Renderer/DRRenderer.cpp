@@ -61,137 +61,24 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
-	GLint status;
-
 	// calculate the view-projection matrix
 	this->m_viewProjection = this->camera.m_projectionMatrix * this->camera.m_viewingMatrix;
 
-	// calculate the light-space projection matrix
-	this->m_lightSpace = this->m_viewProjection * this->m_unitCubeMatrix;
-
 	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( &this->m_viewProjection[ 0 ][ 0 ], 0, 64) )
+	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_viewProjection ), 0, 64) )
 		return false;
 
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( &this->m_lightSpace[ 0 ][ 0 ], 64, 64) )
+	if ( false == this->renderShadowMap( instances ) )
 		return false;
 
-	glUseProgram( 0 );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	glLoadMatrixf( &this->camera.m_viewingMatrix[ 0 ][ 0 ] );
-
-	//Rendering offscreen
-	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	glClear( GL_DEPTH_BUFFER_BIT );
-	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
-
-	if ( false == this->renderInstances( instances ) )
+	if ( false == this->renderGeometryStage( instances ) )
 		return false;
 
-	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	// clear window
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-
-	if ( false == this->m_progGeomStage->use() )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_transformBlock->bind( 0 ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
-		return false;
-	}
-
-	// drawing the cross in the origin
-	glColor4f(1, 0, 0, 0);
-	glBegin(GL_LINES);
-		glVertex3f(100, 0, 0);
-		glVertex3f(-100, 0, 0);
-	glEnd();
-
-	glColor4f(0, 1, 0, 0);
-	glBegin(GL_LINES);
-		glVertex3f(0, 100, 0);
-		glVertex3f(0, -100, 0);
-	glEnd();
-
-	glColor4f(0, 0, 1, 0);
-	glBegin(GL_LINES);
-		glVertex3f(0, 0, 100);
-		glVertex3f(0, 0, -100);
-	glEnd();
-
-	// update the shadow-transform matrix
-	if ( false == this->m_transformBlock->updateData( &this->m_lightSpace[ 0 ][ 0 ], 64, 64) )
+	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
-
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
+	if ( false == this->showShadowMap() )
 		return false;
-
-	//GLenum buffers[MRT_COUNT];
-
-	//  start geometry pass
-	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
-
-	// clear fbo
-	//glClear(GL_COLOR_BUFFER_BIT);
-
-	// activate drawing to targets
-	//for ( int i = 0; i < MRT_COUNT; i++)
-	//	buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
-	//glDrawBuffers(MRT_COUNT, buffers);
-
-
-	// draw all geometry
-	if ( false == this->renderInstances( instances ) )
-		return false;
-
-	//this->showShadowMap();
-
-	/*
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
-	// start lighting stage
-	// bind rendertargets as textures
-	for ( int i = 0; i < MRT_COUNT; i++ )
-	{
-		glActiveTexture( GL_TEXTURE0 + i );
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ]);
-	}
-
-	// activate lighting-stage shader
-	//this->m_lightStageProg->activate();
-*/
-
-	// finish lighting stage
-	//this->m_lightStageProg->deactivate();
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -206,8 +93,8 @@ DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
 
-	//if ( false == this->initFBO() )
-	//	return false;
+	if ( false == this->initFBO() )
+		return false;
 
 	if ( false == this->initGeomStage() )
 		return false;
@@ -633,6 +520,140 @@ DRRenderer::initUniformBlocks()
 }
 
 bool
+DRRenderer::renderShadowMap( std::list<Instance*>& instances )
+{
+	GLenum status;
+
+	// calculate the light-space projection matrix
+	this->m_lightSpace = this->m_viewProjection * this->m_unitCubeMatrix;
+
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_lightSpace ), 64, 64) )
+		return false;
+
+	glUseProgram( 0 );
+
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	glLoadMatrixf( glm::value_ptr( this->camera.m_viewingMatrix ) );
+
+	//Rendering offscreen
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	glClear( GL_DEPTH_BUFFER_BIT );
+	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+
+	if ( false == this->renderInstances( instances ) )
+		return false;
+
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool
+DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
+{
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	if ( false == this->m_progGeomStage->use() )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
+	// drawing the cross in the origin
+	glColor4f(1, 0, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(100, 0, 0);
+		glVertex3f(-100, 0, 0);
+	glEnd();
+
+	glColor4f(0, 1, 0, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 100, 0);
+		glVertex3f(0, -100, 0);
+	glEnd();
+
+	glColor4f(0, 0, 1, 0);
+	glBegin(GL_LINES);
+		glVertex3f(0, 0, 100);
+		glVertex3f(0, 0, -100);
+	glEnd();
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
+		return false;
+
+	//GLenum buffers[MRT_COUNT];
+
+	//  start geometry pass
+	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
+
+	// clear fbo
+	//glClear(GL_COLOR_BUFFER_BIT);
+
+	// activate drawing to targets
+	//for ( int i = 0; i < MRT_COUNT; i++)
+	//	buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
+	//glDrawBuffers(MRT_COUNT, buffers);
+
+	// draw all geometry
+	if ( false == this->renderInstances( instances ) )
+		return false;
+
+	return true;
+}
+
+bool
+DRRenderer::renderLightingStage( std::list<Instance*>& instances )
+{
+	/*
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+	// start lighting stage
+	// bind rendertargets as textures
+	for ( int i = 0; i < MRT_COUNT; i++ )
+	{
+		glActiveTexture( GL_TEXTURE0 + i );
+		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ]);
+	}
+
+	// activate lighting-stage shader
+	//this->m_lightStageProg->activate();
+
+	// finish lighting stage
+	//this->m_lightStageProg->deactivate();
+*/
+
+	return true;
+}
+
+bool
 DRRenderer::renderInstances( std::list<Instance*>& instances )
 {
 	list<Instance*>::iterator iter = instances.begin();
@@ -696,10 +717,10 @@ DRRenderer::showShadowMap()
 
 	// render quad
 	glBegin( GL_QUADS );
-		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 );
-		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, this->camera.getHeight() / 2 );
-		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( this->camera.getWidth() / 2, this->camera.getHeight() / 2 );
-		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( this->camera.getWidth() / 2, 0 );
+		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, 0 );
+		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 + this->camera.getHeight() / 2 );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 0 + this->camera.getWidth() / 2, 0 + this->camera.getHeight() / 2 );
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 0 + this->camera.getWidth() / 2, 0 );
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
