@@ -189,35 +189,35 @@ ZazenGraphics::sendEvent( Event& e )
 {
 	if ( e == "SDLK_RIGHT" )
 	{
-		this->camera->changeHeading( 0.1 * this->lastItFact );
+		this->camera->changeHeadingInv( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_LEFT" )
 	{
-		this->camera->changeHeading( -0.1 * this->lastItFact );
+		this->camera->changeHeadingInv( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_UP" )
 	{
-		this->camera->changePitch( 0.1 * this->lastItFact );
+		this->camera->changePitchInv( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_DOWN" )
 	{
-		this->camera->changePitch( -0.1 * this->lastItFact );
+		this->camera->changePitchInv( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_w" )
 	{
-		this->camera->strafeForward( 0.1 * this->lastItFact );
+		this->camera->strafeForwardInv( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_s" )
 	{
-		this->camera->strafeForward( -0.1 * this->lastItFact );
+		this->camera->strafeForwardInv( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_d" )
 	{
-		this->camera->changeRoll( 0.1 * this->lastItFact );
+		this->camera->changeRollInv( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_a" )
 	{
-		this->camera->changeRoll( -0.1 * this->lastItFact );
+		this->camera->changeRollInv( -0.1 * this->lastItFact );
 	}
 
 	return true;

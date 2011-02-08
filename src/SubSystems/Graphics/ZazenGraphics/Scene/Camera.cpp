@@ -14,6 +14,7 @@
 using namespace std;
 
 Camera::Camera( float angle, int width, int height )
+	: Orientation( m_viewingMatrix )
 {
 	this->width = width;
 	this->height = height;
@@ -88,77 +89,6 @@ Camera::changeFov(float angle)
 	this->angle = angle;
 	
 	this->setupPerspective();
-}
-
-void
-Camera::setPosition( const glm::vec3& pos )
-{
-	float* data = glm::value_ptr( this->m_viewingMatrix );
-	data[ 12 ] = -pos[ 0 ];
-	data[ 13 ] = -pos[ 1 ];
-	data[ 14 ] = -pos[ 2 ];
-
-	this->recalculateFrustum();
-}
-
-// x-achsis rotation
-void
-Camera::changePitch( float angle )
-{
-	// need to do inverse matrix rotation
-	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 1, 0, 0 ) );
-	this->m_viewingMatrix = mat * this->m_viewingMatrix;
-
-	this->recalculateFrustum();
-}
-
-// y-achsis rotation
-void
-Camera::changeHeading(float angle)
-{	
-	// need to do inverse matrix rotation
-	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 0, 1, 0 ) );
-	this->m_viewingMatrix = mat * this->m_viewingMatrix;
-	
-	this->recalculateFrustum();
-}
-
-// z-achsis rotation
-void
-Camera::changeRoll(float angle)
-{
-	// need to do inverse matrix rotation
-	glm::mat4 mat = glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 0, 0, 1 ) );
-	this->m_viewingMatrix = mat * this->m_viewingMatrix;
-
-	this->recalculateFrustum();
-}
-
-void
-Camera::strafeRight(float units)
-{
-	float* data = glm::value_ptr( this->m_viewingMatrix );
-	data[ 12 ] += units;
-	
-	this->recalculateFrustum();
-}
-
-void
-Camera::strafeUp(float units)
-{
-	float* data = glm::value_ptr( this->m_viewingMatrix );
-	data[ 13 ] += units;
-	
-	this->recalculateFrustum();
-}
-
-void
-Camera::strafeForward(float units)
-{
-	float* data = glm::value_ptr( this->m_viewingMatrix );
-	data[ 14 ] += units;
-	
-	this->recalculateFrustum();
 }
 
 void

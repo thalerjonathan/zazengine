@@ -17,13 +17,25 @@ class Orientation
 	virtual ~Orientation();
 
 	void setPosition( const glm::vec3& );
+	void setPositionInv( const glm::vec3& );
 
 	void changeHeading( float );
+	void changeHeadingInv( float );
+
 	void changePitch( float );
+	void changePitchInv( float );
+
 	void changeRoll( float );
+	void changeRollInv( float );
+
 	void strafeForward( float );
+	void strafeForwardInv( float );
+
 	void strafeRight( float );
+	void strafeRightInv( float );
+
 	void strafeUp( float );
+	void strafeUpInv( float );
 
  private:
 	glm::mat4& m_matrix;

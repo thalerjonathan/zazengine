@@ -3,13 +3,15 @@
 
 #include <glm/glm.hpp>
 
+#include "../../../../Core/Utils/Math/Orientation.h"
+
 enum CullResult {
 	INSIDE = 0,
 	OUTSIDE,
 	INTERSECTING
 };
 
-class Camera
+class Camera : public Orientation
 {
  public:
 	Camera( float, int, int );
@@ -29,14 +31,6 @@ class Camera
 	
 	void resize(int, int);
 	void changeFov(float);
-	
-	void setPosition( const glm::vec3& );
-	void changeHeading( float );
-	void changePitch( float );
-	void changeRoll( float );
-	void strafeForward( float );
-	void strafeRight( float );
-	void strafeUp( float );
 
 	CullResult cullBB( const glm::vec3&, const glm::vec3& );
 	CullResult cullSphere( const glm::vec3&, float );
