@@ -527,6 +527,13 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	// calculate the light-space projection matrix
 	this->m_lightSpace = this->m_viewProjection * this->m_unitCubeMatrix;
 
+	/*
+	glm::vec4 p( 0, 0, 0, 1 );
+
+	glm::vec4 projP = this->m_lightSpace * p;
+	cout << "projP: (" << projP[0] << "/" <<  projP[1] << "/" << projP[2] << "/" << projP[3] << ")" << endl;
+*/
+
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_lightSpace ), 64, 64) )
 		return false;
