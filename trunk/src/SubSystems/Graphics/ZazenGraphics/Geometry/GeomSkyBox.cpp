@@ -13,7 +13,7 @@ using namespace std;
 
 #define BOX_SIDE_SIZE 100
 
-GeomSkyBox::GeomSkyBox(Camera& cam, string& folder)
+GeomSkyBox::GeomSkyBox(Viewer& cam, string& folder)
 	: cam(cam)
 {
 	this->east = Texture::load(folder + "/east.png");

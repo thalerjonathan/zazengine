@@ -1,9 +1,8 @@
 #ifndef RENDERER_H_
 #define RENDERER_H_
 
-#include "../Scene/Camera.h"
+#include "../Scene/Viewer.h"
 #include "../Scene/Instance.h"
-#include "../Geometry/GeomSkyBox.h"
 
 #include <list>
 
@@ -55,7 +54,7 @@
 class Renderer
 {
  public:
-	Renderer( Camera& camera, std::string& );
+	Renderer( Viewer* camera );
 	virtual ~Renderer();
 
 	virtual bool initialize() = 0;
@@ -67,8 +66,7 @@ class Renderer
  protected:
 	 long long frame;
 
-	 Camera& camera;
-	 GeomSkyBox* skyBox;
+	 Viewer* m_camera;
 
 	 static bool geomInstanceDistCmp( Instance* a, Instance* b )
 	 {

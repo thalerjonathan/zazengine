@@ -7,6 +7,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <map>
 
 class Scene
 {
@@ -22,26 +23,22 @@ class Scene
 		 glm::mat4* modelMatrix; // is contained within a graphics entity and allows the instance to be moved externally
 	 } InstanceDefinition;
 
-	 Scene( const std::string&, Camera* );
+	 Scene( const std::string&, Viewer* );
 	 ~Scene();
 	 
-	 void setSkyBoxFolder( std::string& f ) { this->skyBoxFolder = f; };
-
 	 bool processFrame( double );
 	 bool load();
 	 
-	 void addEntity( EntityDefinition& e ) { this->entitiesDef[e.name] = e; };
-	 void addInstance( InstanceDefinition* i ) { this->instanceDef.push_back(i); };
+	 void addEntity( EntityDefinition& e ) { this->entitiesDef[ e.name ] = e; };
+	 void addInstance( InstanceDefinition* i ) { this->instanceDef.push_back( i ); };
 	 
 	 void printInfo();
 	 
  private:
 	 const std::string name;
 	 
-	 Camera* camera;
+	 Viewer* camera;
 	 Renderer* renderer;
-
-	 std::string skyBoxFolder;
 
 	 std::map<std::string, EntityDefinition> entitiesDef;
 	 std::vector<InstanceDefinition*> instanceDef;

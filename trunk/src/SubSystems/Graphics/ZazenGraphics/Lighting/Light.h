@@ -8,15 +8,13 @@
 #ifndef LIGHT_H_
 #define LIGHT_H_
 
-#include "../../../../Core/Utils/Math/Transform.h"
+#include "../Scene/Viewer.h"
 
-class Light
+class Light : public Viewer
 {
  public:
-	Light();
+	Light( float, int, int );
 	~Light();
-
-	Transform viewingTransf;
 
  private:
 

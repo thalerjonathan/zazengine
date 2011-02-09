@@ -13,7 +13,7 @@
 #include "ZazenGraphicsEntity.h"
 
 #include "Scene/Scene.h"
-#include "Scene/Camera.h"
+#include "Scene/Viewer.h"
 
 #include <SDL/SDL.h>
 
@@ -48,7 +48,7 @@ class ZazenGraphics : public IGraphics
 	
 		SDL_Surface* drawContext;
 
-		Camera* camera;
+		Viewer* camera;
 		Scene* activeScene;
 	
 		double lastItFact;

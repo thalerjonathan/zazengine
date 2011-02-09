@@ -7,7 +7,8 @@
 
 #include "Light.h"
 
-Light::Light()
+Light::Light( float angle, int width, int height )
+	: Viewer( angle, width, height )
 {
 
 

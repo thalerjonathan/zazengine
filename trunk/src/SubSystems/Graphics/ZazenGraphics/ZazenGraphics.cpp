@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Geometry/GeometryFactory.h"
+#include "Material/Texture.h"
 
 #include "../../../Core/Core.h"
 
@@ -56,12 +57,13 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	}
 	*/
 	
-	this->camera = new Camera( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
+	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
 	this->camera->setPositionInv( glm::vec3( 0, 50, 70 ) );
 	this->camera->changePitchInv( 30 );
 	
 	this->activeScene = new Scene( "NullScene", this->camera );
 
+	/*
 	TiXmlElement* skyBoxNode = configNode->FirstChildElement( "skyBox" );
 	if ( skyBoxNode )
 	{
@@ -77,6 +79,7 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	{
 		cout << "INFO ... scene hast no Skybox defined" << endl;
 	}
+*/
 
 	if ( false == this->loadGeomClasses( configNode ) )
 	{

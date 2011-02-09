@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "Viewer.h"
 
 #include <GL/glew.h>
 
@@ -6,14 +6,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <math.h>
 #include <iostream>
-
-#define ANG2RAD 3.14159265358979323846/180.0
 
 using namespace std;
 
-Camera::Camera( float angle, int width, int height )
+Viewer::Viewer( float angle, int width, int height )
 	: Orientation( m_viewingMatrix )
 {
 	this->width = width;
@@ -28,12 +25,12 @@ Camera::Camera( float angle, int width, int height )
 	this->setupPerspective();
 }
 
-Camera::~Camera()
+Viewer::~Viewer()
 {
 }
 
 void
-Camera::setupPerspective()
+Viewer::setupPerspective()
 {
 	this->m_projectionMatrix = glm::perspective( this->angle, this->ratio, this->nearDist, this->farDist );
 
@@ -46,7 +43,8 @@ Camera::setupPerspective()
 	glLoadIdentity();
 }
 
-void Camera::setupOrtho()
+void
+Viewer::setupOrtho()
 {
 	this->m_projectionMatrix = glm::ortho( 0.0f, this->width, this->height, 0.0f, -1.0f, 1.0f );
 
@@ -60,7 +58,7 @@ void Camera::setupOrtho()
 }
 
 void
-Camera::changeNearClip(float dist)
+Viewer::changeNearClip(float dist)
 {
 	this->nearDist = dist;
 	
@@ -68,7 +66,7 @@ Camera::changeNearClip(float dist)
 }
 
 void
-Camera::changeFarClip(float dist)
+Viewer::changeFarClip(float dist)
 {
 	this->farDist = dist;
 	
@@ -76,7 +74,7 @@ Camera::changeFarClip(float dist)
 }
 
 void
-Camera::resize(int width, int height)
+Viewer::resize(int width, int height)
 {
 	this->ratio = (float) width / (float) height;
 	
@@ -84,17 +82,59 @@ Camera::resize(int width, int height)
 }
 
 void
-Camera::changeFov(float angle)
+Viewer::changeFov(float angle)
 {
 	this->angle = angle;
 	
 	this->setupPerspective();
 }
 
-void
-Camera::recalculateFrustum()
+Viewer::CullResult
+Viewer::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
 {
-	/*
+	int counter = 0;
+	glm::vec4 clippingCoordsMin = this->m_PVMatrix * glm::vec4( bbMin, 1.0 );
+	glm::vec4 clippingCoordsMax = this->m_PVMatrix * glm::vec4( bbMax, 1.0 );
+
+	// perspective division to NormalizedDeviceCoords
+	clippingCoordsMin /= clippingCoordsMin[ 3 ];
+	clippingCoordsMax /= clippingCoordsMax[ 3 ];
+
+	if ( clippingCoordsMin[ 0 ] < -1 || clippingCoordsMin[ 0 ] > 1 )
+		counter++;
+
+	if ( clippingCoordsMin[ 1 ] < -1 || clippingCoordsMin[ 1 ] > 1 )
+		counter++;
+
+	if ( clippingCoordsMin[ 2 ] < -1 || clippingCoordsMin[ 2 ] > 1 )
+		counter++;
+
+
+	if ( clippingCoordsMax[ 0 ] < -1 || clippingCoordsMax[ 0 ] > 1 )
+		counter++;
+
+	if ( clippingCoordsMax[ 1 ] < -1 || clippingCoordsMax[ 1 ] > 1 )
+		counter++;
+
+	if ( clippingCoordsMax[ 2 ] < -1 || clippingCoordsMax[ 2 ] > 1 )
+		counter++;
+
+	if ( counter < 6 )
+		return INSIDE;
+
+	return OUTSIDE;
+}
+
+Viewer::CullResult
+Viewer::cullSphere( const glm::vec3& pos, float radius )
+{
+	return INSIDE;
+}
+
+/*
+void
+Viewer::recalculateFrustum()
+{
 	float t;
 	Matrix clip(this->viewingMatrix);
 	clip.multiply(this->projection);
@@ -188,11 +228,11 @@ Camera::recalculateFrustum()
 
 	cout << "NEAR Plane" << endl;
 	cout << this->frustum[5][0] << "/" << this->frustum[5][1] << "/" << this->frustum[5][2] << ") d=" << this->frustum[5][3] << endl;
-	*/
+
 }
 
-CullResult
-Camera::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
+Viewer::CullResult
+Viewer::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
 {
 	return INSIDE;
 
@@ -229,8 +269,8 @@ Camera::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
 	return (c2 == 6) ? INSIDE : INTERSECTING;
 }
 
-CullResult
-Camera::cullSphere( const glm::vec3& pos, float radius )
+Viewer::CullResult
+Viewer::cullSphere( const glm::vec3& pos, float radius )
 {
 	int c = 0;
 	float d;
@@ -245,3 +285,4 @@ Camera::cullSphere( const glm::vec3& pos, float radius )
 
 	return (c == 6) ? INSIDE : INTERSECTING;
 }
+*/

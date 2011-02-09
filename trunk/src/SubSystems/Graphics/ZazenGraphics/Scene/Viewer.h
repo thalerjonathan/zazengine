@@ -1,22 +1,29 @@
-#ifndef CAMERA_H_
-#define CAMERA_H_
+/*
+ * Viewer.h
+ *
+ *  Created on: Feb 9, 2011
+ *      Author: jonathan
+ */
 
-#include <glm/glm.hpp>
+
+#ifndef VIEWER_H_
+#define VIEWER_H_
 
 #include "../../../../Core/Utils/Math/Orientation.h"
 
-enum CullResult {
-	INSIDE = 0,
-	OUTSIDE,
-	INTERSECTING
-};
-
-class Camera : public Orientation
+class Viewer : public Orientation
 {
  public:
-	Camera( float, int, int );
-	~Camera();
+	enum CullResult {
+		INSIDE = 0,
+		OUTSIDE,
+		INTERSECTING
+	};
 
+	Viewer( float, int, int );
+	~Viewer();
+
+	glm::mat4 m_PVMatrix;
 	glm::mat4 m_viewingMatrix;
 	glm::mat4 m_projectionMatrix;
 
@@ -45,10 +52,12 @@ class Camera : public Orientation
 	float nearDist;
 	float farDist;
 	
+	/*
 	float frustum[6][4];
 	
 	void recalculateFrustum();
+	*/
 	
 };
 
-#endif /*CAMERA_H_*/
+#endif /*VIEWER_H_*/
