@@ -61,11 +61,8 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
-	// calculate the view-projection matrix
-	this->m_viewProjection = this->m_camera->m_projectionMatrix * this->m_camera->m_viewingMatrix;
-
 	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_viewProjection ), 0, 64) )
+	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
 		return false;
 
 	if ( false == this->renderShadowMap( instances ) )
@@ -77,10 +74,8 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
-	/*
 	if ( false == this->showShadowMap() )
 		return false;
-*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -95,24 +90,16 @@ DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
 
-	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
-	glClearDepth(1.0f);									// Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
+	glShadeModel( GL_SMOOTH );							// Enable Smooth Shading
+	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );				// Black Background
+	glClearDepth( 1.0f );									// Depth Buffer Setup
+
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
 	glCullFace(GL_FRONT);
-glEnable(GL_LIGHTING);
-glEnable(GL_TEXTURE_2D);
 
-GLfloat LightAmbient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-GLfloat LightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-GLfloat LightPosition[] = { 0.0f, 60.0f, 0.0f, 1.0f };
-
-glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);         // Setup The Ambient Light
-glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);         // Setup The Diffuse Light
-glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);        // Position The Light
- glEnable(GL_LIGHT1);
+	glEnable( GL_DEPTH_TEST );							// Enables Depth Testing
+	glEnable( GL_CULL_FACE );
 
 	if ( false == this->initFBO() )
 		return false;
@@ -270,12 +257,14 @@ DRRenderer::initFBO()
 			cout << "ERROR in DRRenderer::initFBO: glBindFramebufferEXT failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
+
 		glBindTexture( GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i] );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
+
 		glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->m_camera->getWidth(), this->m_camera->getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
@@ -283,7 +272,6 @@ DRRenderer::initFBO()
 			return false;
 		}
 
-		glClearColor(0, 0, 0, 0);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_RECTANGLE_ARB, this->m_mrt[i], 0);
 		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE_EXT != status )
@@ -291,6 +279,8 @@ DRRenderer::initFBO()
 			cout << "ERROR in DRRenderer::initFBO: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
+
+		glClearColor( 0, 0, 0, 0 );
 
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
@@ -424,7 +414,8 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	// need to enable comparison-mode for depth-texture to use it as a shadow2DSampler in shader
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
@@ -435,6 +426,7 @@ DRRenderer::initShadowMapping()
 		return false;
 	}
 
+	// unbind framebuffer depth-target
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	// create a framebuffer object
@@ -513,6 +505,12 @@ DRRenderer::initShadowMapping()
 		return false;
 	}
 
+	if ( false == this->m_progShadowMapping->bindAttribLocation( 0, "in_vertPos" ) )
+	{
+		cout << "ERROR in DRRenderer::initShadowMapping: binding attribute location to program failed - exit" << endl;
+		return false;
+	}
+
 	if ( false == this->m_progShadowMapping->link() )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: linking program failed - exit" << endl;
@@ -530,13 +528,25 @@ DRRenderer::initUniformBlocks()
 	this->m_transformBlock = UniformBlock::createBlock( "transform" );
 	if ( 0 == this->m_transformBlock )
 	{
-		cout << "ERROR in DRRenderer::initGeomStage: creating uniform block failed - exit" << endl;
+		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
 		return false;
 	}
 
 	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformBlock ) )
 	{
-		cout << "ERROR in DRRenderer::initGeomStage: failed binding uniform block - exit" << endl;
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_transformBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_transformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
 	}
 
@@ -550,54 +560,36 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 
 	// calculate the light-space projection matrix
 	// multiplication with unit-cube is first because has to be carried out the last
-	this->m_lightSpace = this->m_unitCubeMatrix * this->m_light->m_projectionMatrix * this->m_light->m_viewingMatrix;
-
-	/*
-	glm::vec4 p( 0, 0, 0, 1 );
-	glm::vec4 p1( 0, 0, 0, 1 );
-
-	glm::vec4 projP = this->m_lightSpace * p;
-	glm::vec4 projP1 = this->m_viewProjection * p1;
-
-	projP /= projP[ 3 ];
-	projP1 /= projP1[ 3 ];
-
-	cout << "projP: (" << projP[0] << "/" <<  projP[1] << "/" << projP[2] << "/" << projP[3] << ")" << endl;
-	cout << "projP1: (" << projP1[0] << "/" <<  projP1[1] << "/" << projP1[2] << "/" << projP1[3] << ")" << endl;
-	*/
+	this->m_lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
 
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_lightSpace ), 64, 64) )
 		return false;
 
-	glUseProgram( 0 );
-
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
+	if ( false == this->m_progShadowMapping->use() )
 		return false;
-	}
 
-	glLoadMatrixf( glm::value_ptr( this->m_light->m_viewingMatrix ) );
-
-	//Rendering offscreen
+	// Rendering offscreen
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
+		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	// cull front-faces, just backfaces cast a shadow -> better quality
+	glCullFace( GL_FRONT );
+	glClear( GL_DEPTH_BUFFER_BIT );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
 	if ( false == this->renderInstances( this->m_light, instances ) )
 		return false;
 
-	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
+	// back to window-system framebuffer
+	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::renderFrame: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
+		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
@@ -607,22 +599,16 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 bool
 DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 {
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	// switch to back-face culling
+	glCullFace( GL_BACK );
+	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	if ( false == this->m_progGeomStage->use() )
 	{
-		cout << "ERROR in DRRenderer::renderFrame: using shadow mapping program failed - exit" << endl;
+		cout << "ERROR in DRRenderer::renderGeometryStage: using shadow mapping program failed - exit" << endl;
 		return false;
 	}
-
-	if ( false == this->m_transformBlock->bind( 0 ) )
-	{
-		cout << "ERROR in DRRenderer::renderFrame: binding transform uniform-block failed - exit" << endl;
-		return false;
-	}
-
-	glLoadMatrixf( glm::value_ptr( this->m_camera->m_viewingMatrix ) );
 
 	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
@@ -716,22 +702,21 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 	{
 		for ( unsigned int i = 0; i < geom->children.size(); i++ )
 		{
-			return this->renderGeom( viewer, parent, geom->children[ i ] );
+			if ( false == this->renderGeom( viewer, parent, geom->children[ i ] ) )
+				return false;
 		}
 	}
 	else
 	{
-		// no projection for fixed functionality - already there
-		glm::mat4 mat = viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+		Viewer::CullResult cullResult = viewer->cullBB( geom->getBBMin(), geom->getBBMax() );
+		if ( Viewer::INSIDE == cullResult )
+		{
+			glm::mat4 mvp = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			if ( false == this->m_transformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
+				return false;
 
-		glm::mat4 mvp = viewer->m_projectionMatrix * viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
-
-		glLoadMatrixf( glm::value_ptr( mat ) );
-
-		if ( false == this->m_transformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
-			return false;
-
-		return geom->render();
+			return geom->render();
+		}
 	}
 
 	return true;
@@ -752,7 +737,6 @@ DRRenderer::showShadowMap()
 	// set up orthogonal projection to render quad
 	this->m_camera->setupOrtho();
 
-	glEnable( GL_TEXTURE_2D );
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 
@@ -765,7 +749,6 @@ DRRenderer::showShadowMap()
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
-	glDisable(GL_TEXTURE_2D);
 
 	// switch back to perspective projection
 	this->m_camera->setupPerspective();

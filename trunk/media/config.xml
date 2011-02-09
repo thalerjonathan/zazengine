@@ -18,11 +18,18 @@
 				<instance class="ClassHouseJapan" x="0" y="0" z="0"/>
 			</graphics>
 		</object>
-		
 		<object name="Terrain">
 			<graphics>
 				<instance class="ClassTerrain" x="0" y="0" z="0"/>
 			</graphics>
 		</object>
+
+		<!--
+		<object name="Cgess">
+			<graphics>
+				<instance class="ClassChess1" x="0" y="0" z="0"/>
+			</graphics>
+		</object>
+				-->
 	</objectList>
 </config>

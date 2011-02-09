@@ -40,7 +40,10 @@ class Viewer : public Orientation
 	void changeFov(float);
 
 	CullResult cullBB( const glm::vec3&, const glm::vec3& );
-	CullResult cullSphere( const glm::vec3&, float );
+
+ protected:
+	// overridden from Orientation
+	virtual void matrixChanged();
 	
  private:
 	float width;
@@ -51,12 +54,6 @@ class Viewer : public Orientation
 
 	float nearDist;
 	float farDist;
-	
-	/*
-	float frustum[6][4];
-	
-	void recalculateFrustum();
-	*/
 	
 };
 

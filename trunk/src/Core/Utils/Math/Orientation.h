@@ -10,6 +10,7 @@
 
 #include <glm/glm.hpp>
 
+// this class is designed to be used for subclassing
 class Orientation
 {
  public:
@@ -36,6 +37,11 @@ class Orientation
 
 	void strafeUp( float );
 	void strafeUpInv( float );
+
+ protected:
+	// this method is called always when one of the upper methods is invoded
+	// this can be overridden by subclasses to react to matrix changes
+	virtual void matrixChanged() {};
 
  private:
 	glm::mat4& m_matrix;
