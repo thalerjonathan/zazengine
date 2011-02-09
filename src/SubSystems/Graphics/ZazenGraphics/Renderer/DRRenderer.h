@@ -64,14 +64,12 @@ class DRRenderer : public Renderer
 	UniformBlock* m_transformBlock;
 	////////////////////////////////////////
 
-	// lighting
-	Light* m_light;
-	////////////////////////////////////////
-
-	glm::mat4 m_viewProjection;
-
+	// lighting and shadowing
 	glm::mat4 m_unitCubeMatrix;
 	glm::mat4 m_lightSpace;
+
+	Light* m_light;
+	////////////////////////////////////////
 
 	bool initFBO();
 	bool initGeomStage();

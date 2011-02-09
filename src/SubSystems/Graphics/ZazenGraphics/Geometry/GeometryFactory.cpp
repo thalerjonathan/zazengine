@@ -360,43 +360,25 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 			Lib3dsMeshInstanceNode* typedNode = (Lib3dsMeshInstanceNode*) node;
 
-			/*
-			Matrix transl;
-			Matrix meshTransf;
-			Matrix instanceTransf;
+			glm::mat4 transl;
+			glm::mat4 meshTransf;
+			glm::mat4 instanceTransf;
 			float tmpMat[4][4];
 
 			 // need to invert to make openGL compatible
 			lib3ds_matrix_copy( tmpMat, mesh->matrix );
 			lib3ds_matrix_inv( tmpMat );
-			memcpy( meshTransf.data, &tmpMat[0][0], sizeof(float) * 16 );
+			memcpy( glm::value_ptr( meshTransf ), &tmpMat[ 0 ][ 0 ], sizeof(float) * 16 );
 
 			lib3ds_matrix_copy( tmpMat, typedNode->base.matrix );
 			lib3ds_matrix_inv( tmpMat );
-			memcpy( instanceTransf.data, &tmpMat[0][0], sizeof(float) * 16 );
+			memcpy( glm::value_ptr( instanceTransf ), &tmpMat[ 0 ][ 0 ], sizeof(float) * 16 );
 
-			transl.data[ 12 ] = typedNode->pivot[0];
-			transl.data[ 13 ] = typedNode->pivot[1];
-			transl.data[ 14 ] = typedNode->pivot[2];
+			glm::value_ptr( transl )[ 12 ] = typedNode->pivot[ 0 ];
+			glm::value_ptr( transl )[ 13 ] = typedNode->pivot[1];
+			glm::value_ptr( transl )[ 14 ] = typedNode->pivot[2];
 
-
-			cout << "instance " <<  typedNode->base.name << ":" << endl;
-			cout << "Mesh Transform:" << endl;
-			meshTransf.print();
-			cout << "Instance Transform" << endl;
-			instanceTransf.print();
-			cout << "Instance Translation:" << endl;
-			transl.print();
-
-
-			transl.multiply( meshTransf );
-			transl.multiply( instanceTransf );
-
-			cout << "Combined Transform:" << endl;
-			transl.print();
-
-			geomMesh->model_transf = transl;
-			 */
+			geomMesh->m_modelMatrix = transl;
 
 			if ( file->nmeshes > 1 )
 			{
