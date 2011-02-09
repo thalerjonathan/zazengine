@@ -403,6 +403,9 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -525,14 +528,22 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	GLenum status;
 
 	// calculate the light-space projection matrix
-	this->m_lightSpace = this->m_viewProjection * this->m_unitCubeMatrix;
+	// multiplication with unit-cube is first because has to be carried out the last
+	this->m_lightSpace = this->m_unitCubeMatrix * this->m_viewProjection;
 
 	/*
 	glm::vec4 p( 0, 0, 0, 1 );
+	glm::vec4 p1( 0, 0, 0, 1 );
 
 	glm::vec4 projP = this->m_lightSpace * p;
+	glm::vec4 projP1 = this->m_viewProjection * p1;
+
+	projP /= projP[ 3 ];
+	projP1 /= projP1[ 3 ];
+
 	cout << "projP: (" << projP[0] << "/" <<  projP[1] << "/" << projP[2] << "/" << projP[3] << ")" << endl;
-*/
+	cout << "projP1: (" << projP1[0] << "/" <<  projP1[1] << "/" << projP1[2] << "/" << projP1[3] << ")" << endl;
+	*/
 
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_lightSpace ), 64, 64) )
@@ -556,7 +567,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 		return false;
 	}
 
-	glClear( GL_DEPTH_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
 	if ( false == this->renderInstances( instances ) )

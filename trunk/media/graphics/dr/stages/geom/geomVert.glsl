@@ -15,7 +15,7 @@ layout(shared) uniform transform
 void main()
 {
 	ex_shadowCoord = lightSpace_mat * vec4( in_vertPos, 1.0 );
-	ex_shadowCoord = ex_shadowCoord / ex_shadowCoord.w;
+	//ex_shadowCoord = ex_shadowCoord / ex_shadowCoord.w;
 	
 	ex_color = vec4( 1.0, 1.0, 1.0, 1.0 );
 
