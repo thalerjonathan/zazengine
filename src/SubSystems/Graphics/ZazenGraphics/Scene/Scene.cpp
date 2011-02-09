@@ -7,8 +7,8 @@
 
 using namespace std;
 
-Scene::Scene(const string& name, Camera* camera)
-	: name(name)
+Scene::Scene( const string& name, Viewer* camera )
+	: name( name )
 {
 	this->camera = camera;
 	this->renderer = 0;
@@ -23,11 +23,10 @@ Scene::~Scene()
 bool
 Scene::load()
 {
-	if (this->renderer)
+	if ( this->renderer )
 		delete this->renderer;
 
-	this->renderer = new DRRenderer( *this->camera, this->skyBoxFolder );
-	
+	this->renderer = new DRRenderer( this->camera );
 	if ( false == this->renderer->initialize() )
 	{
 		cout << "ERROR ... initializing renderer failed - exit" << endl;

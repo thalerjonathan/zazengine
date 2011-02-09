@@ -5,8 +5,7 @@ in vec4 ex_shadowCoord;
 
 out vec4 out_color;
 
-//uniform sampler2DShadow ShadowMap;
-uniform sampler2D ShadowMap;
+uniform sampler2DShadow ShadowMap;
 
 /*
 out vec4 out_diffuse;
@@ -15,18 +14,16 @@ out vec4 out_depth;
 out vec4 out_generic;
 */
 
-/*
 float lookup( float offsetX, float offsetY )
 {
 	float depth = textureProj( ShadowMap, ex_shadowCoord + vec4( offsetX, offsetY, 0.0, 0.0 ) );
 	return depth != 1.0 ? 0.75 : 1.0; 
 }
-*/
+
 
 void main()
 {
-vec4 shadowCoordinateWdivide = ex_shadowCoord / ex_shadowCoord.w ;
-	out_color = texture2D( ShadowMap, shadowCoordinateWdivide.st );
+	out_color = ex_color * lookup( 0.0, 0.0 );
 
 /*
 	float factor = lookup( 0.0, 0.0 );

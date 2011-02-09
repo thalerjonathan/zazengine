@@ -24,7 +24,7 @@
 class DRRenderer : public Renderer
 {
  public:
-	DRRenderer(Camera& camera, std::string&);
+	DRRenderer( Viewer* camera );
 	virtual ~DRRenderer();
 
 	virtual bool initialize();
@@ -83,8 +83,8 @@ class DRRenderer : public Renderer
 	bool renderGeometryStage( std::list<Instance*>& instances );
 	bool renderLightingStage( std::list<Instance*>& instances );
 
-	bool renderInstances( std::list<Instance*>& instances );
-	bool renderGeom( Instance*, GeomType* );
+	bool renderInstances( Viewer* viewer, std::list<Instance*>& instances );
+	bool renderGeom( Viewer* viewer, Instance* parent, GeomType* geom );
 
 	bool showShadowMap();
 

@@ -18,8 +18,8 @@
 
 using namespace std;
 
-DRRenderer::DRRenderer(Camera& camera, std::string& skyBoxFolder)
-	: Renderer(camera, skyBoxFolder)
+DRRenderer::DRRenderer( Viewer* camera )
+	: Renderer( camera )
 {
 	this->m_drFB = 0;
 	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
@@ -62,7 +62,7 @@ bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
 	// calculate the view-projection matrix
-	this->m_viewProjection = this->camera.m_projectionMatrix * this->camera.m_viewingMatrix;
+	this->m_viewProjection = this->m_camera->m_projectionMatrix * this->m_camera->m_viewingMatrix;
 
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_viewProjection ), 0, 64) )
@@ -92,6 +92,25 @@ bool
 DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
+
+	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
+	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
+	glClearDepth(1.0f);									// Depth Buffer Setup
+	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
+	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
+	glCullFace(GL_FRONT);
+glEnable(GL_LIGHTING);
+glEnable(GL_TEXTURE_2D);
+
+GLfloat LightAmbient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+GLfloat LightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+GLfloat LightPosition[] = { 0.0f, 60.0f, 0.0f, 1.0f };
+
+glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);         // Setup The Ambient Light
+glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);         // Setup The Diffuse Light
+glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);        // Position The Light
+ glEnable(GL_LIGHT1);
 
 	if ( false == this->initFBO() )
 		return false;
@@ -255,7 +274,7 @@ DRRenderer::initFBO()
 			cout << "ERROR in DRRenderer::initFBO: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
-		glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->camera.getWidth(), this->camera.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+		glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA8, this->m_camera->getWidth(), this->m_camera->getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -363,10 +382,10 @@ DRRenderer::initLightingStage()
 {
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
-	this->m_light = new Light();
+	this->m_light = new Light( 45.0, 800, 600 );
 
-	this->m_light->viewingTransf.setPosition( 0, 50, 50 );
-	this->m_light->viewingTransf.changePitch( -0.3 );
+	this->m_light->setPositionInv( glm::vec3( 0, 50, 70 ) );
+	this->m_light->changePitchInv( 30 );
 
 	cout << "Initializing Deferred Rendering Lighting-Stage finished" << endl;
 
@@ -403,8 +422,8 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
-    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
@@ -529,7 +548,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 
 	// calculate the light-space projection matrix
 	// multiplication with unit-cube is first because has to be carried out the last
-	this->m_lightSpace = this->m_unitCubeMatrix * this->m_viewProjection;
+	this->m_lightSpace = this->m_unitCubeMatrix * this->m_light->m_projectionMatrix * this->m_light->m_viewingMatrix;
 
 	/*
 	glm::vec4 p( 0, 0, 0, 1 );
@@ -557,7 +576,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 		return false;
 	}
 
-	glLoadMatrixf( glm::value_ptr( this->camera.m_viewingMatrix ) );
+	glLoadMatrixf( glm::value_ptr( this->m_light->m_viewingMatrix ) );
 
 	//Rendering offscreen
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, this->m_shadowMappingFB );
@@ -570,7 +589,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-	if ( false == this->renderInstances( instances ) )
+	if ( false == this->renderInstances( this->m_light, instances ) )
 		return false;
 
 	glBindFramebufferEXT( GL_FRAMEBUFFER_EXT,0 );
@@ -641,7 +660,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	//glDrawBuffers(MRT_COUNT, buffers);
 
 	// draw all geometry
-	if ( false == this->renderInstances( instances ) )
+	if ( false == this->renderInstances( this->m_camera, instances ) )
 		return false;
 
 	return true;
@@ -672,14 +691,14 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 }
 
 bool
-DRRenderer::renderInstances( std::list<Instance*>& instances )
+DRRenderer::renderInstances( Viewer* viewer, std::list<Instance*>& instances )
 {
 	list<Instance*>::iterator iter = instances.begin();
 	while ( iter != instances.end() )
 	{
 		Instance* instance = *iter++;
 
-		if ( false == this->renderGeom( instance, instance->geom ) )
+		if ( false == this->renderGeom( viewer, instance, instance->geom ) )
 			return false;
 	}
 
@@ -687,25 +706,25 @@ DRRenderer::renderInstances( std::list<Instance*>& instances )
 }
 
 bool
-DRRenderer::renderGeom( Instance* parent, GeomType* geom )
+DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 {
 	if ( geom->children.size() )
 	{
 		for ( unsigned int i = 0; i < geom->children.size(); i++ )
 		{
-			return this->renderGeom( parent, geom->children[ i ] );
+			return this->renderGeom( viewer, parent, geom->children[ i ] );
 		}
 	}
 	else
 	{
 		// no projection for fixed functionality - already there
-		glm::mat4 mat = this->camera.m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+		glm::mat4 mat = viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
 
-		glm::mat4 mvp = this->m_viewProjection * *parent->m_modelMatrix * geom->m_modelMatrix;
+		glm::mat4 mvp = viewer->m_projectionMatrix * viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
 
-		glLoadMatrixf( &mat[ 0 ][ 0 ] );
+		glLoadMatrixf( glm::value_ptr( mat ) );
 
-		if ( false == this->m_transformBlock->updateData( &mvp[ 0 ][ 0 ], 0, 64) )
+		if ( false == this->m_transformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
 			return false;
 
 		return geom->render();
@@ -727,7 +746,7 @@ DRRenderer::showShadowMap()
 	}
 
 	// set up orthogonal projection to render quad
-	this->camera.setupOrtho();
+	this->m_camera->setupOrtho();
 
 	glEnable( GL_TEXTURE_2D );
 	glActiveTexture( GL_TEXTURE0 );
@@ -736,16 +755,16 @@ DRRenderer::showShadowMap()
 	// render quad
 	glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0, 0 );
-		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 + this->camera.getHeight() / 2 );
-		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 0 + this->camera.getWidth() / 2, 0 + this->camera.getHeight() / 2 );
-		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 0 + this->camera.getWidth() / 2, 0 );
+		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0, 0 + this->m_camera->getHeight() / 2 );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 0 + this->m_camera->getWidth() / 2, 0 + this->m_camera->getHeight() / 2 );
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 0 + this->m_camera->getWidth() / 2, 0 );
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glDisable(GL_TEXTURE_2D);
 
 	// switch back to perspective projection
-	this->camera.setupPerspective();
+	this->m_camera->setupPerspective();
 
 	return true;
 }

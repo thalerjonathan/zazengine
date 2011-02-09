@@ -40,13 +40,14 @@ Orientation::setPositionInv( const glm::vec3& pos )
 	data[ 14 ] = -pos[ 2 ];
 }
 
-// x-achsis rotation
+// local x-achsis rotation
 void
 Orientation::changePitch( float angle )
 {
 	this->m_matrix = glm::rotate( this->m_matrix, angle, glm::vec3( 1, 0, 0 ) );
 }
 
+// world x-achsis rotation
 void
 Orientation::changePitchInv( float angle )
 {
@@ -54,13 +55,14 @@ Orientation::changePitchInv( float angle )
 	this->m_matrix = mat * this->m_matrix;
 }
 
-// y-achsis rotation
+// local y-achsis rotation
 void
 Orientation::changeHeading( float angle )
 {
 	this->m_matrix = glm::rotate( this->m_matrix, angle, glm::vec3( 0, 1, 0 ) );
 }
 
+// world y-achsis rotation
 void
 Orientation::changeHeadingInv( float angle )
 {
@@ -68,14 +70,14 @@ Orientation::changeHeadingInv( float angle )
 	this->m_matrix = mat * this->m_matrix;
 }
 
-
-// z-achsis rotation
+// local z-achsis rotation
 void
 Orientation::changeRoll( float angle )
 {
 	this->m_matrix = glm::rotate( this->m_matrix, angle, glm::vec3( 0, 0, 1 ) );
 }
 
+// world z-achsis rotation
 void
 Orientation::changeRollInv( float angle )
 {
