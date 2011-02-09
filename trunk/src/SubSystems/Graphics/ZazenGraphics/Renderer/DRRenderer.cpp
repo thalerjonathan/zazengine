@@ -77,8 +77,10 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
+	/*
 	if ( false == this->showShadowMap() )
 		return false;
+*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -620,23 +622,25 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
+	glLoadMatrixf( glm::value_ptr( this->m_camera->m_viewingMatrix ) );
+
 	// drawing the cross in the origin
 	glColor4f(1, 0, 0, 0);
 	glBegin(GL_LINES);
-		glVertex3f(100, 0, 0);
-		glVertex3f(-100, 0, 0);
+		glVertex3f( 100, 0, 0 );
+		glVertex3f( -100, 0, 0 );
 	glEnd();
 
 	glColor4f(0, 1, 0, 0);
 	glBegin(GL_LINES);
-		glVertex3f(0, 100, 0);
-		glVertex3f(0, -100, 0);
+		glVertex3f( 0, 100, 0 );
+		glVertex3f( 0, -100, 0 );
 	glEnd();
 
 	glColor4f(0, 0, 1, 0);
 	glBegin(GL_LINES);
-		glVertex3f(0, 0, 100);
-		glVertex3f(0, 0, -100);
+		glVertex3f( 0, 0, 100 );
+		glVertex3f( 0, 0, -100 );
 	glEnd();
 
 	glActiveTexture( GL_TEXTURE0 );
