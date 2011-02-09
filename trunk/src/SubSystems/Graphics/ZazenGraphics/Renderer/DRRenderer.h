@@ -84,7 +84,7 @@ class DRRenderer : public Renderer
 	bool renderInstances( Viewer* viewer, std::list<Instance*>& instances );
 	bool renderGeom( Viewer* viewer, Instance* parent, GeomType* geom );
 
-	bool showShadowMap();
+	bool showTexture( GLuint texID, int quarter );
 
 };
 

@@ -637,22 +637,28 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
 		return false;
 
-	//GLenum buffers[MRT_COUNT];
+	/*
+	GLenum buffers[MRT_COUNT];
 
-	//  start geometry pass
-	// glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
+	// start geometry pass
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->m_drFB);
 
 	// clear fbo
-	//glClear(GL_COLOR_BUFFER_BIT);
+	glClear( GL_COLOR_BUFFER_BIT );
 
 	// activate drawing to targets
-	//for ( int i = 0; i < MRT_COUNT; i++)
-	//	buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
-	//glDrawBuffers(MRT_COUNT, buffers);
+	for ( int i = 0; i < MRT_COUNT; i++)
+		buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
+	glDrawBuffers( MRT_COUNT, buffers );
+
+*/
 
 	// draw all geometry
 	if ( false == this->renderInstances( this->m_camera, instances ) )
 		return false;
+
+//	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
 
 	return true;
 }
@@ -661,8 +667,6 @@ bool
 DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 {
 	/*
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
 	// start lighting stage
 	// bind rendertargets as textures
 	for ( int i = 0; i < MRT_COUNT; i++ )
@@ -672,12 +676,12 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	}
 
 	// activate lighting-stage shader
-	//this->m_lightStageProg->activate();
+	this->m_lightStageProg->activate();
 
 	// finish lighting stage
-	//this->m_lightStageProg->deactivate();
-*/
+	this->m_lightStageProg->deactivate();
 
+*/
 	return true;
 }
 
@@ -724,14 +728,14 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 }
 
 bool
-DRRenderer::showShadowMap()
+DRRenderer::showTexture( GLuint texID, int quarter )
 {
 	GLint status;
 
 	glUseProgram( 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::renderFrame: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
+		cout << "ERROR in DRRenderer::showTexture: glUseProgram( 0 ) failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
@@ -739,7 +743,7 @@ DRRenderer::showShadowMap()
 	this->m_camera->setupOrtho();
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+	glBindTexture( GL_TEXTURE_2D, texID );
 
 	// render quad
 	glBegin( GL_QUADS );
