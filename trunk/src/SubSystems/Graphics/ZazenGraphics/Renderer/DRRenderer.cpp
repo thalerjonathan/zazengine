@@ -22,7 +22,7 @@ DRRenderer::DRRenderer( Viewer* camera )
 	: Renderer( camera )
 {
 	this->m_drFB = 0;
-	memset( this->m_mrt, sizeof( this->m_mrt), 0 );
+	memset( this->m_mrt, 0, sizeof( this->m_mrt) );
 
 	this->m_progGeomStage = 0;
 	this->m_vertGeomStage = 0;
@@ -652,7 +652,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
 	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
 		return false;
-
 	/*
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
@@ -676,11 +675,11 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
-	*/
-
+*/
 	// switch to back-face culling
 	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	glClearColor( 0.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// draw all geometry
