@@ -41,6 +41,7 @@ class Program
 
 	GLuint programObject;
 
+	GLint getFragDataLocation( const std::string& name );
 	GLuint getUniformBlockIndex( const std::string& name );
 	GLint getUniformLocation( const std::string& name );
 	static void printInfoLog( GLuint obj );
