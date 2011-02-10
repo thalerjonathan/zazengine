@@ -366,6 +366,7 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
+	// binding attribute locations bevore linking
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
@@ -384,7 +385,44 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	cout << "Initializing Deferred Rendering Geometry-Stage finished" << endl;
+	// check the attribute locations - can only be done after linking
+	if ( 0 != this->m_progGeomStage->getAttribLocation( "in_vertPos" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: attribute location doesn't match - exit" << endl;
+		return false;
+	}
+
+	if ( 1 != this->m_progGeomStage->getAttribLocation( "in_vertNorm" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: attribute location doesn't match - exit" << endl;
+		return false;
+	}
+
+
+	// check the frag data locations - can only be done after linking
+	if ( 0 != this->m_progGeomStage->getFragDataLocation( "out_diffuse" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
+		return false;
+	}
+
+	if ( 1 != this->m_progGeomStage->getFragDataLocation( "out_normal" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
+		return false;
+	}
+
+	if ( 2 != this->m_progGeomStage->getFragDataLocation( "out_depth" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
+		return false;
+	}
+
+	if ( 3 != this->m_progGeomStage->getFragDataLocation( "out_generic" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
+		return false;
+	}
 
 	return true;
 }

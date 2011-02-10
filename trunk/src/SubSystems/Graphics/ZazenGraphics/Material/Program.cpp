@@ -157,16 +157,22 @@ Program::bindAttribLocation( GLuint index, const std::string& name )
 	return true;
 }
 
+GLint
+Program::getAttribLocation( const std::string& name )
+{
+	GLint location = 0;
+
+	location = glGetAttribLocation( this->programObject, name.c_str() );
+	if ( -1 == location )
+		cout << "Coulnd't glGetAttribLocation location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
+
+	return location;
+}
+
 bool
 Program::bindFragDataLocation( GLuint index, const std::string& name )
 {
 	GLint status;
-
-	GLint location = this->getFragDataLocation( name );
-	if ( -1 == location )
-		return false;
-
-	cout << "fragDataLocation for " << name << " = " << location << endl;
 
 	glBindFragDataLocation( this->programObject, index, name.c_str() );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -176,6 +182,18 @@ Program::bindFragDataLocation( GLuint index, const std::string& name )
 	}
 
 	return true;
+}
+
+GLint
+Program::getFragDataLocation( const std::string& name )
+{
+	GLint location = 0;
+
+	location = glGetFragDataLocation( this->programObject, name.c_str() );
+	if ( -1 == location )
+		cout << "Coulnd't glGetFragDataLocation location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
+
+	return location;
 }
 
 bool
@@ -268,18 +286,6 @@ Program::getUniformLocation( const std::string& name )
 	location = glGetUniformLocation( this->programObject, name.c_str() );
 	if ( -1 == location )
 		cout << "Coulnd't get Uniform Location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
-
-	return location;
-}
-
-GLint
-Program::getFragDataLocation( const std::string& name )
-{
-	GLint location = 0;
-
-	location = glGetFragDataLocation( this->programObject, name.c_str() );
-	if ( -1 == location )
-		cout << "Coulnd't get FragData Location for name \"" << name << "\". OpenGL-Error: " << gluErrorString(glGetError())  << endl;
 
 	return location;
 }
