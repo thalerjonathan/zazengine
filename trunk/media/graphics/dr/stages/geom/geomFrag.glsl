@@ -1,9 +1,8 @@
 #version 330 core
 
+in vec4 ex_normal;
 in vec4 ex_color;
 in vec4 ex_shadowCoord;
-
-out vec4 out_color;
 
 out vec4 out_diffuse;
 out vec4 out_normal;
@@ -18,13 +17,10 @@ float lookup( float offsetX, float offsetY )
 	return depth != 1.0 ? 0.75 : 1.0; 
 }
 
-
 void main()
 {
-	out_color = ex_color * lookup( 0.0, 0.0 );
-
-	out_diffuse = out_color;
-	out_normal = vec4( 0.0, 1.0, 0.0, 1.0 );
+	out_diffuse = ex_color * lookup( 0.0, 0.0 );
+	out_normal = ex_normal;
 	out_depth = vec4( 0.0, 0.0, 1.0, 1.0 );
 	out_generic = vec4( 1.0, 1.0, 0, 1.0 );
 
