@@ -30,7 +30,10 @@ class Program
 	bool bindUniformBlock( UniformBlock* );
 
 	bool bindAttribLocation( GLuint index, const std::string& name );
+	GLint getAttribLocation( const std::string& name );
+
 	bool bindFragDataLocation( GLuint colorNumber, const std::string& name );
+	GLint getFragDataLocation( const std::string& name );
 
 	bool link();
 
@@ -41,7 +44,6 @@ class Program
 
 	GLuint programObject;
 
-	GLint getFragDataLocation( const std::string& name );
 	GLuint getUniformBlockIndex( const std::string& name );
 	GLint getUniformLocation( const std::string& name );
 	static void printInfoLog( GLuint obj );
