@@ -9,7 +9,7 @@
 #define DRRENDERER_H_
 
 // number of rendering targets for deferred renderer
-#define MRT_COUNT 4
+#define MRT_COUNT 1
 
 #define SHADOW_MAP_WIDTH 	800
 #define SHADOW_MAP_HEIGHT	600
@@ -37,6 +37,7 @@ class DRRenderer : public Renderer
 	// Multiple-Render-Targes & Framebuffer for Deferred Rendering
 	GLuint m_drFB;
 	GLuint m_mrt[ MRT_COUNT ];
+	GLenum m_buffers[ MRT_COUNT ];
 	////////////////////////////////////////
 
 	// Program and shaders for geometry-stage

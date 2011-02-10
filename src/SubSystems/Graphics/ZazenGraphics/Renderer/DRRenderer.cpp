@@ -74,11 +74,8 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
-	for ( int i = 0; i < MRT_COUNT; i++ )
-	{
-		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
-			return false;
-	}
+	if ( false == this->showTexture( this->m_mrt[ 0 ], 0 ) )
+		return false;
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -238,7 +235,7 @@ DRRenderer::initFBO()
 {
 	GLenum status;
 
-	glGenFramebuffers(1, &this->m_drFB);
+	glGenFramebuffers( 1, &this->m_drFB );
 	if ( GL_NO_ERROR != ( status = glGetError() )  )
 	{
 		cout << "ERROR in DRRenderer::initFBO: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -247,6 +244,8 @@ DRRenderer::initFBO()
 
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
+		this->m_buffers[ i ] = GL_COLOR_ATTACHMENT0 + i;
+
 		glGenTextures( 1, &this->m_mrt[ i ] );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
@@ -254,19 +253,19 @@ DRRenderer::initFBO()
 			return false;
 		}
 
-		glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
-		if ( GL_NO_ERROR != ( status = glGetError() )  )
-		{
-			cout << "ERROR in DRRenderer::initFBO: glBindFramebufferEXT failed with " << gluErrorString( status ) << " - exit" << endl;
-			return false;
-		}
-
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[i] );
+		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
+
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+		// Remove artifact on the edges of the shadowmap
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, this->m_camera->getWidth(), this->m_camera->getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
@@ -275,15 +274,22 @@ DRRenderer::initFBO()
 			return false;
 		}
 
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, this->m_mrt[ i ], 0 );
+		glBindTexture( GL_TEXTURE_2D, 0 );
+
+		glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
+		if ( GL_NO_ERROR != ( status = glGetError() )  )
+		{
+			cout << "ERROR in DRRenderer::initFBO: glBindFramebuffer failed with " << gluErrorString( status ) << " - exit" << endl;
+			return false;
+		}
+
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->m_mrt[i], 0 );
 		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE != status )
 		{
 			cout << "ERROR in DRRenderer::initFBO: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
-
-		glClearColor( 0, 0, 0, 0 );
 
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
@@ -342,31 +348,13 @@ DRRenderer::initGeomStage()
 	}
 
 	// setting frag-data location is done bevore linking
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: binding frag-data location failed - exit" << endl;
-		return false;
-	}
+	/*
+	this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" );
+	this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" );
+	this->m_progGeomStage->bindFragDataLocation( 2, "out_depth" );
+	this->m_progGeomStage->bindFragDataLocation( 3, "out_generic" );
+	*/
 
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: binding frag-data location failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 2, "out_depth" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: binding frag-data location failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 3, "out_generic" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: binding frag-data location failed - exit" << endl;
-		return false;
-	}
-
-	// binding attribute locations bevore linking
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
@@ -385,44 +373,7 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	// check the attribute locations - can only be done after linking
-	if ( 0 != this->m_progGeomStage->getAttribLocation( "in_vertPos" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: attribute location doesn't match - exit" << endl;
-		return false;
-	}
-
-	if ( 1 != this->m_progGeomStage->getAttribLocation( "in_vertNorm" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: attribute location doesn't match - exit" << endl;
-		return false;
-	}
-
-
-	// check the frag data locations - can only be done after linking
-	if ( 0 != this->m_progGeomStage->getFragDataLocation( "out_diffuse" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
-		return false;
-	}
-
-	if ( 1 != this->m_progGeomStage->getFragDataLocation( "out_normal" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
-		return false;
-	}
-
-	if ( 2 != this->m_progGeomStage->getFragDataLocation( "out_depth" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
-		return false;
-	}
-
-	if ( 3 != this->m_progGeomStage->getFragDataLocation( "out_generic" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: frag-data location doesn't match - exit" << endl;
-		return false;
-	}
+	cout << "Initializing Deferred Rendering Geometry-Stage finished" << endl;
 
 	return true;
 }
@@ -480,7 +431,7 @@ DRRenderer::initShadowMapping()
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::glTexImage2D: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
@@ -491,14 +442,14 @@ DRRenderer::initShadowMapping()
 	glGenFramebuffers( 1, &this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: glGenFramebuffers failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glBindFramebufferEXT failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in DRRenderer::initShadowMapping: glBindFramebuffer failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
@@ -507,11 +458,11 @@ DRRenderer::initShadowMapping()
 	glReadBuffer( GL_NONE );
 
 	// attach the texture to FBO depth attachment point
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D, this->m_shadowMap, 0 );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, this->m_shadowMap, 0 );
 	CHECK_FRAMEBUFFER_STATUS( status );
-	if ( GL_FRAMEBUFFER_COMPLETE_EXT != status )
+	if ( GL_FRAMEBUFFER_COMPLETE != status )
 	{
-		cout << "ERROR in DRRenderer::initFBO: glFramebufferTexture2DEXT error: " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in DRRenderer::initFBO: glFramebufferTexture2D error: " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
@@ -631,7 +582,14 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebufferEXT failed with " << gluErrorString( status ) << endl;
+		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebuffer failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	CHECK_FRAMEBUFFER_STATUS( status );
+	if ( GL_FRAMEBUFFER_COMPLETE != status )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
@@ -647,7 +605,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebufferEXT( 0 ) failed with " << gluErrorString( status ) << endl;
+		cout << "ERROR in DRRenderer::renderShadowMap: glBindFramebuffer( 0 ) failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
@@ -657,10 +615,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 bool
 DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 {
-	// switch to back-face culling
-	glCullFace( GL_BACK );
-	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	GLenum status;
 
 	if ( false == this->m_progGeomStage->use() )
 	{
@@ -688,30 +643,53 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
 	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
 		return false;
 
-	GLenum buffers[MRT_COUNT];
-
+	/*
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
-
-	// clear fbo
-	glClear( GL_COLOR_BUFFER_BIT );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: glBindFramebuffer failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
 	// activate drawing to targets
-	for ( int i = 0; i < MRT_COUNT; i++)
-		buffers[ i ] = GL_COLOR_ATTACHMENT0_EXT + i;
+	glDrawBuffers( MRT_COUNT, this->m_buffers );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: glDrawBuffers failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
-	glDrawBuffers( MRT_COUNT, buffers );
+	CHECK_FRAMEBUFFER_STATUS( status );
+	if ( GL_FRAMEBUFFER_COMPLETE != status )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+	*/
+
+	// switch to back-face culling
+	glCullFace( GL_BACK );
+	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// draw all geometry
 	if ( false == this->renderInstances( this->m_camera, instances ) )
 		return false;
 
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	return true;
 }
@@ -804,6 +782,8 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 	}
 
 	int counter = 0;
+	float height = this->m_camera->getHeight() / 2;
+	float width = this->m_camera->getWidth() / 2;
 
 	for ( int i = 0; i < 2; i++ )
 	{
@@ -813,10 +793,10 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 			{
 				// render quad
 				glBegin( GL_QUADS );
-					glTexCoord2f( 0.0f, 1.0f ); glVertex2f( i * ( this->m_camera->getHeight() / 2 ), j * ( this->m_camera->getHeight() / 2 ) );
-					glTexCoord2f( 0.0f, 0.0f ); glVertex2f( i * ( this->m_camera->getHeight() / 2 ),  j * ( this->m_camera->getHeight() / 2 ) + this->m_camera->getHeight() / 2 );
-					glTexCoord2f( 1.0f, 0.0f ); glVertex2f( i * ( this->m_camera->getHeight() / 2 ) + this->m_camera->getWidth() / 2, j * ( this->m_camera->getHeight() / 2 ) + this->m_camera->getHeight() / 2 );
-					glTexCoord2f( 1.0f, 1.0f ); glVertex2f( i * ( this->m_camera->getHeight() / 2 ) + this->m_camera->getWidth() / 2, j * ( this->m_camera->getHeight() / 2 ) );
+					glTexCoord2f( 0.0f, 1.0f ); glVertex2f( width * i, height * j );
+					glTexCoord2f( 0.0f, 0.0f ); glVertex2f( width * i, height * j + height );
+					glTexCoord2f( 1.0f, 0.0f ); glVertex2f( width * i + width, height * j + height );
+					glTexCoord2f( 1.0f, 1.0f ); glVertex2f( width * i + width, height * j );
 				glEnd();
 			}
 
