@@ -74,8 +74,11 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
-	if ( false == this->showTexture( this->m_mrt[ 0 ], 0 ) )
-		return false;
+	for ( int i = 0; i <  MRT_COUNT; i++ )
+	{
+		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
+			return false;
+	}
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -309,8 +312,8 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	this->m_vertLightingStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
-	if ( 0 == this->m_vertLightingStage )
+	this->m_vertGeomStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/geomVert.glsl" );
+	if ( 0 == this->m_vertGeomStage )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: coulnd't create vertex-shader - exit" << endl;
 		return false;
@@ -323,7 +326,7 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	if ( false == this->m_vertLightingStage->compile() )
+	if ( false == this->m_vertGeomStage->compile() )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: vertex shader compilation failed - exit" << endl;
 		return false;
@@ -335,7 +338,7 @@ DRRenderer::initGeomStage()
 		return false;
 	}
 
-	if ( false == this->m_progGeomStage->attachShader( this->m_vertLightingStage ) )
+	if ( false == this->m_progGeomStage->attachShader( this->m_vertGeomStage ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: attaching vertex shader to program failed - exit" << endl;
 		return false;
@@ -348,12 +351,10 @@ DRRenderer::initGeomStage()
 	}
 
 	// setting frag-data location is done bevore linking
-	/*
 	this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" );
 	this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" );
 	this->m_progGeomStage->bindFragDataLocation( 2, "out_depth" );
 	this->m_progGeomStage->bindFragDataLocation( 3, "out_generic" );
-	*/
 
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
@@ -387,6 +388,63 @@ DRRenderer::initLightingStage()
 
 	this->m_light->setPositionInv( glm::vec3( 0, 50, 70 ) );
 	this->m_light->changePitchInv( 30 );
+
+	this->m_progLightingStage = Program::createProgram( );
+	if ( 0 == this->m_progLightingStage )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create program - exit" << endl;
+		return false;
+	}
+
+	this->m_vertLightingStage = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/lighting/lightVert.glsl" );
+	if ( 0 == this->m_vertLightingStage )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create vertex-shader - exit" << endl;
+		return false;
+	}
+
+	this->m_fragLightingStage = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/lighting/lightFrag.glsl" );
+	if ( 0 == this->m_fragGeomStage )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create fragment-shader - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_vertLightingStage->compile() )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: vertex shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_fragLightingStage->compile() )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: fragment shader compilation failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progLightingStage->attachShader( this->m_vertLightingStage ) )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: attaching vertex shader to program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progLightingStage->attachShader( this->m_fragLightingStage ) )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: attaching fragment shader to program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progLightingStage->bindAttribLocation( 0, "in_vertPos" ) )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: binding attribute location to program failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progLightingStage->link() )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: linking program failed - exit" << endl;
+		return false;
+	}
 
 	cout << "Initializing Deferred Rendering Lighting-Stage finished" << endl;
 
@@ -641,18 +699,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	glEnd();
 	*/
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
-		return false;
-	/*
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -675,7 +721,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
-*/
+
 	// switch to back-face culling
 	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
@@ -686,7 +732,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	if ( false == this->renderInstances( this->m_camera, instances ) )
 		return false;
 
-	//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
@@ -696,22 +742,42 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 bool
 DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 {
-	/*
+	GLenum status;
+
+	// activate lighting-stage shader
+	if ( false == this->m_progLightingStage->use() )
+		return false;
+
 	// start lighting stage
 	// bind rendertargets as textures
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
 		glActiveTexture( GL_TEXTURE0 + i );
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ]);
+		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
 	}
 
-	// activate lighting-stage shader
-	this->m_lightStageProg->activate();
+	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
-	// finish lighting stage
-	this->m_lightStageProg->deactivate();
+	// bind our MRT to the uniforms
+	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
+		return false;
+	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
+		return false;
+	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 2 ) )
+		return false;
+	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap", 3 ) )
+		return false;
 
-*/
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 4 ) )
+		return false;
+
 	return true;
 }
 
@@ -772,6 +838,7 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 	// set up orthogonal projection to render quad
 	this->m_camera->setupOrtho();
 
+	glEnable( GL_TEXTURE_2D );
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, texID );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -804,6 +871,7 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 	}
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
+	glDisable( GL_TEXTURE_2D );
 
 	// switch back to perspective projection
 	this->m_camera->setupPerspective();
