@@ -136,4 +136,3 @@ Viewer::matrixChanged()
 	// viewingMatrix is changed by Orientation -> recalculate ProjectionView-Matrix
 	this->m_PVMatrix = this->m_projectionMatrix * this->m_viewingMatrix;
 }
-

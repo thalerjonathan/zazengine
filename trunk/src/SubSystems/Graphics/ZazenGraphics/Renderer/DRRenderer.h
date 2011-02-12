@@ -9,7 +9,7 @@
 #define DRRENDERER_H_
 
 // number of rendering targets for deferred renderer
-#define MRT_COUNT 4
+#define MRT_COUNT 2
 
 #define SHADOW_MAP_WIDTH 	800
 #define SHADOW_MAP_HEIGHT	600
@@ -62,15 +62,16 @@ class DRRenderer : public Renderer
 	////////////////////////////////////////
 
 	// Uniform-Blocks
-	UniformBlock* m_transformBlock;
+	UniformBlock* m_mvpTransformBlock;
+	UniformBlock* m_lightDataBlock;
 	////////////////////////////////////////
 
 	// lighting and shadowing
-	glm::mat4 m_unitCubeMatrix;
-	glm::mat4 m_lightSpace;
-
 	Light* m_light;
 	////////////////////////////////////////
+
+	// utils matrix
+	glm::mat4 m_unitCubeMatrix;
 
 	bool initFBO();
 	bool initGeomStage();
