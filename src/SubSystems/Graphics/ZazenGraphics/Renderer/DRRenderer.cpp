@@ -39,7 +39,8 @@ DRRenderer::DRRenderer( Viewer* camera )
 	this->m_shadowMap = 0;
 	this->m_shadowMappingFB = 0;
 
-	this->m_transformBlock = 0;
+	this->m_mvpTransformBlock = 0;
+	this->m_lightDataBlock = 0;
 
 	this->m_light = 0;
 
@@ -61,10 +62,6 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
-		return false;
-
 	if ( false == this->renderShadowMap( instances ) )
 		return false;
 
@@ -130,8 +127,11 @@ DRRenderer::shutdown()
 	cout << "Shutting down Deferred Renderer..." << endl;
 
 	// cleaning up uniform blocks
-	if ( this->m_transformBlock )
-		delete this->m_transformBlock;
+	if ( this->m_mvpTransformBlock )
+		delete this->m_mvpTransformBlock;
+
+	if ( this->m_lightDataBlock )
+		delete this->m_lightDataBlock;
 
 	if ( this->m_shadowMap )
 	{
@@ -286,7 +286,7 @@ DRRenderer::initFBO()
 			return false;
 		}
 
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->m_mrt[i], 0 );
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->m_mrt[ i ], 0 );
 		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE != status )
 		{
@@ -351,10 +351,17 @@ DRRenderer::initGeomStage()
 	}
 
 	// setting frag-data location is done bevore linking
-	this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" );
-	this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" );
-	this->m_progGeomStage->bindFragDataLocation( 2, "out_depth" );
-	this->m_progGeomStage->bindFragDataLocation( 3, "out_generic" );
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 0, "out_diffuse" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 1, "out_depth" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
+		return false;
+	}
 
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
@@ -592,26 +599,54 @@ DRRenderer::initShadowMapping()
 bool
 DRRenderer::initUniformBlocks()
 {
-	this->m_transformBlock = UniformBlock::createBlock( "transform" );
-	if ( 0 == this->m_transformBlock )
+	this->m_mvpTransformBlock = UniformBlock::createBlock( "mvp_transform" );
+	if ( 0 == this->m_mvpTransformBlock )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformBlock ) )
+	this->m_lightDataBlock = UniformBlock::createBlock( "lightData" );
+	if ( 0 == this->m_lightDataBlock )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
+		return false;
+	}
+
+	// bind mvp-transformation to all programs
+	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_mvpTransformBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_transformBlock ) )
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_mvpTransformBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
 
-	if ( false == this->m_transformBlock->bind( 0 ) )
+	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_mvpTransformBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
+	// lighting data just to lighting stage program
+	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightDataBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
+	// bind the blocks themself
+	if ( false == this->m_mvpTransformBlock->bind( 0 ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
+	if ( false == this->m_lightDataBlock->bind( 1 ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
@@ -624,14 +659,6 @@ bool
 DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 {
 	GLenum status;
-
-	// calculate the light-space projection matrix
-	// multiplication with unit-cube is first because has to be carried out the last
-	this->m_lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
-
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_transformBlock->updateData( glm::value_ptr( this->m_lightSpace ), 64, 64) )
-		return false;
 
 	if ( false == this->m_progShadowMapping->use() )
 		return false;
@@ -680,24 +707,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		cout << "ERROR in DRRenderer::renderGeometryStage: using shadow mapping program failed - exit" << endl;
 		return false;
 	}
-
-	// drawing the cross in the origin
-	/*
-	glBegin(GL_LINES);
-		glVertex3f( 100, 0, 0 );
-		glVertex3f( -100, 0, 0 );
-	glEnd();
-
-	glBegin(GL_LINES);
-		glVertex3f( 0, 100, 0 );
-		glVertex3f( 0, -100, 0 );
-	glEnd();
-
-	glBegin(GL_LINES);
-		glVertex3f( 0, 0, 100 );
-		glVertex3f( 0, 0, -100 );
-	glEnd();
-	*/
 
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
@@ -767,16 +776,44 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	// bind our MRT to the uniforms
 	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
 		return false;
-	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
+	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
 		return false;
-	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 2 ) )
+	/*
+	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
 		return false;
 	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap", 3 ) )
 		return false;
+	 */
 
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
-	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 4 ) )
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT ) )
 		return false;
+
+	// calculate the light-space projection matrix
+	// multiplication with unit-cube is first because has to be carried out the last
+	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
+		return false;
+
+	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
+
+	this->m_camera->setupOrtho();
+
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
+		return false;
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 64, 64) )
+		return false;
+
+	// render quad
+	glBegin( GL_QUADS );
+		glVertex2f( 0, 0 );
+		glVertex2f( 0, this->m_camera->getHeight() );
+		glVertex2f( this->m_camera->getWidth(), this->m_camera->getHeight() );
+		glVertex2f( this->m_camera->getWidth(), 0 );
+	glEnd();
+
+	this->m_camera->setupPerspective();
 
 	return true;
 }
@@ -813,8 +850,10 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		if ( Viewer::INSIDE == cullResult )
 		{
 			glm::mat4 mvp = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
-			if ( false == this->m_transformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
 				return false;
+
+			// Don't need to update inverse, because its just needed in screen-space during lighting-stage
 
 			return geom->render();
 		}
@@ -859,10 +898,10 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 			{
 				// render quad
 				glBegin( GL_QUADS );
-					glTexCoord2f( 0.0f, 1.0f ); glVertex2f( width * i, height * j );
-					glTexCoord2f( 0.0f, 0.0f ); glVertex2f( width * i, height * j + height );
-					glTexCoord2f( 1.0f, 0.0f ); glVertex2f( width * i + width, height * j + height );
-					glTexCoord2f( 1.0f, 1.0f ); glVertex2f( width * i + width, height * j );
+					glTexCoord2f( 0.0f, 1.0f ); glVertex2f( width * j, height * i );
+					glTexCoord2f( 0.0f, 0.0f ); glVertex2f( width * j, height * i + height );
+					glTexCoord2f( 1.0f, 0.0f ); glVertex2f( width * j + width, height * i + height );
+					glTexCoord2f( 1.0f, 1.0f ); glVertex2f( width * j + width, height * i );
 				glEnd();
 			}
 

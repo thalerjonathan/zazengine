@@ -2,10 +2,10 @@
 
 in vec3 in_vertPos;
 
-layout(shared) uniform transform
+layout(shared) uniform mvp_transform
 {
 	mat4 mvp_mat;
-	mat4 lightSpace_mat;
+	mat4 projInv_mat;
 };
 
 void main()
