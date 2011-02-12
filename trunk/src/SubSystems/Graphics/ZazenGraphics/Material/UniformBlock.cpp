@@ -48,7 +48,7 @@ UniformBlock::bind( int index )
 {
 	GLint status;
 
-	glBindBufferBase( GL_UNIFORM_BUFFER, 0, this->id );
+	glBindBufferBase( GL_UNIFORM_BUFFER, index, this->id );
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
