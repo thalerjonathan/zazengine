@@ -74,13 +74,11 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
-	/*
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
 		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
 			return false;
 	}
-	*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
