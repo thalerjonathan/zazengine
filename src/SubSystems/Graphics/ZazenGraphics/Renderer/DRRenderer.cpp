@@ -62,6 +62,9 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
+		return false;
+
 	if ( false == this->renderShadowMap( instances ) )
 		return false;
 
@@ -71,11 +74,13 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
+	/*
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
 		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
 			return false;
 	}
+	*/
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -639,13 +644,14 @@ DRRenderer::initUniformBlocks()
 		return false;
 	}
 
-	// bind the blocks themself
+	// transformblock goes to buffer index 0
 	if ( false == this->m_mvpTransformBlock->bind( 0 ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
 	}
 
+	// lightdata block goes to buffer index 1
 	if ( false == this->m_lightDataBlock->bind( 1 ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
@@ -742,8 +748,11 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-	glBindTexture( GL_TEXTURE_2D, 0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: glBindFramebuffer( 0 ) failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
 
 	return true;
 }
@@ -757,38 +766,47 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_progLightingStage->use() )
 		return false;
 
-	// start lighting stage
-	// bind rendertargets as textures
-	for ( int i = 0; i < MRT_COUNT; i++ )
-	{
-		glActiveTexture( GL_TEXTURE0 + i );
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
-	}
 
-	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+	// bind diffuse rendering target to texture unit 0
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, this->m_mrt[ 0 ] );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture of mrt 0 failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+	// tell lighting program that diffusemap is boudn to texture-unit 0
+	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
+		return false;
+
+
+	// bind depth rendering target to texture unit 1
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, this->m_mrt[ 1 ] );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture mrt 1 failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+	// tell lighting program that depthmap is boudn to texture-unit 1
+	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
+		return false;
+
+
+	// bind the shadowmap of the global light to texture-unit 2
+	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
-
-	// bind our MRT to the uniforms
-	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
-		return false;
-	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
-		return false;
-	/*
-	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
-		return false;
-	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap", 3 ) )
-		return false;
-	 */
-
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit 0
-	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT ) )
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 2 ) )
 		return false;
 
+
+	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
 	// calculate the light-space projection matrix
 	// multiplication with unit-cube is first because has to be carried out the last
 	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
@@ -796,12 +814,13 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
 		return false;
 
-	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
 
 	this->m_camera->setupOrtho();
 
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
+	// update projection-view because changed to orthogonal-projection
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 0, 64) )
 		return false;
+	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
 	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 64, 64) )
 		return false;
 
@@ -814,6 +833,16 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	glEnd();
 
 	this->m_camera->setupPerspective();
+
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	glActiveTexture( GL_TEXTURE2 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	return true;
 }
@@ -847,7 +876,7 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 	else
 	{
 		Viewer::CullResult cullResult = viewer->cullBB( geom->getBBMin(), geom->getBBMax() );
-		if ( Viewer::INSIDE == cullResult )
+		if ( Viewer::OUTSIDE != cullResult )
 		{
 			glm::mat4 mvp = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
 			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )

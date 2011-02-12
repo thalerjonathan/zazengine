@@ -50,11 +50,11 @@ float shadowLookup( const vec4 shadowCoord, const float offsetX, const float off
 void main()
 {
 	// 1. get the pixels normalized position on the screen (0-1) 
-	vec2 normalizedScreenCoord = vec2( 1.0, 1.0 );
+	vec2 normalizedScreenCoord = vec2( gl_FragCoord.x / 800, gl_FragCoord.y / 600 );
 
 	// 2. get the diffuse color
 	vec4 diffuseComp = texture( DiffuseMap, normalizedScreenCoord );
-	
+
 	// 3. get depth value
     float depth = unpackFloatFromVec4i( texture( DepthMap, normalizedScreenCoord ) );  
 	

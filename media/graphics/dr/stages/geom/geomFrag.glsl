@@ -18,6 +18,6 @@ void main()
 {
 	// for now we just write white as diffuse color
 	out_diffuse = vec4( 1.0, 0.0, 0.0, 1.0 );
-	out_depth = vec4( 0.0, 1.0, 0.0, 1.0 ); // packFloatToVec4i( ex_depth.z / ex_depth.w );
+	out_depth = packFloatToVec4i( ex_depth.z / ex_depth.w );
 
 }

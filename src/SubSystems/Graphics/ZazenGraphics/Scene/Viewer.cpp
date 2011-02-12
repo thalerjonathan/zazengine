@@ -37,7 +37,7 @@ Viewer::setupPerspective()
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	glLoadMatrixf( &this->m_projectionMatrix[ 0 ][ 0 ] );
+	glLoadMatrixf( glm::value_ptr( this->m_projectionMatrix ) );
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -51,7 +51,7 @@ Viewer::setupOrtho()
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	glLoadMatrixf( &this->m_projectionMatrix[ 0 ][ 0 ] );
+	glLoadMatrixf( glm::value_ptr( this->m_projectionMatrix ) );
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
