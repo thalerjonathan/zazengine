@@ -77,10 +77,11 @@ void main()
 	}
 	else
 	{
-		vec4 normal = texture( NormalMap, screenCoord );
-		vec4 lightDir = lightSpace_mat[ 2 ];
-		out_final = diffuseComp * dot( normal, lightDir );
-		//out_final = diffuseComp;
+		vec3 normal = texture( NormalMap, screenCoord ).xyz;
+		//vec3 lightDir = lightSpace_mat[ 0 ].xyz;
+		vec3 lightDir = vec3( 0.0, 1.0, 0.0 );
+		
+		out_final = diffuseComp * dot( normal.xyz, lightDir );
 		out_final.a = 1.0;
 	}
 }

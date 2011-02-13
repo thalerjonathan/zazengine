@@ -841,8 +841,17 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		{
 			// calculate modelView-Matrix
 			glm::mat4 modelViewMatrix = viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
-			// normal-vectors are transformed different
-			glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
+
+			// normal-vectors are transformed different than vertices
+			// take the transpose of the inverse modelView or simply reset the translation vector in the modelview-matrix
+			// in other words: only the rotations are applied to normals and they are guaranteed to leave
+			// normalized normals at unit length. THIS METHOD ONLY WORKS WHEN NO NON UNIFORM SCALING IS APPLIED
+			//glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
+			glm::mat4 normalMatrix = modelViewMatrix;
+			glm::value_ptr( normalMatrix )[ 12 ] = 0.0;
+			glm::value_ptr( normalMatrix )[ 13 ] = 0.0;
+			glm::value_ptr( normalMatrix )[ 14 ] = 0.0;
+
 			// calculate the model-view-projection matrix
 			glm::mat4 modelViewProjectionMatrix = viewer->m_projectionMatrix * modelViewMatrix;
 
