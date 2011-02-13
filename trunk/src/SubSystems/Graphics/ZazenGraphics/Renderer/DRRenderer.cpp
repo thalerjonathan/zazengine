@@ -66,15 +66,15 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderGeometryStage( instances ) )
 		return false;
 
-//	if ( false == this->renderLightingStage( instances ) )
-//		return false;
-
+	if ( false == this->renderLightingStage( instances ) )
+		return false;
+/*
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
 		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
 			return false;
 	}
-
+*/
 //	if ( false == this->showTexture( this->m_shadowMap, 2 ) )
 //		return false;
 
@@ -643,11 +643,6 @@ DRRenderer::initUniformBlocks()
 	}
 
 	// lighting data just to lighting stage program
-	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_lightDataBlock ) )
-	{
-		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
-		return false;
-	}
 	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightDataBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
@@ -733,27 +728,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
-	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
-		return false;
-	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( lightSpace ), 64, 64) )
-		return false;
-
-	// bind the shadowmap of the global light to texture-unit 0
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
-		return false;
-
 	// switch to back-face culling
 	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
@@ -824,6 +798,10 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 
 
 	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
+	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 64, 64) )
+		return false;
+
 	// calculate the light-space projection matrix
 	// multiplication with unit-cube is first because has to be carried out the last
 	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
@@ -836,9 +814,6 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 
 	// update projection-view because changed to orthogonal-projection
 	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 0, 64) )
-		return false;
-	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 64, 64) )
 		return false;
 
 	// render quad
