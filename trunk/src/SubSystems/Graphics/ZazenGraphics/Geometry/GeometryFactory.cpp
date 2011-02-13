@@ -344,6 +344,10 @@ GeometryFactory::load3DS(const std::string& fileName)
 				vertexData[ i ].position[ 0 ] = mesh->vertices[ i ][ 0 ];
 				vertexData[ i ].position[ 1 ] = mesh->vertices[ i ][ 2 ];
 				vertexData[ i ].position[ 2 ] = mesh->vertices[ i ][ 1 ];
+
+				vertexData[ i ].normal[ 0 ] = normals[ i ][ 0 ];
+				vertexData[ i ].normal[ 1 ] = normals[ i ][ 2 ];
+				vertexData[ i ].normal[ 2 ] = normals[ i ][ 1 ];
 			}
 	
 			lib3ds_mesh_calculate_vertex_normals( mesh, normals );

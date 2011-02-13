@@ -1,9 +1,11 @@
 #version 330 core
 
 in vec4 ex_depth;
+in vec4 ex_normal;
 
 out vec4 out_diffuse;
 out vec4 out_depth;
+out vec4 out_normal;
 
 vec4 packFloatToVec4i( const float value )
 {
@@ -18,4 +20,5 @@ void main()
 {	
 	out_diffuse = vec4( 1.0, 1.0, 1.0, 1.0 );	
 	out_depth = packFloatToVec4i( ex_depth.x / ex_depth.y );
+	out_normal = ex_normal;
 }

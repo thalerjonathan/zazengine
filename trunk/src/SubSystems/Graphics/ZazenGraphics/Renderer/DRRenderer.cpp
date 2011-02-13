@@ -68,15 +68,12 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
-/*
+
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
 		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
 			return false;
 	}
-*/
-//	if ( false == this->showTexture( this->m_shadowMap, 2 ) )
-//		return false;
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -357,8 +354,12 @@ DRRenderer::initGeomStage()
 		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
 		return false;
 	}
-
 	if ( false == this->m_progGeomStage->bindFragDataLocation( 1, "out_depth" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
+		return false;
+	}
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 2, "out_normal" ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
 		return false;
@@ -369,7 +370,6 @@ DRRenderer::initGeomStage()
 		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
 		return false;
 	}
-
 	if ( false == this->m_progGeomStage->bindAttribLocation( 1, "in_vertNorm" ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: binding attribute location to program failed - exit" << endl;
@@ -731,7 +731,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	// switch to back-face culling
 	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-	glClearColor( 1.0, 0.0, 0.0, 1.0 );
+	glClearColor( 0.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// draw all geometry
@@ -757,49 +757,45 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_progLightingStage->use() )
 		return false;
 
-
-	// bind diffuse rendering target to texture unit 0
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, this->m_mrt[ 0 ] );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	// bind the mrts
+	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
-		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture of mrt 0 failed with " << gluErrorString( status ) << endl;
-		return false;
+		// bind diffuse rendering target to texture unit 0
+		glActiveTexture( GL_TEXTURE0 + i );
+		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
+		if ( GL_NO_ERROR != ( status = glGetError() ) )
+		{
+			cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture of mrt " << i << " failed with " << gluErrorString( status ) << endl;
+			return false;
+		}
 	}
-	// tell lighting program that diffusemap is boudn to texture-unit 0
-	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
-		return false;
 
-
-	// bind depth rendering target to texture unit 1
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, this->m_mrt[ 1 ] );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture mrt 1 failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-	// tell lighting program that depthmap is boudn to texture-unit 1
-	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
-		return false;
-
-
-	// bind the shadowmap of the global light to texture-unit 2
-	glActiveTexture( GL_TEXTURE2 );
+	// bind the shadowmap of the global light
+	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
+
+	// tell lighting program that diffusemap is boudn to texture-unit 0
+	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
+		return false;
+	// tell lighting program that depthmap is boudn to texture-unit 1
+	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
+		return false;
+	// tell lighting program that depthmap is boudn to texture-unit 1
+	//if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 2 ) )
+	//	return false;
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 2 ) )
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 3 ) )
 		return false;
 
-
+	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
 	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 64, 64) )
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 128, 64) )
 		return false;
 
 	// calculate the light-space projection matrix
@@ -810,6 +806,7 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		return false;
 
 
+	// change to ortho to render the screen quad
 	this->m_camera->setupOrtho();
 
 	// update projection-view because changed to orthogonal-projection
@@ -824,9 +821,10 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		glVertex2f( this->m_camera->getWidth(), 0 );
 	glEnd();
 
+	// back to perspective
 	this->m_camera->setupPerspective();
 
-
+	/*
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
@@ -835,6 +833,7 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 
 	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
+*/
 
 	return true;
 }
@@ -870,8 +869,13 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		Viewer::CullResult cullResult = viewer->cullBB( geom->getBBMin(), geom->getBBMax() );
 		if ( Viewer::OUTSIDE != cullResult )
 		{
-			glm::mat4 mvp = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( mvp ), 0, 64) )
+			glm::mat4 modelViewProjectionMatrix = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			// normal-vectors are transformed different
+			glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewProjectionMatrix ) );
+
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 0, 64) )
+				return false;
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( normalMatrix ), 64, 64) )
 				return false;
 
 			// Don't need to update inverse, because its just needed in screen-space during lighting-stage
