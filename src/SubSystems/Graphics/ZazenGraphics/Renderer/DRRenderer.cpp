@@ -88,16 +88,14 @@ DRRenderer::initialize()
 {
 	cout << "Initializing Deferred Renderer..." << endl;
 
-	glShadeModel( GL_SMOOTH );							// Enable Smooth Shading
-	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );				// Black Background
+	glShadeModel( GL_SMOOTH );								// Enable Smooth Shading
+	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );					// Black Background
 	glClearDepth( 1.0f );									// Depth Buffer Setup
 
-	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
-	glCullFace(GL_FRONT);
-
-	glEnable( GL_DEPTH_TEST );							// Enables Depth Testing
-	glEnable( GL_CULL_FACE );
+	glDepthFunc( GL_LEQUAL );								// The Type Of Depth Testing To Do
+	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );	// Really Nice Perspective Calculations
+	glEnable( GL_DEPTH_TEST );								// Enables Depth Testing
+	glEnable( GL_TEXTURE_2D );
 
 	if ( false == this->initFBO() )
 		return false;
@@ -676,7 +674,6 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	}
 
 	// cull front-faces, just backfaces cast a shadow -> better quality
-	//glCullFace( GL_FRONT );
 	glClear( GL_DEPTH_BUFFER_BIT );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
@@ -729,7 +726,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	}
 
 	// switch to back-face culling
-	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	glClearColor( 0.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -779,15 +775,15 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		return false;
 	}
 
-	// tell lighting program that diffusemap is boudn to texture-unit 0
+	// tell lighting program that diffusemap is bound to texture-unit 0
 	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
 		return false;
-	// tell lighting program that depthmap is boudn to texture-unit 1
+	// tell lighting program that depthmap is bound to texture-unit 1
 	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
 		return false;
-	// tell lighting program that depthmap is boudn to texture-unit 1
-	//if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 2 ) )
-	//	return false;
+	// tell lighting program that normalmap is bound to texture-unit 2
+	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 2 ) )
+		return false;
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
 	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 3 ) )
 		return false;
@@ -824,17 +820,6 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	// back to perspective
 	this->m_camera->setupPerspective();
 
-	/*
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, 0 );
-
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, 0 );
-
-	glActiveTexture( GL_TEXTURE2 );
-	glBindTexture( GL_TEXTURE_2D, 0 );
-*/
-
 	return true;
 }
 
@@ -869,9 +854,12 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		Viewer::CullResult cullResult = viewer->cullBB( geom->getBBMin(), geom->getBBMax() );
 		if ( Viewer::OUTSIDE != cullResult )
 		{
-			glm::mat4 modelViewProjectionMatrix = viewer->m_PVMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			// calculate modelView-Matrix
+			glm::mat4 modelViewMatrix = viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
 			// normal-vectors are transformed different
-			glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewProjectionMatrix ) );
+			glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
+			// calculate the model-view-projection matrix
+			glm::mat4 modelViewProjectionMatrix = viewer->m_projectionMatrix * modelViewMatrix;
 
 			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 0, 64) )
 				return false;
@@ -902,7 +890,6 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 	// set up orthogonal projection to render quad
 	this->m_camera->setupOrtho();
 
-	glEnable( GL_TEXTURE_2D );
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, texID );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -933,9 +920,6 @@ DRRenderer::showTexture( GLuint texID, int quarter )
 			counter++;
 		}
 	}
-
-	glBindTexture( GL_TEXTURE_2D, 0 );
-	glDisable( GL_TEXTURE_2D );
 
 	// switch back to perspective projection
 	this->m_camera->setupPerspective();
