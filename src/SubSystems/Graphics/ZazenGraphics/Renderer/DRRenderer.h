@@ -9,7 +9,7 @@
 #define DRRENDERER_H_
 
 // number of rendering targets for deferred renderer
-#define MRT_COUNT 2
+#define MRT_COUNT 3
 
 #define SHADOW_MAP_WIDTH 	800
 #define SHADOW_MAP_HEIGHT	600

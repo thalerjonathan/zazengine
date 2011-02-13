@@ -4,14 +4,18 @@ out vec4 out_final;
 
 uniform sampler2D DiffuseMap;
 uniform sampler2D DepthMap;
+uniform sampler2D NormalMap;
+
 uniform sampler2DShadow ShadowMap;
 
 layout(shared) uniform mvp_transform
 {
 	mat4 mvp_mat;
+	mat4 normal_mat;
 	mat4 projInv_mat;
 };
 
+// contains light-direction in 8,9,10
 layout(shared) uniform lightData
 {
 	mat4 lightSpace_mat;
@@ -73,6 +77,9 @@ void main()
 	}
 	else
 	{
+		//vec4 normal = texture( NormalMap, screenCoord );
+		//vec4 lightDir = lightSpace_mat[ 2 ];
+		// out_final = diffuseComp * dot( normal, lightDir );
 		out_final = diffuseComp;
 		out_final.a = 1.0;
 	}
