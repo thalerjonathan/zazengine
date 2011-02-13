@@ -36,13 +36,10 @@ DRRenderer::DRRenderer( Viewer* camera )
 	this->m_vertShadowMapping = 0;
 	this->m_fragShadowMapping = 0;
 
-	this->m_shadowMap = 0;
 	this->m_shadowMappingFB = 0;
 
 	this->m_mvpTransformBlock = 0;
 	this->m_lightDataBlock = 0;
-
-	this->m_light = 0;
 
 	float unitCube[] = {
 			0.5, 0.0, 0.0, 0.0,
@@ -129,15 +126,14 @@ DRRenderer::shutdown()
 	if ( this->m_lightDataBlock )
 		delete this->m_lightDataBlock;
 
-	if ( this->m_shadowMap )
+	std::vector<Light*>::iterator iter = this->m_lights.begin();
+	while ( iter != this->m_lights.end() )
 	{
-		glDeleteTextures( 1, &this->m_shadowMap );
+		delete *iter++;
 	}
 
 	if ( this->m_shadowMappingFB )
-	{
 		glDeleteFramebuffers( 1, &this->m_shadowMappingFB );
-	}
 
 	// cleaning up shadow mapping
 	if ( this->m_progShadowMapping )
@@ -210,9 +206,7 @@ DRRenderer::shutdown()
 
 	// cleaning up framebuffer
 	if ( this->m_drFB )
-	{
 		glDeleteFramebuffers( 1, &this->m_drFB );
-	}
 
 	// cleaning up mrts
 	for ( int i = 0; i < MRT_COUNT; i++ )
@@ -390,9 +384,17 @@ DRRenderer::initLightingStage()
 {
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
-	this->m_light = new Light( 45.0, 800, 600 );
-	this->m_light->setPositionInv( glm::vec3( 0, 80, 120 ) );
-	this->m_light->changePitchInv( 30 );
+	Light* light = Light::createLight( 45.0, 800, 600 );
+	if ( 0 == light )
+	{
+		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create light - exit" << endl;
+		return false;
+	}
+
+	light->setPositionInv( glm::vec3( 0, 80, 120 ) );
+	light->changePitchInv( 30 );
+
+	this->m_lights.push_back( light );
 
 	this->m_progLightingStage = Program::createProgram( );
 	if ( 0 == this->m_progLightingStage )
@@ -463,44 +465,6 @@ DRRenderer::initShadowMapping()
 
 	GLenum status;
 
-	// Try to use a texture depth component
-	glGenTextures( 1, &this->m_shadowMap );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
-		return false;
-	}
-
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
-		return false;
-	}
-
-	// GL_LINEAR does not make sense for depth texture. However, next tutorial shows usage of GL_LINEAR and PCF
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-
-	// Remove artifact on the edges of the shadowmap
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-
-	// need to enable comparison-mode for depth-texture to use it as a shadow2DSampler in shader
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
-
-	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
-		return false;
-	}
-
-	// unbind framebuffer depth-target
-	glBindTexture( GL_TEXTURE_2D, 0 );
-
 	// create a framebuffer object
 	glGenFramebuffers( 1, &this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -509,6 +473,7 @@ DRRenderer::initShadowMapping()
 		return false;
 	}
 
+	/*
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_shadowMappingFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
@@ -520,8 +485,6 @@ DRRenderer::initShadowMapping()
 	glDrawBuffer( GL_NONE );
 	glReadBuffer( GL_NONE );
 
-	// attach the texture to FBO depth attachment point
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, this->m_shadowMap, 0 );
 	CHECK_FRAMEBUFFER_STATUS( status );
 	if ( GL_FRAMEBUFFER_COMPLETE != status )
 	{
@@ -531,6 +494,7 @@ DRRenderer::initShadowMapping()
 
 	// switch back to window-system-provided framebuffer
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+*/
 
 	this->m_progShadowMapping = Program::createProgram( );
 	if ( 0 == this->m_progShadowMapping )
@@ -666,19 +630,31 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 		return false;
 	}
 
-	CHECK_FRAMEBUFFER_STATUS( status );
-	if ( GL_FRAMEBUFFER_COMPLETE != status )
+	// Instruct openGL that we won't bind a color texture with the currently binded FBO
+	glDrawBuffer( GL_NONE );
+	glReadBuffer( GL_NONE );
+
+	// render the depth-map for each light
+	std::vector<Light*>::iterator iter = this->m_lights.begin();
+	while ( iter != this->m_lights.end() )
 	{
-		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
-		return false;
+		Light* light = *iter++;
+
+		// attach the texture to FBO depth attachment point
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, light->getShadowMapID(), 0 );
+		CHECK_FRAMEBUFFER_STATUS( status );
+		if ( GL_FRAMEBUFFER_COMPLETE != status )
+		{
+			cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
+			return false;
+		}
+
+		glClear( GL_DEPTH_BUFFER_BIT );
+		glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+
+		if ( false == this->renderInstances( light, instances ) )
+			return false;
 	}
-
-	// cull front-faces, just backfaces cast a shadow -> better quality
-	glClear( GL_DEPTH_BUFFER_BIT );
-	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
-
-	if ( false == this->renderInstances( this->m_light, instances ) )
-		return false;
 
 	// back to window-system framebuffer
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -766,15 +742,6 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		}
 	}
 
-	// bind the shadowmap of the global light
-	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
-	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
 	// tell lighting program that diffusemap is bound to texture-unit 0
 	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
 		return false;
@@ -794,31 +761,49 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 128, 64) )
 		return false;
 
-	// calculate the light-space projection matrix
-	// multiplication with unit-cube is first because has to be carried out the last
-	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
-	// update the transform-uniforms block with the new mvp matrix
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
-		return false;
+	// render the depth-map for each light
+	std::vector<Light*>::iterator iter = this->m_lights.begin();
+	while ( iter != this->m_lights.end() )
+	{
+		Light* light = *iter++;
+
+		// TODO: need to set opengl to additiveley blend light-passes
+
+		// bind the shadowmap of the global light
+		glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+		glBindTexture( GL_TEXTURE_2D, light->getShadowMapID() );
+		if ( GL_NO_ERROR != ( status = glGetError() ) )
+		{
+			cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
+			return false;
+		}
+
+		// calculate the light-space projection matrix
+		// multiplication with unit-cube is first because has to be carried out the last
+		glm::mat4 lightSpace = this->m_unitCubeMatrix * light->m_PVMatrix;
+		// update the transform-uniforms block with the new mvp matrix
+		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
+			return false;
 
 
-	// change to ortho to render the screen quad
-	this->m_camera->setupOrtho();
+		// change to ortho to render the screen quad
+		this->m_camera->setupOrtho();
 
-	// update projection-view because changed to orthogonal-projection
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 0, 64) )
-		return false;
+		// update projection-view because changed to orthogonal-projection
+		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 0, 64) )
+			return false;
 
-	// render quad
-	glBegin( GL_QUADS );
-		glVertex2f( 0, 0 );
-		glVertex2f( 0, this->m_camera->getHeight() );
-		glVertex2f( this->m_camera->getWidth(), this->m_camera->getHeight() );
-		glVertex2f( this->m_camera->getWidth(), 0 );
-	glEnd();
+		// render quad
+		glBegin( GL_QUADS );
+			glVertex2f( 0, 0 );
+			glVertex2f( 0, this->m_camera->getHeight() );
+			glVertex2f( this->m_camera->getWidth(), this->m_camera->getHeight() );
+			glVertex2f( this->m_camera->getWidth(), 0 );
+		glEnd();
 
-	// back to perspective
-	this->m_camera->setupPerspective();
+		// back to perspective
+		this->m_camera->setupPerspective();
+	}
 
 	return true;
 }

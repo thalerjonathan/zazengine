@@ -10,13 +10,20 @@
 
 #include "../Scene/Viewer.h"
 
+#include <GL/glew.h>
+
 class Light : public Viewer
 {
  public:
-	Light( float, int, int );
-	~Light();
+	static Light* createLight( float, int, int );
+	virtual ~Light();
+
+	GLuint getShadowMapID() { return this->m_shadowMapID; };
 
  private:
+	Light( float, int, int );
+
+	GLuint m_shadowMapID;
 
 };
 

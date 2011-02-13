@@ -10,7 +10,17 @@
 
 #include <glm/glm.hpp>
 
+/* High-Level orientation class
+ *
+ * matrix multiplication allowes combination of multiple transformation into one matrix
+ * because of the nature of matrix multiplication the order of multiplying matrices
+ * with each other is important. A*B is different from B*A.
+ * the transformations matrix multiplied with the last will be applied first e.g.
+ * Projection * Viewing * Modeling means: modeling is applied first, viewing second
+ * and projection last.
+ */
 // this class is designed to be used for subclassing
+
 class Orientation
 {
  public:

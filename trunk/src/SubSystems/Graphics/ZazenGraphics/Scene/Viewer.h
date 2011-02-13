@@ -11,6 +11,14 @@
 
 #include "../../../../Core/Utils/Math/Orientation.h"
 
+/* Can be used as the view-point of a camera or light
+ *
+ * in opengl the camera is alwayx in the 0,0,0 origin and points down
+ * the -Z achsis. the camera itself is not modified but instead one has
+ * to apply the inverse operation on the viewing matrix to achive a
+ * camera/viewer transformation
+ */
+
 class Viewer : public Orientation
 {
  public:

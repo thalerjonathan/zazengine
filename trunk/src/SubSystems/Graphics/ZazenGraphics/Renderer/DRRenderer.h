@@ -21,6 +21,37 @@
 #include "../Material/Shader.h"
 #include "../Lighting/Light.h"
 
+/* Deferred Rendering
+ * Geometry-Stage:
+ * Renders diffuse color ( texturing will be applied here ), depth and normals ( could also come from a normalmap )
+ * into 3 rendering target. Those targets will be used by the LightingStage to produce the final result.
+ *
+ * Lighting-Stage:
+ * Uses the rendering targets to calculate the final color of each fragment. See Shadowing how shadowing is applied
+ *
+ * Shadowing
+ * This renderer utilizes ShadowMaps as shadow-algorithm. The scene is rendererd from the viewpoint of
+ * the light into a depth-texture ( managed by the light ). Shadowing itself happens in the lighting-stage.
+ * The screen-space coordinate is transformed back into world-space (using the depth) and then transformed
+ * into light-space. Furthermore the light-space coordinate is transformed into 0-1 to be able to access
+ * the shadowmap like a texture ( using textureProj ).
+ *
+ * Lighting
+ * No Lighting implemented yet
+ */
+
+/* Errors:
+ * - Correct Deferred Shadowing: something still wrong with the shadowing transformation in lighting Fragment-shader
+ * - Normals: something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
+ */
+
+/* TODO:
+ * - Enhance Deferred Shadowing (reduce artifacts and implement soft-shadows )
+ * - Lighting: implement a lighting model ( e.g. phong )
+ * - Introduce multiple lights: each light contributes ADDITIVELY to the framebuffe, solve this
+ * - Material-Model: diffuse texturing, transparency, metal
+ * - Reflections: would be nice to have reflections in this renderer too
+ */
 class DRRenderer : public Renderer
 {
  public:
@@ -57,7 +88,6 @@ class DRRenderer : public Renderer
 	Shader* m_vertShadowMapping;
 	Shader* m_fragShadowMapping;
 
-	GLuint m_shadowMap;
 	GLuint m_shadowMappingFB;
 	////////////////////////////////////////
 
@@ -67,7 +97,7 @@ class DRRenderer : public Renderer
 	////////////////////////////////////////
 
 	// lighting and shadowing
-	Light* m_light;
+	std::vector<Light*> m_lights;
 	////////////////////////////////////////
 
 	// utils matrix
