@@ -89,6 +89,9 @@ Viewer::changeFov(float angle)
 	this->setupPerspective();
 }
 
+/* Not correctly working yet ( and pretty slow )
+ * with this method an object will be clipped although one is inside it
+ */
 Viewer::CullResult
 Viewer::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
 {
