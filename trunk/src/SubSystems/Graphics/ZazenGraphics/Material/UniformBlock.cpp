@@ -11,6 +11,8 @@
 
 using namespace std;
 
+GLuint UniformBlock::bindIndexer = 0;
+
 UniformBlock*
 UniformBlock::createBlock( const std::string& name )
 {
@@ -26,33 +28,37 @@ UniformBlock::createBlock( const std::string& name )
 	}
 
 	UniformBlock* block = new UniformBlock( name );
-	block->id = id;
+	block->m_id = id;
+	block->m_bindIndex = UniformBlock::bindIndexer;
+
+	UniformBlock::bindIndexer++;
 
 	return block;
 }
 
 UniformBlock::UniformBlock( const std::string& name )
-	: name ( name )
+	: m_name ( name )
 {
-	this->id = 0;
+	this->m_id = 0;
+	this->m_bindIndex = 0;
 }
 
 UniformBlock::~UniformBlock()
 {
-	if ( this->id )
-		glDeleteBuffers( 1, &this->id );
+	if ( this->m_id )
+		glDeleteBuffers( 1, &this->m_id );
 }
 
 bool
-UniformBlock::bind( int index )
+UniformBlock::bind()
 {
 	GLint status;
 
-	glBindBufferBase( GL_UNIFORM_BUFFER, index, this->id );
+	glBindBufferBase( GL_UNIFORM_BUFFER, this->m_bindIndex, this->m_id );
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "UniformBlock::bind: glBindBufferBase failed for name \"" << this->name << "\": " << gluErrorString( status )  << endl;
+		cout << "UniformBlock::bind: glBindBufferBase failed for name \"" << this->m_name << "\": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
@@ -71,7 +77,7 @@ UniformBlock::updateData( void* data, int offset, int size )
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "UniformBlock::updateData: glBufferData failed for name \"" << this->name << "\": " << gluErrorString( status )  << endl;
+		cout << "UniformBlock::updateData: glBufferData failed for name \"" << this->m_name << "\": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
@@ -93,7 +99,7 @@ UniformBlock::updateData( void* data, int size )
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "UniformBlock::updateData: glBufferData failed for name \"" << this->name << "\": " << gluErrorString( status )  << endl;
+		cout << "UniformBlock::updateData: glBufferData failed for name \"" << this->m_name << "\": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
@@ -108,11 +114,11 @@ UniformBlock::bindBuffer()
 {
 	GLint status;
 
-	glBindBuffer( GL_UNIFORM_BUFFER, this->id );
+	glBindBuffer( GL_UNIFORM_BUFFER, this->m_id );
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "UniformBlock::bindBuffer: glBindBuffer failed for name \"" << this->name << "\": " << gluErrorString( status )  << endl;
+		cout << "UniformBlock::bindBuffer: glBindBuffer failed for name \"" << this->m_name << "\": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
@@ -128,7 +134,7 @@ UniformBlock::unbindBuffer()
 	status = glGetError();
 	if ( GL_NO_ERROR != status )
 	{
-		cout << "UniformBlock::unbindBuffer: glBindBuffer( 0 ) failed for name \"" << this->name << "\": " << gluErrorString( status )  << endl;
+		cout << "UniformBlock::unbindBuffer: glBindBuffer( 0 ) failed for name \"" << this->m_name << "\": " << gluErrorString( status )  << endl;
 		return false;
 	}
 
