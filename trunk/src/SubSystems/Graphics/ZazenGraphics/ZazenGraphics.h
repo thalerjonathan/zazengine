@@ -58,6 +58,7 @@ class ZazenGraphics : public IGraphics
 		bool initSDL();
 		bool initGL();
 
+		bool loadCameraConfig( TiXmlElement* );
 		bool loadGeomClasses( TiXmlElement* );
 };
 

@@ -332,11 +332,18 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 			for ( unsigned int i = 0; i < mesh->nvertices; i++ )
 			{
+				/*
 				for ( unsigned int j = 0; j < 3; j++ )
 				{
 					vertexData[ i ].position[ j ] = mesh->vertices[ i ][ j ];
 					//vertexData[ i ].normal[ j ] = normals[ i ][ j ];
 				}
+				 */
+
+				// flip z and y achsis
+				vertexData[ i ].position[ 0 ] = mesh->vertices[ i ][ 0 ];
+				vertexData[ i ].position[ 1 ] = mesh->vertices[ i ][ 2 ];
+				vertexData[ i ].position[ 2 ] = mesh->vertices[ i ][ 1 ];
 			}
 	
 			lib3ds_mesh_calculate_vertex_normals( mesh, normals );
@@ -375,8 +382,8 @@ GeometryFactory::load3DS(const std::string& fileName)
 			memcpy( glm::value_ptr( instanceTransf ), &tmpMat[ 0 ][ 0 ], sizeof(float) * 16 );
 
 			glm::value_ptr( transl )[ 12 ] = typedNode->pivot[ 0 ];
-			glm::value_ptr( transl )[ 13 ] = typedNode->pivot[1];
-			glm::value_ptr( transl )[ 14 ] = typedNode->pivot[2];
+			glm::value_ptr( transl )[ 13 ] = typedNode->pivot[ 1 ];
+			glm::value_ptr( transl )[ 14 ] = typedNode->pivot[ 2 ];
 
 			geomMesh->m_modelMatrix = transl;
 
