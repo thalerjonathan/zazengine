@@ -132,7 +132,7 @@ Program::bindUniformBlock( UniformBlock* block )
 	//if ( false == block->bind( index ) )
 	//	return false;
 
-	glUniformBlockBinding( this->programObject, index, 0 );
+	glUniformBlockBinding( this->programObject, index,  block->getBindIndex() );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "glUniformBlockBinding failed for name \"" << block->getName() << "\": " << gluErrorString( status )  << endl;

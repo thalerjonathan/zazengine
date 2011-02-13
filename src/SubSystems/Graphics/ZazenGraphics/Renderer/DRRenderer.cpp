@@ -613,19 +613,29 @@ DRRenderer::initUniformBlocks()
 		return false;
 	}
 
+	// bind uniform blocks
+	if ( false == this->m_mvpTransformBlock->bind() )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+	if ( false == this->m_lightDataBlock->bind() )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+
 	// bind mvp-transformation to all programs
 	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_mvpTransformBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
-
 	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_mvpTransformBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
-
 	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_mvpTransformBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
@@ -638,24 +648,9 @@ DRRenderer::initUniformBlocks()
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
-
 	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightDataBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
-		return false;
-	}
-
-	// transformblock goes to buffer index 0
-	if ( false == this->m_mvpTransformBlock->bind( 0 ) )
-	{
-		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
-		return false;
-	}
-
-	// lightdata block goes to buffer index 1
-	if ( false == this->m_lightDataBlock->bind( 1 ) )
-	{
-		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
 	}
 

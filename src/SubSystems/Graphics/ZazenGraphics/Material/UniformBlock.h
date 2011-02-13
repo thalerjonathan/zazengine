@@ -19,10 +19,12 @@ class UniformBlock
 
 	virtual ~UniformBlock();
 
-	const std::string& getName() { return this->name; };
-	GLuint getID() { return this->id; };
+	const std::string& getName() { return this->m_name; };
+	GLuint getID() { return this->m_id; };
 
-	bool bind( int index );
+	GLuint getBindIndex() { return this->m_bindIndex; };
+
+	bool bind();
 
 	bool bindBuffer();
 	bool unbindBuffer();
@@ -33,8 +35,12 @@ class UniformBlock
  private:
 	UniformBlock( const std::string& name );
 
-	GLuint id;
-	const std::string name;
+	static GLuint bindIndexer;
+
+	GLuint m_id;
+	const std::string m_name;
+
+	GLuint m_bindIndex;
 
 };
 
