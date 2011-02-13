@@ -491,8 +491,8 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
 	// need to enable comparison-mode for depth-texture to use it as a shadow2DSampler in shader
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
@@ -635,6 +635,12 @@ DRRenderer::initUniformBlocks()
 	}
 
 	// lighting data just to lighting stage program
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_lightDataBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
 	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightDataBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
@@ -711,6 +717,10 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 2 ) )
+		return false;
+
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -731,6 +741,20 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	if ( GL_FRAMEBUFFER_COMPLETE != status )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: framebuffer error: " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glm::mat4 lightSpace = this->m_unitCubeMatrix * this->m_light->m_PVMatrix;
+	// update the transform-uniforms block with the new mvp matrix
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
+		return false;
+
+	// bind the shadowmap of the global light to texture-unit 2
+	glActiveTexture( GL_TEXTURE2 );
+	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
