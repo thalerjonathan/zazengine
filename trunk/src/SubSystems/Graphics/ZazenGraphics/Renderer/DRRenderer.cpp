@@ -71,14 +71,17 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderGeometryStage( instances ) )
 		return false;
 
-	if ( false == this->renderLightingStage( instances ) )
-		return false;
+//	if ( false == this->renderLightingStage( instances ) )
+//		return false;
 
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
 		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
 			return false;
 	}
+
+	if ( false == this->showTexture( this->m_shadowMap, 2 ) )
+		return false;
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -717,10 +720,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 2 ) )
-		return false;
-
 	// start geometry pass
 	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -750,13 +749,17 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 
 	// bind the shadowmap of the global light to texture-unit 2
-	glActiveTexture( GL_TEXTURE2 );
+	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
+
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 0 ) )
+		return false;
 
 	// switch to back-face culling
 	glCullFace( GL_BACK );
