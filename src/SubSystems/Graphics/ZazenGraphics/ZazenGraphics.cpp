@@ -56,12 +56,6 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 	*/
-	
-	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPositionInv( glm::vec3( 0, 50, 70 ) );
-	this->camera->changePitchInv( 30 );
-	
-	this->activeScene = new Scene( "NullScene", this->camera );
 
 	/*
 	TiXmlElement* skyBoxNode = configNode->FirstChildElement( "skyBox" );
@@ -81,10 +75,21 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	}
 */
 
+	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
+	this->camera->setPositionInv( glm::vec3( 0.0, 10, 150 ) );
+
+	this->activeScene = new Scene( "NullScene", this->camera );
+
+	if ( false == this->loadCameraConfig( configNode ) )
+	{
+		return false;
+	}
+
 	if ( false == this->loadGeomClasses( configNode ) )
 	{
 		return false;
 	}
+
 
 	Core::getInstance().getEventManager().registerForEvent( "SDLK_RIGHT", this );
 	Core::getInstance().getEventManager().registerForEvent( "SDLK_LEFT", this );
@@ -278,6 +283,81 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	return entity;
 }
 
+
+bool
+ZazenGraphics::initSDL()
+{
+	cout << "Initializing SDL..." << endl;
+	int error = SDL_Init(SDL_INIT_VIDEO);
+	if (error != 0)
+	{
+		cout << "FAILED ... Initializing SDL failed - exit..." << endl;
+		return false;
+	}
+	else
+	{
+		cout << "OK ... SDL initialized" << endl;
+	}
+
+	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
+	{
+		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
+		return false;
+	}
+
+	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
+	if ( 0 == this->drawContext )
+	{
+		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
+		return false;
+	}
+
+	cout << "OK ... Videocontext created" << endl;
+
+	return true;
+}
+
+bool
+ZazenGraphics::initGL()
+{
+	//int argc = 0;
+	//glutInit(&argc, NULL);
+
+	int major, minor;
+	GLenum err = glewInit();
+	if ( GLEW_OK != err )
+	{
+		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
+		return false;
+	}
+	else
+	{
+		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
+	}
+
+	cout << "OpenGL Version: " << glGetString(GL_VERSION) << endl;
+
+	glGetIntegerv(GL_MAJOR_VERSION, &major); // major = 3
+	glGetIntegerv(GL_MINOR_VERSION, &minor); // minor = 2
+
+	// opengl 3.3 minimum
+	if ( 3 > major )
+	{
+		cout << "ERROR ... OpenGL3.3 or above required" << endl;
+		return false;
+	}
+	else if ( 3 == major )
+	{
+		if ( 3 > minor )
+		{
+			cout << "ERROR ... OpenGL3.3 or above required" << endl;
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool
 ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 {
@@ -390,75 +470,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 }
 
 bool
-ZazenGraphics::initSDL()
+ZazenGraphics::loadCameraConfig( TiXmlElement* configNode )
 {
-	cout << "Initializing SDL..." << endl;
-	int error = SDL_Init(SDL_INIT_VIDEO);
-	if (error != 0)
-	{
-		cout << "FAILED ... Initializing SDL failed - exit..." << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... SDL initialized" << endl;
-	}
-
-	if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == -1)
-	{
-		cout << "FAILED ... SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER) failed with " << SDL_GetError() << endl;
-		return false;
-	}
-
-	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
-	if ( 0 == this->drawContext )
-	{
-		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
-		return false;
-	}
-
-	cout << "OK ... Videocontext created" << endl;
-
-	return true;
-}
-
-bool
-ZazenGraphics::initGL()
-{
-	//int argc = 0;
-	//glutInit(&argc, NULL);
-
-	int major, minor;
-	GLenum err = glewInit();
-	if ( GLEW_OK != err )
-	{
-		cout << "ERROR ... GLEW failed with " <<  glewGetErrorString(err) << endl;
-		return false;
-	}
-	else
-	{
-		cout << "OK ... GLEW " << glewGetString(GLEW_VERSION) << " initialized " << endl;
-	}
-
-	cout << "OpenGL Version: " << glGetString(GL_VERSION) << endl;
-
-	glGetIntegerv(GL_MAJOR_VERSION, &major); // major = 3
-	glGetIntegerv(GL_MINOR_VERSION, &minor); // minor = 2
-
-	// opengl 3.3 minimum
-	if ( 3 > major )
-	{
-		cout << "ERROR ... OpenGL3.3 or above required" << endl;
-		return false;
-	}
-	else if ( 3 == major )
-	{
-		if ( 3 > minor )
-		{
-			cout << "ERROR ... OpenGL3.3 or above required" << endl;
-			return false;
-		}
-	}
-
 	return true;
 }

@@ -12,24 +12,35 @@
 		<subSystem file="media/input/config.xml"/>
 	</subSystemList>
 	
+	<camera>
+		<position x="0" y="0" z="0"/>
+		<lookAt x="0" y="0" z="0"/>
+		<up x="0" y="1" z="0"/>
+	</camera>
+	
 	<objectList>
-		<object name="House">
+		<object name="Floor">
 			<graphics>
-				<instance class="ClassHouseJapan" x="0" y="0" z="0"/>
+				<instance class="ClassFloor" x="0" y="-3" z="0"/>
 			</graphics>
 		</object>
-		<object name="Terrain">
+		
+		<object name="Teapot">
 			<graphics>
-				<instance class="ClassTerrain" x="0" y="0" z="0"/>
+				<instance class="ClassTeapot" x="0" y="3" z="0"/>
 			</graphics>
 		</object>
-
-		<!--
-		<object name="Cgess">
+		
+		<object name="GeoSphere">
 			<graphics>
-				<instance class="ClassChess1" x="0" y="0" z="0"/>
+				<instance class="ClassGeoSphere" x="-30" y="13" z="-30"/>
 			</graphics>
 		</object>
-				-->
+		
+		<object name="Knot">
+			<graphics>
+				<instance class="ClassKnot" x="30" y="15" z="30"/>
+			</graphics>
+		</object>
 	</objectList>
 </config>

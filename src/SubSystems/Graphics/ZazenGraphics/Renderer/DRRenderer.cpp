@@ -395,8 +395,7 @@ DRRenderer::initLightingStage()
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
 	this->m_light = new Light( 45.0, 800, 600 );
-
-	this->m_light->setPositionInv( glm::vec3( 0, 50, 70 ) );
+	this->m_light->setPositionInv( glm::vec3( 0, 80, 120 ) );
 	this->m_light->changePitchInv( 30 );
 
 	this->m_progLightingStage = Program::createProgram( );
