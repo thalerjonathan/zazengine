@@ -20,7 +20,7 @@ Viewer::Viewer( float angle, int width, int height )
 	this->ratio = (float) this->width / (float) this->height;
 	
 	this->nearDist = 1;
-	this->farDist = 1000000;
+	this->farDist = 1000;
 
 	this->setupPerspective();
 }

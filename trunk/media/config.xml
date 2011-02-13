@@ -21,7 +21,7 @@
 	<objectList>
 		<object name="Floor">
 			<graphics>
-				<instance class="ClassFloor" x="0" y="-3" z="0"/>
+				<instance class="ClassFloorLarge" x="0" y="-3" z="0"/>
 			</graphics>
 		</object>
 		
