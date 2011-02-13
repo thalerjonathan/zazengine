@@ -19,7 +19,7 @@ vec4 packFloatToVec4i( const float value )
 
 float shadowLookup( const vec4 shadowCoord, const float offsetX, const float offsetY )
 {
-	return textureProj( ShadowMap, shadowCoord + vec4( offsetX, offsetY, 0.0, 0.0 ) );
+	return textureProj( ShadowMap, shadowCoord + vec4( offsetX, offsetY, 0.005, 0.0 ) );
 }
 
 void main()

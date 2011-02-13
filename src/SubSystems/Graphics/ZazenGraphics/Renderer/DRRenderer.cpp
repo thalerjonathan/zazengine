@@ -44,15 +44,13 @@ DRRenderer::DRRenderer( Viewer* camera )
 
 	this->m_light = 0;
 
-	float* data = glm::value_ptr( this->m_unitCubeMatrix );
-
 	float unitCube[] = {
 			0.5, 0.0, 0.0, 0.0,
 			0.0, 0.5, 0.0, 0.0,
 			0.0, 0.0, 0.5, 0.0,
 		0.5, 0.5, 0.5, 1.0};
 
-	memcpy( data, unitCube, sizeof(unitCube) );
+	memcpy( glm::value_ptr( this->m_unitCubeMatrix ), unitCube, sizeof( unitCube ) );
 }
 
 DRRenderer::~DRRenderer()
@@ -62,9 +60,6 @@ DRRenderer::~DRRenderer()
 bool
 DRRenderer::renderFrame( std::list<Instance*>& instances )
 {
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_PVMatrix ), 0, 64) )
-		return false;
-
 	if ( false == this->renderShadowMap( instances ) )
 		return false;
 
@@ -80,8 +75,8 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 			return false;
 	}
 
-	if ( false == this->showTexture( this->m_shadowMap, 2 ) )
-		return false;
+//	if ( false == this->showTexture( this->m_shadowMap, 2 ) )
+//		return false;
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -494,11 +489,11 @@ DRRenderer::initShadowMapping()
 	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
 	// need to enable comparison-mode for depth-texture to use it as a shadow2DSampler in shader
-    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
-    //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 
 	// No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -691,7 +686,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	}
 
 	// cull front-faces, just backfaces cast a shadow -> better quality
-	glCullFace( GL_FRONT );
+	//glCullFace( GL_FRONT );
 	glClear( GL_DEPTH_BUFFER_BIT );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
@@ -747,8 +742,11 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	// update the transform-uniforms block with the new mvp matrix
 	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
 		return false;
+	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( lightSpace ), 64, 64) )
+		return false;
 
-	// bind the shadowmap of the global light to texture-unit 2
+	// bind the shadowmap of the global light to texture-unit 0
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, this->m_shadowMap );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
@@ -764,7 +762,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	// switch to back-face culling
 	glCullFace( GL_BACK );
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-	glClearColor( 0.0, 0.0, 0.0, 1.0 );
+	glClearColor( 1.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// draw all geometry
