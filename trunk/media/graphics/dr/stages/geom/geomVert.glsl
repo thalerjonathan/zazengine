@@ -17,5 +17,5 @@ void main()
 {
 	gl_Position = mvp_mat * vec4( in_vertPos, 1.0 );
 	ex_depth.xy = gl_Position.zw;
-	ex_normal = normal_mat * vec4( in_vertNorm, 1.0 );
+	ex_normal = normal_mat * vec4( in_vertNorm, 0.0 );
 }
