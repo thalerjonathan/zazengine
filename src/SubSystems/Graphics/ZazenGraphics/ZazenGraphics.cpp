@@ -76,9 +76,9 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 */
 
 	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPositionInv( glm::vec3( 120, 80, 0 ) );
-	this->camera->changeHeadingInv( -90 );
-	this->camera->changePitchInv( 30 );
+	this->camera->setPosition( glm::vec3( 120, 80, 0 ) );
+	this->camera->changeHeading( 90 );
+	this->camera->changePitch( -30 );
 
 	this->activeScene = new Scene( "NullScene", this->camera );
 
@@ -199,35 +199,35 @@ ZazenGraphics::sendEvent( Event& e )
 {
 	if ( e == "SDLK_RIGHT" )
 	{
-		this->camera->changeHeadingInv( 0.1 * this->lastItFact );
+		this->camera->changeHeading( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_LEFT" )
 	{
-		this->camera->changeHeadingInv( -0.1 * this->lastItFact );
+		this->camera->changeHeading( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_UP" )
 	{
-		this->camera->changePitchInv( 0.1 * this->lastItFact );
+		this->camera->changePitch( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_DOWN" )
 	{
-		this->camera->changePitchInv( -0.1 * this->lastItFact );
+		this->camera->changePitch( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_w" )
 	{
-		this->camera->strafeZ( 0.1 * this->lastItFact );
+		this->camera->strafeForward( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_s" )
 	{
-		this->camera->strafeZ( -0.1 * this->lastItFact );
+		this->camera->strafeForward( 0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_d" )
 	{
-		this->camera->changeRollInv( 0.1 * this->lastItFact );
+		this->camera->changeRoll( -0.1 * this->lastItFact );
 	}
 	else if ( e == "SDLK_a" )
 	{
-		this->camera->changeRollInv( -0.1 * this->lastItFact );
+		this->camera->changeRoll( 0.1 * this->lastItFact );
 	}
 
 	return true;

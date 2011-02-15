@@ -391,8 +391,8 @@ DRRenderer::initLightingStage()
 		return false;
 	}
 
-	light->setPositionInv( glm::vec3( 0, 80, 120 ) );
-	light->changePitchInv( 30 );
+	light->setPosition( glm::vec3( 0, 80, 120 ) );
+	light->changePitch( -30 );
 
 	this->m_lights.push_back( light );
 

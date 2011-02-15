@@ -11,7 +11,7 @@
 using namespace std;
 
 Viewer::Viewer( float angle, int width, int height )
-	: Orientation( m_viewMatrix )
+	: Orientation( m_modelMatrix )
 {
 	this->width = width;
 	this->height = height;
@@ -136,6 +136,10 @@ Viewer::cullBB( const glm::vec3& bbMin, const glm::vec3& bbMax )
 void
 Viewer::matrixChanged()
 {
+	// viewing-matrix is the inverse of the model-matrix
+	// in opengl the camera (or a viewer) is positioned in the origin 0,0,0 and points down the -Z achsis
+	// not the camera is moved, the objecs are moved with the inverse of the cameras modeling
 	// viewingMatrix is changed by Orientation -> recalculate ProjectionView-Matrix
+	this->m_viewMatrix = glm::inverse( this->m_modelMatrix );
 	this->m_PVMatrix = this->m_projectionMatrix * this->m_viewMatrix;
 }
