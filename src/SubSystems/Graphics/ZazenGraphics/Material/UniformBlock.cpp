@@ -11,6 +11,9 @@
 
 using namespace std;
 
+// the index used to bind the uniformblock with glBindBufferBase
+// this is the index like the activetexture in texturing. its different because
+// an arbitrary number of uniformblocks can be active
 GLuint UniformBlock::bindIndexer = 0;
 
 UniformBlock*
