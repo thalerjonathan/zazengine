@@ -8,8 +8,10 @@
 #ifndef DRRENDERER_H_
 #define DRRENDERER_H_
 
-// number of rendering targets for deferred renderer
-#define MRT_COUNT 3
+// number of generic color-attachment rendering targets for deferred renderer
+// 1st = diffuse color
+// 2nd = normals
+#define MRT_COUNT 2
 
 #define SHADOW_MAP_WIDTH 	800
 #define SHADOW_MAP_HEIGHT	600
@@ -25,6 +27,7 @@
  * Geometry-Stage:
  * Renders diffuse color ( texturing will be applied here ), depth and normals ( could also come from a normalmap )
  * into 3 rendering target. Those targets will be used by the LightingStage to produce the final result.
+ * A DEPTH_ATTACHMENT is used as the depth-buffer and to get correct depth-visibility ( http://www.gamedev.net/topic/578084-depth-buffer-and-deferred-rendering/ )
  *
  * Lighting-Stage:
  * Uses the rendering targets to calculate the final color of each fragment. See Shadowing how shadowing is applied
@@ -49,11 +52,8 @@
  */
 
 /* Errors:
- * - Visibility in G-Buffer not correct because we don't render against a z-buffer. so the object first in the
- * 	 renderlist shows up over the others.
- * 		-> add a depth-buffer to the framebuffer? ( http://www.gamedev.net/topic/578084-depth-buffer-and-deferred-rendering/ )
- *
  * - Shadowmap display: glTexParameteri(texture_target, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
+ *
  * - Shadowing artefacts:
  *		-> employ Face-Culling: cull front-faces during shadowmap generation
  *
@@ -97,8 +97,9 @@ class DRRenderer : public Renderer
 
  private:
 	// Multiple-Render-Targes & Framebuffer for Deferred Rendering
-	GLuint m_drFB;
-	GLuint m_mrt[ MRT_COUNT ];
+	GLuint m_geometryStageFB;
+	GLuint m_geometryDepth;						// the id of the depth-buffer
+	GLuint m_colorBuffers[ MRT_COUNT ];			// the generic color attachments for MRTs
 	GLenum m_buffers[ MRT_COUNT ];
 	////////////////////////////////////////
 

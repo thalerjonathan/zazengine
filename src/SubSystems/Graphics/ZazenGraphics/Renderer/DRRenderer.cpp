@@ -21,8 +21,11 @@ using namespace std;
 DRRenderer::DRRenderer( Viewer* camera )
 	: Renderer( camera )
 {
-	this->m_drFB = 0;
-	memset( this->m_mrt, 0, sizeof( this->m_mrt) );
+	this->m_geometryStageFB = 0;
+	memset( this->m_colorBuffers, 0, sizeof( this->m_colorBuffers) );
+	memset( this->m_buffers, 0, sizeof( this->m_buffers) );
+
+	this->m_geometryDepth = 0;
 
 	this->m_progGeomStage = 0;
 	this->m_vertGeomStage = 0;
@@ -66,9 +69,12 @@ DRRenderer::renderFrame( std::list<Instance*>& instances )
 	if ( false == this->renderLightingStage( instances ) )
 		return false;
 
+	if ( false == this->showTexture( this->m_geometryDepth, MRT_COUNT ) )
+		return false;
+
 	for ( int i = 0; i <  MRT_COUNT; i++ )
 	{
-		if ( false == this->showTexture( this->m_mrt[ i ], i ) )
+		if ( false == this->showTexture( this->m_colorBuffers[ i ], i ) )
 			return false;
 	}
 
@@ -208,16 +214,25 @@ DRRenderer::shutdown()
 	}
 
 	// cleaning up framebuffer
-	if ( this->m_drFB )
-		glDeleteFramebuffers( 1, &this->m_drFB );
+	if ( this->m_geometryStageFB )
+	{
+		glDeleteFramebuffers( 1, &this->m_geometryStageFB );
+		this->m_geometryStageFB = 0;
+	}
+
+	if ( this->m_geometryDepth )
+	{
+		glDeleteTextures( 1, &this->m_geometryDepth );
+		this->m_geometryDepth = 0;
+	}
 
 	// cleaning up mrts
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
-		if ( this->m_mrt[ i ] )
+		if ( this->m_colorBuffers[ i ] )
 		{
-			glDeleteTextures( 1, &this->m_mrt[ i ] );
-			this->m_mrt[ i ] = 0;
+			glDeleteTextures( 1, &this->m_colorBuffers[ i ] );
+			this->m_colorBuffers[ i ] = 0;
 		}
 	}
 
@@ -231,25 +246,81 @@ DRRenderer::initFBO()
 {
 	GLenum status;
 
-	glGenFramebuffers( 1, &this->m_drFB );
+	// generate the id of our
+	glGenFramebuffers( 1, &this->m_geometryStageFB );
 	if ( GL_NO_ERROR != ( status = glGetError() )  )
 	{
 		cout << "ERROR in DRRenderer::initFBO: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
+	// generate and bind depth buffer
+	glGenTextures( 1, &this->m_geometryDepth );
+	if ( GL_NO_ERROR != ( status = glGetError() )  )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glGenTextures for depth-buffer failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindTexture( GL_TEXTURE_2D, this->m_geometryDepth );
+	if ( GL_NO_ERROR != ( status = glGetError() )  )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glBindTexture for depth-buffer failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	// GL_LINEAR does not make sense for depth texture.
+	// PercentageCloserFiltering utilizes GL_LINEAR, not yet implemented
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+	// Remove artifact on the edges of the depthmap
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+
+	glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
+
+	// for now we create shadowmaps in same width and height as their viewing frustum and 32 bit depth
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, this->m_camera->getWidth(), this->m_camera->getHeight(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glTexImage2D for depth-buffer failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
+	if ( GL_NO_ERROR != ( status = glGetError() )  )
+	{
+		cout << "ERROR in DRRenderer::initFBO: glBindFramebuffer for depth-buffer  failed with " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	// add this as a depth-attachment to get correct depth-visibility in our deferred rendering
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, this->m_geometryDepth, 0 );
+	CHECK_FRAMEBUFFER_STATUS( status );
+	if ( GL_FRAMEBUFFER_COMPLETE != status )
+	{
+		cout << "ERROR in DRRenderer::initFBO: framebuffer error for depth-buffer: " << gluErrorString( status ) << " - exit" << endl;
+		return false;
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	// generate and bind generic color attachements
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
 		this->m_buffers[ i ] = GL_COLOR_ATTACHMENT0 + i;
 
-		glGenTextures( 1, &this->m_mrt[ i ] );
+		glGenTextures( 1, &this->m_colorBuffers[ i ] );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
 
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
+		glBindTexture( GL_TEXTURE_2D, this->m_colorBuffers[ i ] );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -272,14 +343,14 @@ DRRenderer::initFBO()
 
 		glBindTexture( GL_TEXTURE_2D, 0 );
 
-		glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
+		glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glBindFramebuffer failed with " << gluErrorString( status ) << " - exit" << endl;
 			return false;
 		}
 
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->m_mrt[ i ], 0 );
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->m_colorBuffers[ i ], 0 );
 		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE != status )
 		{
@@ -349,12 +420,7 @@ DRRenderer::initGeomStage()
 		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
 		return false;
 	}
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 1, "out_depth" ) )
-	{
-		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
-		return false;
-	}
-	if ( false == this->m_progGeomStage->bindFragDataLocation( 2, "out_normal" ) )
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 1, "out_normal" ) )
 	{
 		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
 		return false;
@@ -658,21 +724,22 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 {
 	GLenum status;
 
+	// activate geometry-stage program
 	if ( false == this->m_progGeomStage->use() )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: using shadow mapping program failed - exit" << endl;
 		return false;
 	}
 
-	// start geometry pass
-	glBindFramebuffer( GL_FRAMEBUFFER, this->m_drFB );
+	// bind the framebuffer of the geometry-stage
+	glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: glBindFramebuffer failed with " << gluErrorString( status ) << endl;
 		return false;
 	}
 
-	// activate drawing to targets
+	// activate multiple drawing to our color targets targets
 	glDrawBuffers( MRT_COUNT, this->m_buffers );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
@@ -680,6 +747,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
+	// check framebuffer status, maybe something failed with glDrawBuffers
 	CHECK_FRAMEBUFFER_STATUS( status );
 	if ( GL_FRAMEBUFFER_COMPLETE != status )
 	{
@@ -687,15 +755,18 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
+	// turn on color drawing ( was turned off in shadowmaping)
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	// set clear-color
 	glClearColor( 0.0, 0.0, 0.0, 1.0 );
+	// clear the colorbuffers AND our depth-buffer ( m_geometryDepth );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 3 ) )
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT + 1
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", MRT_COUNT + 1 ) )
 		return false;
 
-	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+	glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
 	glBindTexture( GL_TEXTURE_2D, this->m_lights[ 0 ]->getShadowMapID() );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
@@ -705,6 +776,8 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 
 	// calculate the light-space projection matrix
 	// multiplication with unit-cube is first because has to be carried out the last
+	// TODO: VERY IMPORTANT: IF LIGHT DOES NOT STICK TO CAMERA THEN THE LIGHTS MODELMATRIX MUST BE TRANSFORMED
+	// BY THE VIEWING-MATRIX OF THE LIGHT TO PLACE IT IN WORLD COORDINATES
 	glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * this->m_lights[ 0 ]->m_PVMatrix;
 	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( this->m_lights[ 0 ]->m_modelMatrix ), 0, 64) )
 		return false;
@@ -745,7 +818,7 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	{
 		// bind diffuse rendering target to texture unit 0
 		glActiveTexture( GL_TEXTURE0 + i );
-		glBindTexture( GL_TEXTURE_2D, this->m_mrt[ i ] );
+		glBindTexture( GL_TEXTURE_2D, this->m_colorBuffers[ i ] );
 		if ( GL_NO_ERROR != ( status = glGetError() ) )
 		{
 			cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture of mrt " << i << " failed with " << gluErrorString( status ) << endl;
@@ -753,17 +826,26 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		}
 	}
 
+	// bind depth-buffer to texture-unit MRT_COUNT
+	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+	glBindTexture( GL_TEXTURE_2D, this->m_geometryDepth );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture of depth-buffer failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
 	// tell lighting program that diffusemap is bound to texture-unit 0
 	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
 		return false;
-	// tell lighting program that depthmap is bound to texture-unit 1
-	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", 1 ) )
+	// tell lighting program that normalmap is bound to texture-unit 1
+	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
 		return false;
-	// tell lighting program that normalmap is bound to texture-unit 2
-	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 2 ) )
+	// tell lighting program that depth-map is bound to texture-unit 2
+	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", MRT_COUNT ) )
 		return false;
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT ) )
+	// tell program that the shadowmap of each light will be available at texture unit MRT_COUNT + 1
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT + 1 ) )
 		return false;
 
 	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
@@ -778,16 +860,17 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
 		return false;
 
-	// render the depth-map for each light
+	// render the contribution of each light to the scene
 	std::vector<Light*>::iterator iter = this->m_lights.begin();
 	while ( iter != this->m_lights.end() )
 	{
 		Light* light = *iter++;
 
 		// TODO: need to set opengl to additiveley blend light-passes
+		// alpha? color modulate?...
 
-		// bind the shadowmap of the global light
-		glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+		// bind the shadowmap of the light to texture unit MRT_COUNT + 1
+		glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
 		glBindTexture( GL_TEXTURE_2D, light->getShadowMapID() );
 		if ( GL_NO_ERROR != ( status = glGetError() ) )
 		{
