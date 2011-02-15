@@ -729,6 +729,10 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_progLightingStage->use() )
 		return false;
 
+	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	glClearColor( 0.0, 0.0, 0.0, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
 	// bind the mrts
 	for ( int i = 0; i < MRT_COUNT; i++ )
 	{
@@ -756,9 +760,15 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		return false;
 
 	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
-	glm::mat4 inverseProjection = glm::inverse( this->m_camera->m_projectionMatrix );
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( inverseProjection ), 128, 64) )
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_projectionMatrix ) ), 320, 64) )
+		return false;
+
+	// change to ortho to render the screen quad
+	this->m_camera->setupOrtho();
+
+	// update projection-matrix because changed to orthogonal-projection
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
 		return false;
 
 	// render the depth-map for each light
@@ -778,6 +788,9 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 			return false;
 		}
 
+		// TODO: VERY IMPORTANT: IF LIGHT DOES NOT STICK TO CAMERA THEN THE LIGHTS MODELMATRIX MUST BE TRANSFORMED
+		// BY THE VIEWING-MATRIX OF THE LIGHT TO PLACE IT IN WORLD COORDINATES.
+
 		// calculate the light-space projection matrix
 		// multiplication with unit-cube is first because has to be carried out the last
 		glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * light->m_PVMatrix;
@@ -788,17 +801,6 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
 			return false;
 
-		// update the inverse of the projection
-		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( glm::inverse( this->m_camera->m_projectionMatrix ) ), 320, 64 ) )
-			return false;
-
-		// change to ortho to render the screen quad
-		this->m_camera->setupOrtho();
-
-		// update projection-matrix because changed to orthogonal-projection
-		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
-			return false;
-
 		// render quad
 		glBegin( GL_QUADS );
 			glVertex2f( 0, 0 );
@@ -806,10 +808,10 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 			glVertex2f( this->m_camera->getWidth(), this->m_camera->getHeight() );
 			glVertex2f( this->m_camera->getWidth(), 0 );
 		glEnd();
-
-		// back to perspective
-		this->m_camera->setupPerspective();
 	}
+
+	// back to perspective
+	this->m_camera->setupPerspective();
 
 	return true;
 }

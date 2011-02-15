@@ -28,6 +28,8 @@
  *
  * Lighting-Stage:
  * Uses the rendering targets to calculate the final color of each fragment. See Shadowing how shadowing is applied
+ * Iterate over each light and apply it through the rendering of a quad with the size of the screen.
+ * Additively blend the results of each light together.
  *
  * Shadowing
  * This renderer utilizes ShadowMaps as shadow-algorithm. The scene is rendererd from the viewpoint of
@@ -39,16 +41,25 @@
  * Lighting
  * because this is a deferred renderer, lighting occurs in screen-space. for this the normals must be
  * in screen-space and the lights position and direction too.
+ * Very imporant is that light-direction and position must be transformed with the camera too because
+ * each light is also part of the scene and must be placed in world-coordinates with its modeling-transformations.
+ * During the lighting-pass each light is transformed into its world-coordinates by multiplying its
+ * modeling-matrix with the viewing matrix of the camera. If one doesn't do this, the light sticks with the
+ * camera (maybe this is desired...)
  */
 
 /* Errors:
  * - Correct Deferred Shadowing: something still wrong with the shadowing transformation in lighting Fragment-shader
- * - Normals: something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
+ * - Lighting and Normals:
+ * 		-> check space of normals and camera: normals must be provided in screen-space and camera position
+ * 			and direction must be transformed to screen-space too. LIGHTING MUST ALWAYS HAPPEN IN THE SAME
+ * 		    SPACE.
+ * 		-> something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
+ *		-> lights must be transformed by camera-viewingMatrix to world-coordinates otherwise they stick with camera
  */
 
 /* TODO:
  * - Enhance Deferred Shadowing (reduce artifacts and implement soft-shadows )
- * - Lighting: implement a lighting model ( e.g. phong )
  * - Introduce multiple lights: each light contributes ADDITIVELY to the framebuffe, solve this
  * - Material-Model: diffuse texturing, transparency, metal
  * - Reflections: would be nice to have reflections in this renderer too
