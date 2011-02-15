@@ -56,6 +56,15 @@
  * 		    SPACE.
  * 		-> something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
  *		-> lights must be transformed by camera-viewingMatrix to world-coordinates otherwise they stick with camera
+ *
+ * Questions:
+ * - am i in the right space?
+ * - do i mix up spaces (e.g. screen-space and view-space or clipping space (after applying mvp matrix ) with projection space ( after perspective div to NDC ) )
+ * - is the data correct i receive?
+ * - where does the data i receive come from?
+ * - what is the data i receive?
+ * - where does the data go to i transform?
+ * - what happens with the data i transformed, send away and received somewhere else in between?
  */
 
 /* TODO:
