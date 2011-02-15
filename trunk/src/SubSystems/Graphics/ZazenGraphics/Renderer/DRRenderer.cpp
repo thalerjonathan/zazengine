@@ -610,6 +610,12 @@ DRRenderer::initUniformBlocks()
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_lightDataBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
+
 
 	return true;
 }
@@ -706,6 +712,28 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	glClearColor( 0.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
+	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", 3 ) )
+		return false;
+
+	glActiveTexture( GL_TEXTURE0 + MRT_COUNT );
+	glBindTexture( GL_TEXTURE_2D, this->m_lights[ 0 ]->getShadowMapID() );
+	if ( GL_NO_ERROR != ( status = glGetError() ) )
+	{
+		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
+		return false;
+	}
+
+	// calculate the light-space projection matrix
+	// multiplication with unit-cube is first because has to be carried out the last
+	glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * this->m_lights[ 0 ]->m_PVMatrix;
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( this->m_lights[ 0 ]->m_modelMatrix ), 0, 64) )
+		return false;
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( this->m_lights[ 0 ]->m_PVMatrix ), 64, 64) )
+		return false;
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
+		return false;
+
 	// draw all geometry
 	if ( false == this->renderInstances( this->m_camera, instances ) )
 		return false;
@@ -756,7 +784,7 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 2 ) )
 		return false;
 	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT
-	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", 3 ) )
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT ) )
 		return false;
 
 	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
