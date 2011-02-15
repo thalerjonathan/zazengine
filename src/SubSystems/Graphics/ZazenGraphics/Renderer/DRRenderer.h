@@ -37,7 +37,8 @@
  * the shadowmap like a texture ( using textureProj ).
  *
  * Lighting
- * No Lighting implemented yet
+ * because this is a deferred renderer, lighting occurs in screen-space. for this the normals must be
+ * in screen-space and the lights position and direction too.
  */
 
 /* Errors:

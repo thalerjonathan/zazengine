@@ -8,14 +8,19 @@ out vec4 ex_normal;
 
 layout(shared) uniform mvp_transform
 {
-	mat4 mvp_mat;
-	mat4 normal_mat;
-	mat4 projInv_mat;
+	mat4 modelView_Matrix;
+	mat4 modelViewProjection_Matrix;
+	
+	mat4 normalsModelView_Matrix;
+	mat4 normalsModelViewProjection_Matrix;
+	
+	mat4 projection_Matrix;
+	mat4 projectionInv_Matrix;
 };
 
 void main()
 {
-	gl_Position = mvp_mat * vec4( in_vertPos, 1.0 );
+	gl_Position = modelViewProjection_Matrix * vec4( in_vertPos, 1.0 );
 	ex_depth.xy = gl_Position.zw;
-	ex_normal = normal_mat * vec4( in_vertNorm, 0.0 );
+	ex_normal = normalsModelView_Matrix * vec4( in_vertNorm, 0.0 );
 }

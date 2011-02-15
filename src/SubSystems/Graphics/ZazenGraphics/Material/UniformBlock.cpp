@@ -66,7 +66,7 @@ UniformBlock::bind()
 }
 
 bool
-UniformBlock::updateData( void* data, int offset, int size )
+UniformBlock::updateData( const void* data, int offset, int size )
 {
 	GLint status;
 
@@ -88,7 +88,7 @@ UniformBlock::updateData( void* data, int offset, int size )
 }
 
 bool
-UniformBlock::updateData( void* data, int size )
+UniformBlock::updateData( const void* data, int size )
 {
 	GLint status;
 

@@ -39,14 +39,14 @@ class Orientation
 	void changeRoll( float );
 	void changeRollInv( float );
 
+	void strafeZ( float );
 	void strafeForward( float );
-	void strafeForwardInv( float );
 
+	void strafeX( float );
 	void strafeRight( float );
-	void strafeRightInv( float );
 
+	void strafeY( float );
 	void strafeUp( float );
-	void strafeUpInv( float );
 
  protected:
 	// this method is called always when one of the upper methods is invoded

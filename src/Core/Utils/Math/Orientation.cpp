@@ -113,7 +113,7 @@ Orientation::strafeForward( float units )
 }
 
 void
-Orientation::strafeForwardInv( float units )
+Orientation::strafeZ( float units )
 {
 	float* data = glm::value_ptr( this->m_matrix );
 	data[ 14 ] += units;
@@ -133,7 +133,7 @@ Orientation::strafeRight( float units )
 }
 
 void
-Orientation::strafeRightInv( float units )
+Orientation::strafeX( float units )
 {
 	float* data = glm::value_ptr( this->m_matrix );
 	data[ 12 ] += units;
@@ -154,7 +154,7 @@ Orientation::strafeUp( float units )
 }
 
 void
-Orientation::strafeUpInv( float units )
+Orientation::strafeY( float units )
 {
 	float* data = glm::value_ptr( this->m_matrix );
 	data[ 13 ] += units;
