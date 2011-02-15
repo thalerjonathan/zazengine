@@ -16,5 +16,6 @@ layout(shared) uniform mvp_transform
 
 void main()
 {
-	gl_Position = modelViewProjection_Matrix * vec4( in_vertPos, 1.0 );
+	// only apply projection-matrix because we do orthogonal quad rendering and apply no modeling
+	gl_Position = projection_Matrix * vec4( in_vertPos, 1.0 );
 }

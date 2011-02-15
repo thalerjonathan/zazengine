@@ -17,6 +17,13 @@
  * the -Z achsis. the camera itself is not modified but instead one has
  * to apply the inverse operation on the viewing matrix to achive a
  * camera/viewer transformation
+ *
+ * TODO: it would be nice if we can use only modelMatrix for the orientation-manipulation
+ * and derive viewMatrix as the inverse of the modelMatrix but this seems not to work correctly yet.
+ * When we could do this, we can easily switch between modeling an object in world-space and
+ * switch to its point-of-view. this becomes very important for lights because they need to be
+ * placed within the scene with modeling-transformations to which camera-viewing must be applied
+ * but it must also be able to render the scene from the point-of-view of the light for shadowmap rendering.
  */
 
 class Viewer : public Orientation
