@@ -310,10 +310,15 @@ GeometryFactory::load3DS(const std::string& fileName)
 
 			// indexbuffer for faces
 			GLuint* indexBuffer = new GLuint[ mesh->nfaces * 3 ];
+			memset( indexBuffer, 0, mesh->nfaces * 3 * sizeof( GLuint ) );
+
 			// we cannot use vertexData for normals because they have to calculated first
 			GeomMesh::Normal* normals = new GeomMesh::Normal[ mesh->nfaces * 3 ];
+			memset( normals, 0, mesh->nfaces * 3 * sizeof( GeomMesh::Normal ) );
+
 			// allocate vertexdata
 			GeomMesh::VertexData* vertexData = new GeomMesh::VertexData[ mesh->nvertices ];
+			memset( vertexData, 0, mesh->nvertices * sizeof( GeomMesh::VertexData ) );
 
 			glm::vec3 meshBBmin;
 			glm::vec3 meshBBmax;

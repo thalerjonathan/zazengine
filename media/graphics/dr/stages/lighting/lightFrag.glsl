@@ -53,7 +53,7 @@ vec3 positionFromDepth( const vec2 screenCoord, const float depth )
 
 float shadowLookup( const vec4 shadowCoord, const float offsetX, const float offsetY )
 {
-	return textureProj( ShadowMap, shadowCoord + vec4( offsetX, offsetY, 0.005, 0.0 ) );
+	return textureProj( ShadowMap, shadowCoord + vec4( offsetX, offsetY, 0.0, 0.0 ) );
 }
 
 void main()
@@ -80,7 +80,7 @@ void main()
 	float shadow = shadowLookup( fragLightPos, 0.0, 0.0 );
 
 	// this fragment is in shadow
-	if ( shadow == 0.0 )
+	if ( shadow != 1.0 )
 	{
 		// encode shadow as red
 		out_final = vec4( 1.0, 0.0, 0.0, 1.0 );
@@ -91,9 +91,7 @@ void main()
 		vec3 normal = texture( NormalMap, screenCoord ).xyz;
 		
 		// we need to transform the lights direction too when it should not stay with the camera
-		//vec3 lightDir = lightSpace_mat[ 0 ].xyz;
-		vec3 lightDir = vec4( normalsModelView_Matrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz;
-		//vec3 lightDir = vec3( 0.0, 1.0, 0.0 );
+		vec3 lightDir = vec3( 0.0, 1.0, 0.0 );
 		
 		out_final = diffuseComp * dot( normal.xyz, lightDir );
 		out_final.a = 1.0;

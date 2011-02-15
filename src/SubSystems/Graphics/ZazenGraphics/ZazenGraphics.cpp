@@ -76,7 +76,8 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 */
 
 	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPositionInv( glm::vec3( 0, 80, 120 ) );
+	this->camera->setPositionInv( glm::vec3( 120, 80, 0 ) );
+	this->camera->changeHeadingInv( -90 );
 	this->camera->changePitchInv( 30 );
 
 	this->activeScene = new Scene( "NullScene", this->camera );
