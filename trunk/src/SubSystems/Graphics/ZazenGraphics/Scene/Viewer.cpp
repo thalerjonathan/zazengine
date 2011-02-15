@@ -11,7 +11,7 @@
 using namespace std;
 
 Viewer::Viewer( float angle, int width, int height )
-	: Orientation( m_viewingMatrix )
+	: Orientation( m_viewMatrix )
 {
 	this->width = width;
 	this->height = height;
@@ -137,5 +137,5 @@ void
 Viewer::matrixChanged()
 {
 	// viewingMatrix is changed by Orientation -> recalculate ProjectionView-Matrix
-	this->m_PVMatrix = this->m_projectionMatrix * this->m_viewingMatrix;
+	this->m_PVMatrix = this->m_projectionMatrix * this->m_viewMatrix;
 }

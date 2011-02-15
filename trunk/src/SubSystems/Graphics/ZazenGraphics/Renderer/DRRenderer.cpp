@@ -780,17 +780,23 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 
 		// calculate the light-space projection matrix
 		// multiplication with unit-cube is first because has to be carried out the last
-		glm::mat4 lightSpace = this->m_unitCubeMatrix * light->m_PVMatrix;
-		// update the transform-uniforms block with the new mvp matrix
-		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpace ), 0, 64) )
+		glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * light->m_PVMatrix;
+		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( light->m_modelMatrix ), 0, 64) )
+			return false;
+		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( light->m_PVMatrix ), 64, 64) )
+			return false;
+		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
 			return false;
 
+		// update the inverse of the projection
+		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( glm::inverse( this->m_camera->m_projectionMatrix ) ), 320, 64 ) )
+			return false;
 
 		// change to ortho to render the screen quad
 		this->m_camera->setupOrtho();
 
-		// update projection-view because changed to orthogonal-projection
-		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 0, 64) )
+		// update projection-matrix because changed to orthogonal-projection
+		if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
 			return false;
 
 		// render quad
@@ -811,6 +817,11 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 bool
 DRRenderer::renderInstances( Viewer* viewer, std::list<Instance*>& instances )
 {
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( viewer->m_projectionMatrix ), 256, 64 ) )
+		return false;
+	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_projectionMatrix ) ), 320, 64 ) )
+		return false;
+
 	list<Instance*>::iterator iter = instances.begin();
 	while ( iter != instances.end() )
 	{
@@ -840,24 +851,31 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		if ( Viewer::OUTSIDE != cullResult )
 		{
 			// calculate modelView-Matrix
-			glm::mat4 modelViewMatrix = viewer->m_viewingMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			glm::mat4 modelViewMatrix = viewer->m_viewMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			// calculate the model-view-projection matrix
+			glm::mat4 modelViewProjectionMatrix = viewer->m_projectionMatrix * modelViewMatrix;
 
 			// normal-vectors are transformed different than vertices
 			// take the transpose of the inverse modelView or simply reset the translation vector in the modelview-matrix
 			// in other words: only the rotations are applied to normals and they are guaranteed to leave
 			// normalized normals at unit length. THIS METHOD ONLY WORKS WHEN NO NON UNIFORM SCALING IS APPLIED
-			//glm::mat4 normalMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
-			glm::mat4 normalMatrix = modelViewMatrix;
-			glm::value_ptr( normalMatrix )[ 12 ] = 0.0;
-			glm::value_ptr( normalMatrix )[ 13 ] = 0.0;
-			glm::value_ptr( normalMatrix )[ 14 ] = 0.0;
+			/*
+						glm::mat4 normalMatrix = modelViewMatrix;
+						glm::value_ptr( normalMatrix )[ 12 ] = 0.0;
+						glm::value_ptr( normalMatrix )[ 13 ] = 0.0;
+						glm::value_ptr( normalMatrix )[ 14 ] = 0.0;
+						*/
+			glm::mat4 normalModelViewMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
+			// modelviewprojection for normals
+			glm::mat4 normalModelViewProjectionMatrix = glm::transpose( glm::inverse( modelViewProjectionMatrix ) );
 
-			// calculate the model-view-projection matrix
-			glm::mat4 modelViewProjectionMatrix = viewer->m_projectionMatrix * modelViewMatrix;
-
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 0, 64) )
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewMatrix ), 0, 64 ) )
 				return false;
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( normalMatrix ), 64, 64) )
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 64, 64 ) )
+				return false;
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( normalModelViewMatrix ), 128, 64 ) )
+				return false;
+			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( normalModelViewProjectionMatrix ), 192, 64) )
 				return false;
 
 			// Don't need to update inverse, because its just needed in screen-space during lighting-stage

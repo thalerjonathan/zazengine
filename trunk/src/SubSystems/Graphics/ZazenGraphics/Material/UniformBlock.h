@@ -29,8 +29,8 @@ class UniformBlock
 	bool bindBuffer();
 	bool unbindBuffer();
 
-	bool updateData( void* data, int size );
-	bool updateData( void* data, int offset, int size );
+	bool updateData( const void* data, int size );
+	bool updateData( const void* data, int offset, int size );
 
  private:
 	UniformBlock( const std::string& name );

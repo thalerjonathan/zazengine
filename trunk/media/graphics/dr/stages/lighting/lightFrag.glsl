@@ -10,15 +10,22 @@ uniform sampler2DShadow ShadowMap;
 
 layout(shared) uniform mvp_transform
 {
-	mat4 mvp_mat;
-	mat4 normal_mat;
-	mat4 projInv_mat;
+	mat4 modelView_Matrix;
+	mat4 modelViewProjection_Matrix;
+	
+	mat4 normalsModelView_Matrix;
+	mat4 normalsModelViewProjection_Matrix;
+	
+	mat4 projection_Matrix;
+	mat4 projectionInv_Matrix;
 };
 
 // contains light-direction in 8,9,10
 layout(shared) uniform lightData
 {
-	mat4 lightSpace_mat;
+	mat4 light_ModelMatrix;
+	mat4 light_SpaceMatrix;
+	mat4 light_SpaceUnitMatrix;
 };
 
 float unpackFloatFromVec4i( const vec4 value )
@@ -38,7 +45,7 @@ vec3 positionFromDepth( const vec2 screenCoord, const float depth )
     vec4 vProjectedPos = vec4( ndcX, ndcY, depth, 1.0f );
     
     // Transform by the inverse projection matrix
-    vec4 pos = projInv_mat * vProjectedPos;
+    vec4 pos = projectionInv_Matrix * vProjectedPos;
     
     // Divide by w to get the view-space position
     return pos.xyz / pos.w;  
@@ -63,8 +70,11 @@ void main()
 	// 4. get the position of fragment in world-space
 	vec4 fragWorldPos = vec4( positionFromDepth( screenCoord, depth ), 1.0 );
 
-	// 5. transform the fragment world-pos to its position in light-space
-	vec4 fragLightPos = lightSpace_mat * fragWorldPos;
+	// 5. transform the fragment world-pos to its position in light-space unit-cube
+	// this means a transformation into the lightspace which is then in -1 to +1 in all directions (NDC)
+	// then we map this coordinates to 0-1 to be able to access the shadowmap like a texture
+	// the unit-cube transformation is already included in the light_SpaceUnitMatrix
+	vec4 fragLightPos = light_SpaceUnitMatrix * fragWorldPos;
 	
 	// 6. do the shadow lookup
 	float shadow = shadowLookup( fragLightPos, 0.0, 0.0 );
