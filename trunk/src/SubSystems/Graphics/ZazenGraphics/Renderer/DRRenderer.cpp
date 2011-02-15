@@ -89,9 +89,12 @@ DRRenderer::initialize()
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );					// Black Background
 	glClearDepth( 1.0f );									// Depth Buffer Setup
 
-	glDepthFunc( GL_LEQUAL );								// The Type Of Depth Testing To Do
 	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );	// Really Nice Perspective Calculations
+
 	glEnable( GL_DEPTH_TEST );								// Enables Depth Testing
+	glDepthFunc( GL_LEQUAL );								// The Type Of Depth Testing To Do
+	glDepthMask( GL_TRUE );
+
 	glEnable( GL_TEXTURE_2D );
 
 	if ( false == this->initFBO() )
@@ -473,29 +476,6 @@ DRRenderer::initShadowMapping()
 		return false;
 	}
 
-	/*
-	glBindFramebuffer( GL_FRAMEBUFFER, this->m_shadowMappingFB );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::initShadowMapping: glBindFramebuffer failed with " << gluErrorString( status ) << " - exit" << endl;
-		return false;
-	}
-
-	// Instruct openGL that we won't bind a color texture with the currently binded FBO
-	glDrawBuffer( GL_NONE );
-	glReadBuffer( GL_NONE );
-
-	CHECK_FRAMEBUFFER_STATUS( status );
-	if ( GL_FRAMEBUFFER_COMPLETE != status )
-	{
-		cout << "ERROR in DRRenderer::initFBO: glFramebufferTexture2D error: " << gluErrorString( status ) << " - exit" << endl;
-		return false;
-	}
-
-	// switch back to window-system-provided framebuffer
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-*/
-
 	this->m_progShadowMapping = Program::createProgram( );
 	if ( 0 == this->m_progShadowMapping )
 	{
@@ -707,7 +687,6 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 	}
 
-	// switch to back-face culling
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	glClearColor( 0.0, 0.0, 0.0, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );

@@ -49,13 +49,23 @@
  */
 
 /* Errors:
- * - Correct Deferred Shadowing: something still wrong with the shadowing transformation in lighting Fragment-shader
+ * - Visibility in G-Buffer not correct because we don't render against a z-buffer. so the object first in the
+ * 	 renderlist shows up over the others.
+ * 		-> add a depth-buffer to the framebuffer? ( http://www.gamedev.net/topic/578084-depth-buffer-and-deferred-rendering/ )
+ *
+ * - Shadowmap display: glTexParameteri(texture_target, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
+ * - Shadowing artefacts:
+ *		-> employ Face-Culling: cull front-faces during shadowmap generation
+ *
  * - Lighting and Normals:
  * 		-> check space of normals and camera: normals must be provided in screen-space and camera position
  * 			and direction must be transformed to screen-space too. LIGHTING MUST ALWAYS HAPPEN IN THE SAME
  * 		    SPACE.
  * 		-> something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
  *		-> lights must be transformed by camera-viewingMatrix to world-coordinates otherwise they stick with camera
+ *
+ * - Correct Deferred Shadowing:
+ * 		-> something still wrong with the shadowing transformation in lighting Fragment-shader
  *
  * Questions:
  * - am i in the right space?
@@ -70,7 +80,7 @@
 /* TODO:
  * - Enhance Deferred Shadowing (reduce artifacts and implement soft-shadows )
  * - Introduce multiple lights: each light contributes ADDITIVELY to the framebuffe, solve this
- * - Material-Model: diffuse texturing, transparency, metal
+ * - Material-Model: diffuse texturing, transparency, metal, SubSurfaceScattering!!!
  * - Reflections: would be nice to have reflections in this renderer too
  */
 class DRRenderer : public Renderer
