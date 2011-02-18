@@ -48,7 +48,7 @@ class Orientation
 	void strafeY( float );
 	void strafeUp( float );
 
-	void lookAt( const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up );
+	void set( const glm::vec3& pos, float pitch, float heading, float roll );
 
  protected:
 	// this method is called always when one of the upper methods is invoded

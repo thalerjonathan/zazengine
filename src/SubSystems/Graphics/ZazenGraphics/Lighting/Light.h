@@ -16,8 +16,8 @@ class Light : public Viewer
 {
  public:
 	static Light* createSpoptLight( float, int, int );
-	static Light* createDirectionalLight( float, int, int );
-	static Light* createPointLight( float, int, int );
+	static Light* createDirectionalLight( int, int );
+	static Light* createPointLight( int );
 
 	virtual ~Light();
 
@@ -26,7 +26,7 @@ class Light : public Viewer
 	GLuint* getShadowCubeMap() { return this->m_cubeShadowMap; };
 
  private:
-	Light( float, int, int );
+	Light( int, int );
 
 	GLuint m_shadowMap;
 	GLuint m_cubeShadowMap[6];

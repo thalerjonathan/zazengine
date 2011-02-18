@@ -45,9 +45,11 @@ class ZazenGraphics : public IGraphics
 	private:
 		std::string id;
 		std::string type;
-	
+		std::string controlTargetID;
+
 		SDL_Surface* drawContext;
 
+		Orientation* m_controlTarget;
 		Viewer* camera;
 		Scene* activeScene;
 	
@@ -58,7 +60,8 @@ class ZazenGraphics : public IGraphics
 		bool initSDL();
 		bool initGL();
 
-		bool loadCameraConfig( TiXmlElement* );
+		void loadControlConfig( TiXmlElement* );
+		void loadCameraConfig( TiXmlElement* );
 		bool loadGeomClasses( TiXmlElement* );
 };
 

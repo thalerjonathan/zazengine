@@ -58,6 +58,7 @@ Scene::load()
 
 		Instance* newInstance = new Instance( model );
 		newInstance->m_modelMatrix = instanceDef->modelMatrix;
+		newInstance->id = instanceDef->id;
 
 		this->instances.push_back( newInstance );
 	}
@@ -69,6 +70,23 @@ bool
 Scene::processFrame( double loopFactor )
 {	
 	return this->renderer->renderFrame( this->instances );
+}
+
+Instance*
+Scene::getInstanceByID( const std::string& id )
+{
+	std::list<Instance*>::iterator iter = this->instances.begin();
+	while ( iter != this->instances.end() )
+	{
+		Instance* instance = *iter;
+
+		if ( instance->id == id )
+		{
+			return instance;
+		}
+	}
+
+	return 0;
 }
 
 void

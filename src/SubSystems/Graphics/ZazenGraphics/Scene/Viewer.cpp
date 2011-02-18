@@ -10,19 +10,16 @@
 
 using namespace std;
 
-Viewer::Viewer( float angle, int width, int height )
+Viewer::Viewer( int width, int height )
 	: Orientation( m_modelMatrix )
 {
 	this->width = width;
 	this->height = height;
 
-	this->angle = angle;
-	this->ratio = (float) this->width / (float) this->height;
-	
 	this->nearDist = 1;
 	this->farDist = 1000;
 
-	this->setupPerspective();
+	this->fov = 90.0f;
 }
 
 Viewer::~Viewer()
@@ -32,8 +29,9 @@ Viewer::~Viewer()
 void
 Viewer::setupPerspective()
 {
-	this->m_projectionMatrix = glm::perspective( this->angle, this->ratio, this->nearDist, this->farDist );
+	this->m_projectionMatrix = glm::perspective( this->fov, ( float ) this->width / ( float ) this->height, this->nearDist, this->farDist );
 
+	// TODO: remove this fixed-function stuff
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
@@ -48,6 +46,7 @@ Viewer::setupOrtho()
 {
 	this->m_projectionMatrix = glm::ortho( 0.0f, this->width, this->height, 0.0f, -1.0f, 1.0f );
 
+	// TODO: remove this fixed-function stuff
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
@@ -58,35 +57,10 @@ Viewer::setupOrtho()
 }
 
 void
-Viewer::changeNearClip(float dist)
+Viewer::resize( int width, int height )
 {
-	this->nearDist = dist;
-	
-	this->setupPerspective();
-}
-
-void
-Viewer::changeFarClip(float dist)
-{
-	this->farDist = dist;
-	
-	this->setupPerspective();
-}
-
-void
-Viewer::resize(int width, int height)
-{
-	this->ratio = (float) width / (float) height;
-	
-	this->setupPerspective();
-}
-
-void
-Viewer::changeFov(float angle)
-{
-	this->angle = angle;
-	
-	this->setupPerspective();
+	this->width = (float) width;
+	this->height = (float) height;
 }
 
 /* Not correctly working yet ( and pretty slow )

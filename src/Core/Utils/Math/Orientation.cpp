@@ -163,7 +163,7 @@ Orientation::strafeY( float units )
 }
 
 void
-Orientation::lookAt( const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up )
+Orientation::set( const glm::vec3& pos, float heading, float roll, float pitch )
 {
 	// TODO: implement
 

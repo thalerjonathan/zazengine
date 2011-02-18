@@ -1,19 +1,17 @@
 #include "Instance.h"
 
 Instance::Instance( GeomType* geom )
+	: Orientation( m_modelMatrix )
 {
 	this->visible = true;
 	this->distance = 0;
 	this->lastFrame = 0;
 	
 	this->geom = geom;
-
-	this->m_modelMatrix = 0;
 }
 
 Instance::~Instance()
 {
-	delete this->m_modelMatrix;
 }
 
 float

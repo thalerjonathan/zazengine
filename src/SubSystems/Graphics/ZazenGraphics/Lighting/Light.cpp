@@ -13,9 +13,9 @@
 using namespace std;
 
 Light*
-Light::createSpoptLight( float angle, int width, int height )
+Light::createSpoptLight( float fov, int width, int height )
 {
-	Light* light = new Light( angle, width, height );
+	Light* light = new Light( width, height );
 	if ( false == light->createShadowMap( width, height ) )
 	{
 		delete light;
@@ -23,16 +23,17 @@ Light::createSpoptLight( float angle, int width, int height )
 	}
 	else
 	{
-		// TODO: setup projective
+		light->setFov( fov );
+		light->setupPerspective();
 	}
 
 	return light;
 }
 
 Light*
-Light::createDirectionalLight( float angle, int width, int height )
+Light::createDirectionalLight( int width, int height )
 {
-	Light* light = new Light( angle, width, height );
+	Light* light = new Light( width, height );
 	if ( false == light->createShadowMap( width, height ) )
 	{
 		delete light;
@@ -40,31 +41,32 @@ Light::createDirectionalLight( float angle, int width, int height )
 	}
 	else
 	{
-		// TODO: setup orthogonal
+		light->setupOrtho();
 	}
 
 	return light;
 }
 
 Light*
-Light::createPointLight( float angle, int width, int height )
+Light::createPointLight( int side )
 {
-	Light* light = new Light( angle, width, height );
-	if ( false == light->createShadowCubeMap( width, height ) )
+	Light* light = new Light( side, side );
+	if ( false == light->createShadowCubeMap( side, side ) )
 	{
 		delete light;
 		light = 0;
 	}
 	else
 	{
-		// TODO: setup symetrical projective 90degrees
+		light->setFov( 90 );
+		light->setupPerspective();
 	}
 
 	return light;
 }
 
-Light::Light( float angle, int width, int height )
-	: Viewer( angle, width, height )
+Light::Light( int width, int height )
+	: Viewer( width, height )
 {
 	this->m_shadowMap = 0;
 	memset( this->m_cubeShadowMap, 0, sizeof( this->m_cubeShadowMap ) );
