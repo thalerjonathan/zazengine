@@ -7,12 +7,80 @@
 
 #include "Light.h"
 
+#include <string.h>
 #include <iostream>
 
 using namespace std;
 
 Light*
-Light::createLight( float angle, int width, int height )
+Light::createSpoptLight( float angle, int width, int height )
+{
+	Light* light = new Light( angle, width, height );
+	if ( false == light->createShadowMap( width, height ) )
+	{
+		delete light;
+		light = 0;
+	}
+	else
+	{
+		// TODO: setup projective
+	}
+
+	return light;
+}
+
+Light*
+Light::createDirectionalLight( float angle, int width, int height )
+{
+	Light* light = new Light( angle, width, height );
+	if ( false == light->createShadowMap( width, height ) )
+	{
+		delete light;
+		light = 0;
+	}
+	else
+	{
+		// TODO: setup orthogonal
+	}
+
+	return light;
+}
+
+Light*
+Light::createPointLight( float angle, int width, int height )
+{
+	Light* light = new Light( angle, width, height );
+	if ( false == light->createShadowCubeMap( width, height ) )
+	{
+		delete light;
+		light = 0;
+	}
+	else
+	{
+		// TODO: setup symetrical projective 90degrees
+	}
+
+	return light;
+}
+
+Light::Light( float angle, int width, int height )
+	: Viewer( angle, width, height )
+{
+	this->m_shadowMap = 0;
+	memset( this->m_cubeShadowMap, 0, sizeof( this->m_cubeShadowMap ) );
+}
+
+Light::~Light()
+{
+	if ( this->m_shadowMap )
+		glDeleteTextures( 1, &this->m_shadowMap );
+
+	if ( this->m_cubeShadowMap[ 0 ] )
+		glDeleteTextures( 6, this->m_cubeShadowMap );
+}
+
+bool
+Light::createShadowMap( int width, int height )
 {
 	GLenum status;
 	GLuint shadowMapID;
@@ -21,14 +89,14 @@ Light::createLight( float angle, int width, int height )
 	glGenTextures( 1, &shadowMapID );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in Light::createLight: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in Light::createShadowMap: glGenTextures failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
 	glBindTexture( GL_TEXTURE_2D, shadowMapID );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in Light::createLight: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in Light::createShadowMap: glBindTexture failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
@@ -48,27 +116,20 @@ Light::createLight( float angle, int width, int height )
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
-		cout << "ERROR in Light::createLight: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
+		cout << "ERROR in Light::createShadowMap: glTexImage2D failed with " << gluErrorString( status ) << " - exit" << endl;
 		return false;
 	}
 
 	// unbind framebuffer depth-target
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
-	Light* light = new Light( angle, width, height );
-	light->m_shadowMapID = shadowMapID;
+	this->m_shadowMap = shadowMapID;
 
-	return light;
+	return true;
 }
 
-Light::Light( float angle, int width, int height )
-	: Viewer( angle, width, height )
+bool
+Light::createShadowCubeMap( int width, int height )
 {
-	this->m_shadowMapID = 0;
-}
-
-Light::~Light()
-{
-	if ( this->m_shadowMapID )
-		glDeleteTextures( 1, &this->m_shadowMapID );
+	return false;
 }

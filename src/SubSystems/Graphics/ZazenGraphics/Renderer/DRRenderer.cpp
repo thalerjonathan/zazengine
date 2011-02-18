@@ -453,7 +453,7 @@ DRRenderer::initLightingStage()
 {
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
-	Light* light = Light::createLight( 45.0, 800, 600 );
+	Light* light = Light::createSpoptLight( 45.0, 800, 600 );
 	if ( 0 == light )
 	{
 		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create light - exit" << endl;
@@ -693,7 +693,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 		Light* light = *iter++;
 
 		// attach the texture to FBO depth attachment point
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, light->getShadowMapID(), 0 );
+		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, light->getShadowMap(), 0 );
 		CHECK_FRAMEBUFFER_STATUS( status );
 		if ( GL_FRAMEBUFFER_COMPLETE != status )
 		{
@@ -767,7 +767,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 
 	glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
-	glBindTexture( GL_TEXTURE_2D, this->m_lights[ 0 ]->getShadowMapID() );
+	glBindTexture( GL_TEXTURE_2D, this->m_lights[ 0 ]->getShadowMap() );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
@@ -871,7 +871,7 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 
 		// bind the shadowmap of the light to texture unit MRT_COUNT + 1
 		glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
-		glBindTexture( GL_TEXTURE_2D, light->getShadowMapID() );
+		glBindTexture( GL_TEXTURE_2D, light->getShadowMap() );
 		if ( GL_NO_ERROR != ( status = glGetError() ) )
 		{
 			cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;

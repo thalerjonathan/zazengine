@@ -15,15 +15,24 @@
 class Light : public Viewer
 {
  public:
-	static Light* createLight( float, int, int );
+	static Light* createSpoptLight( float, int, int );
+	static Light* createDirectionalLight( float, int, int );
+	static Light* createPointLight( float, int, int );
+
 	virtual ~Light();
 
-	GLuint getShadowMapID() { return this->m_shadowMapID; };
+
+	GLuint getShadowMap() { return this->m_shadowMap; };
+	GLuint* getShadowCubeMap() { return this->m_cubeShadowMap; };
 
  private:
 	Light( float, int, int );
 
-	GLuint m_shadowMapID;
+	GLuint m_shadowMap;
+	GLuint m_cubeShadowMap[6];
+
+	bool createShadowMap( int width, int height );
+	bool createShadowCubeMap( int width, int height );
 
 };
 

@@ -13,33 +13,72 @@
 	</subSystemList>
 	
 	<camera>
-		<position x="0" y="0" z="0"/>
-		<lookAt x="0" y="0" z="0"/>
-		<up x="0" y="1" z="0"/>
+		<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
 	</camera>
 	
 	<objectList>
 		<object name="Floor">
 			<graphics>
 				<instance class="ClassFloorLarge" x="0" y="-3" z="0"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
 			</graphics>
 		</object>
 		
 		<object name="Teapot">
 			<graphics>
 				<instance class="ClassTeapot" x="0" y="3" z="0"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
 			</graphics>
 		</object>
 		
 		<object name="GeoSphere">
 			<graphics>
 				<instance class="ClassGeoSphere" x="-30" y="13" z="-30"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
 			</graphics>
 		</object>
 		
 		<object name="Knot">
 			<graphics>
 				<instance class="ClassKnot" x="30" y="15" z="30"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
+			</graphics>
+		</object>
+		
+		<object name="Light1Spot">
+			<graphics>
+				<light type="SPOT" x="30" y="15" z="30"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
+				
+				<!-- angle: spotlight is projective -->
+				<shadowing cast="true" angle="90" resMapX="800" resMapX="800"/> 
+			</graphics>
+		</object>
+		
+		<object name="Light2Directional">
+			<graphics>
+				<light type="DIRECTIONAL" x="30" y="15" z="30"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
+				
+				<!-- no angle, orthogonal projection -->
+				<shadowing cast="true" resMapX="2048" resMapY="2048"/> 
+			</graphics>
+		</object>
+		
+		<object name="Light3Point">
+			<graphics>
+				<light type="POINT" x="30" y="15" z="30"/>
+				
+				<lookAt eyeX="0" eyeY="0" eyeZ="0" centerX="0" centerY="0" centerZ="0" upX="0" upY="0" upZ="0" />
+				
+				<!-- no angle -->
+				<shadowing cast="true" resMapX="400" resMapY="400"/> 
 			</graphics>
 		</object>
 	</objectList>

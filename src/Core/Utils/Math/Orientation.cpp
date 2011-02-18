@@ -161,3 +161,11 @@ Orientation::strafeY( float units )
 
 	this->matrixChanged();
 }
+
+void
+Orientation::lookAt( const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up )
+{
+	// TODO: implement
+
+	this->matrixChanged();
+}

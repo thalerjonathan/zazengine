@@ -212,7 +212,7 @@ Core::loadConfig()
 
 	if ( false == doc.LoadFile() )
 	{
-		cout << "ERROR ... could not load file " << fullFileName << " - reason = " << doc.ErrorDesc() << endl;
+		cout << "ERROR ... could not load file " << fullFileName << " - reason = " << doc.ErrorDesc() << " at row = " << doc.ErrorRow() << " col = " << doc.ErrorCol() << endl;
 		return false;
 	}
 
