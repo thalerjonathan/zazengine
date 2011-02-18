@@ -19,8 +19,9 @@ class Scene
  
 	 typedef struct {
 		 std::string entity;
+		 std::string id;
 		 float size;
-		 glm::mat4* modelMatrix; // is contained within a graphics entity and allows the instance to be moved externally
+		 glm::mat4 modelMatrix; // is contained within a graphics entity and allows the instance to be moved externally
 	 } InstanceDefinition;
 
 	 Scene( const std::string&, Viewer* );
@@ -29,6 +30,8 @@ class Scene
 	 bool processFrame( double );
 	 bool load();
 	 
+	 Instance* getInstanceByID( const std::string& id );
+
 	 void addEntity( EntityDefinition& e ) { this->entitiesDef[ e.name ] = e; };
 	 void addInstance( InstanceDefinition* i ) { this->instanceDef.push_back( i ); };
 	 

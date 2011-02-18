@@ -26,12 +26,12 @@ ZazenGraphics::ZazenGraphics()
 	: id ("ZazenGraphics"),
 	  type ("graphics")
 {
-
+	this->m_controlTarget = 0;
 }
 
 ZazenGraphics::~ZazenGraphics()
 {
-
+	this->m_controlTarget = 0;
 }
 
 bool
@@ -49,49 +49,15 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 	
-	/*
-	if ( Material::loadMaterials() == false )
-	{
-		cout << "FAILED ... loading Materials" << endl;
-		return false;
-	}
-	*/
-
-	/*
-	TiXmlElement* skyBoxNode = configNode->FirstChildElement( "skyBox" );
-	if ( skyBoxNode )
-	{
-		string folder;
-
-		const char* str = skyBoxNode->Attribute( "folder" );
-		if (str != 0)
-			folder = str;
-
-		this->activeScene->setSkyBoxFolder( folder );
-	}
-	else
-	{
-		cout << "INFO ... scene hast no Skybox defined" << endl;
-	}
-*/
-
-	this->camera = new Viewer( 45.0, WINDOW_WIDTH, WINDOW_HEIGHT );
-	this->camera->setPosition( glm::vec3( 120, 80, 0 ) );
-	this->camera->changeHeading( 90 );
-	this->camera->changePitch( -30 );
+	this->loadControlConfig( configNode );
+	this->loadCameraConfig( configNode );
 
 	this->activeScene = new Scene( "NullScene", this->camera );
-
-	if ( false == this->loadCameraConfig( configNode ) )
-	{
-		return false;
-	}
 
 	if ( false == this->loadGeomClasses( configNode ) )
 	{
 		return false;
 	}
-
 
 	Core::getInstance().getEventManager().registerForEvent( "SDLK_RIGHT", this );
 	Core::getInstance().getEventManager().registerForEvent( "SDLK_LEFT", this );
@@ -140,7 +106,21 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
-	return this->activeScene->load();
+	if ( false == this->activeScene->load() )
+	{
+		return false;
+	}
+
+	if ( this->controlTargetID == "CAM" )
+	{
+		this->m_controlTarget = this->camera;
+	}
+	else
+	{
+
+	}
+
+	return true;
 }
 
 bool
@@ -197,37 +177,40 @@ ZazenGraphics::finalizeProcess()
 bool
 ZazenGraphics::sendEvent( Event& e )
 {
-	if ( e == "SDLK_RIGHT" )
+	if ( this->m_controlTarget )
 	{
-		this->camera->changeHeading( -0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_LEFT" )
-	{
-		this->camera->changeHeading( 0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_UP" )
-	{
-		this->camera->changePitch( -0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_DOWN" )
-	{
-		this->camera->changePitch( 0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_w" )
-	{
-		this->camera->strafeForward( -0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_s" )
-	{
-		this->camera->strafeForward( 0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_d" )
-	{
-		this->camera->changeRoll( -0.1 * this->lastItFact );
-	}
-	else if ( e == "SDLK_a" )
-	{
-		this->camera->changeRoll( 0.1 * this->lastItFact );
+		if ( e == "SDLK_RIGHT" )
+		{
+			this->m_controlTarget->changeHeading( -0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_LEFT" )
+		{
+			this->m_controlTarget->changeHeading( 0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_UP" )
+		{
+			this->m_controlTarget->changePitch( -0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_DOWN" )
+		{
+			this->m_controlTarget->changePitch( 0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_w" )
+		{
+			this->m_controlTarget->strafeForward( -0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_s" )
+		{
+			this->m_controlTarget->strafeForward( 0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_d" )
+		{
+			this->m_controlTarget->changeRoll( -0.1 * this->lastItFact );
+		}
+		else if ( e == "SDLK_a" )
+		{
+			this->m_controlTarget->changeRoll( 0.1 * this->lastItFact );
+		}
 	}
 
 	return true;
@@ -248,7 +231,6 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 
 	glm::vec3 v;
 	entity->instance = new Scene::InstanceDefinition();
-	entity->instance->modelMatrix = new glm::mat4();
 
 	const char* str = instanceNode->Attribute( "class" );
 	if ( 0 != str )
@@ -275,8 +257,8 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	}
 
 	entity->instance->size = 1.0;
-
-	*entity->instance->modelMatrix = glm::translate( glm::mat4(1.0f), v );
+	entity->instance->id = parent->getName();
+	entity->instance->modelMatrix = glm::translate( glm::mat4(1.0f), v );
 
 	this->activeScene->addInstance( entity->instance );
 
@@ -471,8 +453,154 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 	return true;
 }
 
-bool
+void
+ZazenGraphics::loadControlConfig( TiXmlElement* configNode )
+{
+	std::string target = "CAM";
+
+	TiXmlElement* controlNode = configNode->FirstChildElement( "control" );
+	if ( 0 == controlNode )
+	{
+		cout << "INFO ... no controlNode defined - using defaults" << endl;
+	}
+	else
+	{
+		const char* str = controlNode->Attribute( "target" );
+		if ( 0 == str )
+		{
+			cout << "INFO ... target attribute missing in controlNode - use default " << endl;
+		}
+		else
+		{
+			target = str;
+		}
+	}
+
+	this->controlTargetID = target;
+}
+
+void
 ZazenGraphics::loadCameraConfig( TiXmlElement* configNode )
 {
-	return true;
+	float fov = 90.0f;
+	std::string mode = "PROJ";
+	glm::vec3 pos;
+	float roll = 0.0f;
+	float pitch = 0.0f;
+	float heading = 0.0f;
+
+	TiXmlElement* cameraNode = configNode->FirstChildElement( "camera" );
+	if ( 0 == cameraNode )
+	{
+		cout << "INFO ... no cameraNode defined - using defaults" << endl;
+	}
+	else
+	{
+		TiXmlElement* viewingNode = cameraNode->FirstChildElement( "viewing" );
+		if ( 0 == viewingNode )
+		{
+			cout << "ERROR ... no viewingNode defined - using defaults" << endl;
+		}
+		else
+		{
+			const char* str = viewingNode->Attribute( "fov" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... fov attribute missing in viewingNode - use default " << endl;
+			}
+			else
+			{
+				fov = atof( str );
+			}
+		}
+
+		TiXmlElement* orientationNode = cameraNode->FirstChildElement( "orientation" );
+		if ( 0 == orientationNode )
+		{
+			cout << "ERROR ... no orientationNode defined - using defaults" << endl;
+		}
+		else
+		{
+			float x = 0.0f;
+			float y = 0.0f;
+			float z = 0.0f;
+
+			const char* str = orientationNode->Attribute( "x" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... x attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				x = atof( str );
+			}
+
+			str = orientationNode->Attribute( "y" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... y attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				y = atof( str );
+			}
+
+			str = orientationNode->Attribute( "z" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... z attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				z = atof( str );
+			}
+
+			str = orientationNode->Attribute( "heading" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... heading attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				heading = atof( str );
+			}
+
+			str = orientationNode->Attribute( "roll" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... roll attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				roll = atof( str );
+			}
+
+			str = orientationNode->Attribute( "pitch" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... pitch attribute missing in orientation - use default " << endl;
+			}
+			else
+			{
+				pitch = atof( str );
+			}
+
+			pos = glm::vec3( x, y, z );
+		}
+	}
+
+	this->camera = new Viewer( WINDOW_WIDTH, WINDOW_HEIGHT );
+
+	if ( mode == "PROJ" )
+	{
+		this->camera->setFov( 90 );
+		this->camera->setupPerspective();
+	}
+	else if ( mode == "ORTHO" )
+	{
+		this->camera->setupOrtho();
+	}
+
+
+	this->camera->set( pos, pitch, heading, roll );
 }

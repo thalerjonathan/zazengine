@@ -35,7 +35,7 @@ class Viewer : public Orientation
 		INTERSECTING
 	};
 
-	Viewer( float, int, int );
+	Viewer( int, int );
 	~Viewer();
 
 	glm::mat4 m_modelMatrix;
@@ -50,11 +50,12 @@ class Viewer : public Orientation
     int getHeight() { return this->height; };
     int getWidth() { return this->width; };
 
-	void changeNearClip(float);
-	void changeFarClip(float);
+    void setFov( float fov ) { this->fov = fov; };
+
+	void setNear( float near ) { this->nearDist = near; };
+	void setFar( float far ) { this->farDist = far; };
 	
-	void resize(int, int);
-	void changeFov(float);
+	void resize( int, int );
 
 	CullResult cullBB( const glm::vec3&, const glm::vec3& );
 
@@ -66,8 +67,7 @@ class Viewer : public Orientation
 	float width;
 	float height;
 
-	float angle;
-	float ratio;
+	float fov;
 
 	float nearDist;
 	float farDist;

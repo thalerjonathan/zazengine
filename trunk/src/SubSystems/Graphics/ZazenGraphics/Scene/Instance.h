@@ -2,20 +2,22 @@
 #define INSTANCE_H_
 
 #include "../Geometry/GeomType.h"
+#include "../../../../Core/Utils/Math/Orientation.h"
 
-class Instance
+class Instance : public Orientation
 {
  public:
 	Instance( GeomType* );
 	~Instance();
-	 
+
+	std::string id; // TODO: initialize
 	bool visible;
 	float distance;
 	long lastFrame;
 
 	GeomType* geom;
 
-	glm::mat4* m_modelMatrix;
+	glm::mat4 m_modelMatrix;
 
 	float recalculateDistance();
 

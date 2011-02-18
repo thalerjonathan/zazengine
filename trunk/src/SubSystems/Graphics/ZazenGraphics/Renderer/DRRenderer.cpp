@@ -453,7 +453,7 @@ DRRenderer::initLightingStage()
 {
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
-	Light* light = Light::createSpoptLight( 45.0, 800, 600 );
+	Light* light = Light::createSpoptLight( 90.0f, 800, 600 );
 	if ( 0 == light )
 	{
 		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create light - exit" << endl;
@@ -943,7 +943,7 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 		if ( Viewer::OUTSIDE != cullResult )
 		{
 			// calculate modelView-Matrix
-			glm::mat4 modelViewMatrix = viewer->m_viewMatrix * *parent->m_modelMatrix * geom->m_modelMatrix;
+			glm::mat4 modelViewMatrix = viewer->m_viewMatrix * parent->m_modelMatrix * geom->m_modelMatrix;
 			// calculate the model-view-projection matrix
 			glm::mat4 modelViewProjectionMatrix = viewer->m_projectionMatrix * modelViewMatrix;
 
