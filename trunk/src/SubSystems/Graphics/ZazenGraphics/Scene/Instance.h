@@ -7,10 +7,10 @@
 class Instance : public Orientation
 {
  public:
-	Instance( GeomType* );
+	Instance();
 	~Instance();
 
-	std::string id; // TODO: initialize
+	std::string id;
 	bool visible;
 	float distance;
 	long lastFrame;

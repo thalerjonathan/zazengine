@@ -38,23 +38,25 @@ class Core
 
 		ISubSystem* getSubSystemByType( const std::string& );
 
-		EventManager& getEventManager() const { return *this->eventManager; };
+		EventManager& getEventManager() const { return *this->m_eventManager; };
 
 	private:
 		static Core* instance;
 
-		bool runCore;
+		bool m_runCore;
 
-		EventManager* eventManager;
+		EventManager* m_eventManager;
 
-		IGameObjectFactory* gameObjectFactory;
-		ISubSystemFactory* subSystemFactory;
+		IGameObjectFactory* m_gameObjectFactory;
+		ISubSystemFactory* m_subSystemFactory;
 
-		std::list<ISubSystem*> subSystems;
-		std::list<IGameObject*> gameObjects;
+		std::list<ISubSystem*> m_subSystems;
+		std::list<IGameObject*> m_gameObjects;
 
 		Core();
 		~Core();
+
+		IGameObject* getObjectByName( const std::string& );
 
 		bool loadConfig();
 		ISubSystem* loadSubSystem( const std::string& );

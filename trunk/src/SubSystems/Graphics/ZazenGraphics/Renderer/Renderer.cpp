@@ -10,10 +10,9 @@
 
 using namespace std;
 
-Renderer::Renderer( Viewer* camera )
+Renderer::Renderer( )
 {
-	this->m_camera = camera;
-
+	this->m_camera = 0;
 	this->frame = 0;
 }
 

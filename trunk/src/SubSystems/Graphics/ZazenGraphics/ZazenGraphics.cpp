@@ -13,6 +13,8 @@
 #include "Geometry/GeometryFactory.h"
 #include "Material/Texture.h"
 
+#include "Renderer/DRRenderer.h"
+
 #include "../../../Core/Core.h"
 
 #include <iostream>
@@ -23,15 +25,13 @@
 using namespace std;
 
 ZazenGraphics::ZazenGraphics()
-	: id ("ZazenGraphics"),
-	  type ("graphics")
+	: m_id ("ZazenGraphics"),
+	  m_type ("graphics")
 {
-	this->m_controlTarget = 0;
 }
 
 ZazenGraphics::~ZazenGraphics()
 {
-	this->m_controlTarget = 0;
 }
 
 bool
@@ -49,24 +49,17 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 	
-	this->loadControlConfig( configNode );
-	this->loadCameraConfig( configNode );
-
-	this->activeScene = new Scene( "NullScene", this->camera );
+	this->m_renderer = new DRRenderer();
+	if ( false == this->m_renderer->initialize() )
+	{
+		cout << "ERROR ... initializing renderer failed - exit" << endl;
+		return false;
+	}
 
 	if ( false == this->loadGeomClasses( configNode ) )
 	{
 		return false;
 	}
-
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_RIGHT", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_LEFT", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_UP", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_DOWN", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_w", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_s", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_d", this );
-	Core::getInstance().getEventManager().registerForEvent( "SDLK_a", this );
 
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	
@@ -80,17 +73,14 @@ ZazenGraphics::shutdown()
 
 	Core::getInstance().getEventManager().unregisterForEvent( "SDLK_RIGHT", this );
 
-	std::list<ZazenGraphicsEntity*>::iterator iter = this->entities.begin();
-	while ( iter != this->entities.end() )
+	std::list<ZazenGraphicsEntity*>::iterator iter = this->m_entities.begin();
+	while ( iter != this->m_entities.end() )
 	{
 		ZazenGraphicsEntity* entity = *iter++;
 		delete entity;
 	}
 
-	this->entities.clear();
-
-	delete this->activeScene;
-	this->activeScene = 0;
+	this->m_entities.clear();
 
 	SDL_Quit();
 
@@ -106,20 +96,6 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
-	if ( false == this->activeScene->load() )
-	{
-		return false;
-	}
-
-	if ( this->controlTargetID == "CAM" )
-	{
-		this->m_controlTarget = this->camera;
-	}
-	else
-	{
-
-	}
-
 	return true;
 }
 
@@ -141,9 +117,9 @@ ZazenGraphics::process( double iterationFactor )
 	bool flag = true;
 	//cout << "ZazenGraphics::process enter" << endl;
 
-	// process events of entities
-	std::list<ZazenGraphicsEntity*>::iterator iter = this->entities.begin();
-	while ( iter != this->entities.end() )
+	// process events of m_entities
+	std::list<ZazenGraphicsEntity*>::iterator iter = this->m_entities.begin();
+	while ( iter != this->m_entities.end() )
 	{
 		ZazenGraphicsEntity* entity = *iter++;
 
@@ -158,8 +134,8 @@ ZazenGraphics::process( double iterationFactor )
 		entity->queuedEvents.clear();
 	}
 
-	this->lastItFact = iterationFactor;
-	flag = this->activeScene->processFrame( iterationFactor );
+	this->m_lastItFact = iterationFactor;
+	flag = this->m_renderer->renderFrame( this->m_instances );
 
 	//cout << "ZazenGraphics::process leave" << endl;
 
@@ -177,42 +153,6 @@ ZazenGraphics::finalizeProcess()
 bool
 ZazenGraphics::sendEvent( Event& e )
 {
-	if ( this->m_controlTarget )
-	{
-		if ( e == "SDLK_RIGHT" )
-		{
-			this->m_controlTarget->changeHeading( -0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_LEFT" )
-		{
-			this->m_controlTarget->changeHeading( 0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_UP" )
-		{
-			this->m_controlTarget->changePitch( -0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_DOWN" )
-		{
-			this->m_controlTarget->changePitch( 0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_w" )
-		{
-			this->m_controlTarget->strafeForward( -0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_s" )
-		{
-			this->m_controlTarget->strafeForward( 0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_d" )
-		{
-			this->m_controlTarget->changeRoll( -0.1 * this->lastItFact );
-		}
-		else if ( e == "SDLK_a" )
-		{
-			this->m_controlTarget->changeRoll( 0.1 * this->lastItFact );
-		}
-	}
-
 	return true;
 }
 
@@ -222,47 +162,43 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	ZazenGraphicsEntity* entity = new ZazenGraphicsEntity( parent );
 
 	TiXmlElement* instanceNode = objectNode->FirstChildElement( "instance" );
-	if ( 0 == instanceNode )
+	if ( instanceNode )
 	{
-		cout << "ERROR ... no instance-node found for graphicsinstance - ignoring object" << endl;
-		delete entity;
-		return 0;
+		glm::vec3 v;
+
+		Instance* instance = new Instance();
+
+		const char* str = instanceNode->Attribute( "class" );
+		if ( 0 != str )
+		{
+			instance->geom = GeometryFactory::get( str );
+		}
+
+		str = instanceNode->Attribute( "x" );
+		if ( 0 != str )
+		{
+			v[ 0 ] = atof( str );
+		}
+
+		str = instanceNode->Attribute( "y" );
+		if ( 0 != str )
+		{
+			v[ 1 ] = atof( str );
+		}
+
+		str = instanceNode->Attribute( "z" );
+		if ( 0 != str )
+		{
+			v[ 2 ] = atof( str );
+		}
+
+		instance->id = parent->getName();
+		instance->set( v, 0, 0, 0 );
+
+		this->m_instances.push_back( instance );
 	}
 
-	glm::vec3 v;
-	entity->instance = new Scene::InstanceDefinition();
-
-	const char* str = instanceNode->Attribute( "class" );
-	if ( 0 != str )
-	{
-		entity->instance->entity = str;
-	}
-
-	str = instanceNode->Attribute( "x" );
-	if ( 0 != str )
-	{
-		v[ 0 ] = atof( str );
-	}
-
-	str = instanceNode->Attribute( "y" );
-	if ( 0 != str )
-	{
-		v[ 1 ] = atof( str );
-	}
-
-	str = instanceNode->Attribute( "z" );
-	if ( 0 != str )
-	{
-		v[ 2 ] = atof( str );
-	}
-
-	entity->instance->size = 1.0;
-	entity->instance->id = parent->getName();
-	entity->instance->modelMatrix = glm::translate( glm::mat4(1.0f), v );
-
-	this->activeScene->addInstance( entity->instance );
-
-	this->entities.push_back( entity );
+	this->m_entities.push_back( entity );
 
 	return entity;
 }
@@ -289,8 +225,8 @@ ZazenGraphics::initSDL()
 		return false;
 	}
 
-	this->drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
-	if ( 0 == this->drawContext )
+	this->m_drawContext = SDL_SetVideoMode( WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL /*| SDL_FULLSCREEN*/);
+	if ( 0 == this->m_drawContext )
 	{
 		cout << "FAILED ... SDL_SetVideoMode failed with " << SDL_GetError() << endl;
 		return false;
@@ -360,8 +296,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 
 		if ( 0 == strcmp( str, "class" ) )
 		{
-			Scene::EntityDefinition entity;
-
+			string classID;
 			string modelType;
 
 			str = classNode->Attribute( "id" );
@@ -372,7 +307,7 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 			}
 			else
 			{
-				entity.name = str;
+				classID = str;
 			}
 
 			str = classNode->Attribute( "modelType" );
@@ -434,6 +369,8 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 			}
 			else if ( "MESH" == modelType)
 			{
+				std::string meshFile;
+
 				str = classNode->Attribute( "file" );
 				if ( 0 == str )
 				{
@@ -442,42 +379,17 @@ ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
 				}
 				else
 				{
-					entity.modelFile = str;
+					meshFile = str;
 				}
-			}
 
-			this->activeScene->addEntity( entity );
+				GeometryFactory::loadMesh( classID, meshFile );
+			}
 		}
 	}
 
 	return true;
 }
 
-void
-ZazenGraphics::loadControlConfig( TiXmlElement* configNode )
-{
-	std::string target = "CAM";
-
-	TiXmlElement* controlNode = configNode->FirstChildElement( "control" );
-	if ( 0 == controlNode )
-	{
-		cout << "INFO ... no controlNode defined - using defaults" << endl;
-	}
-	else
-	{
-		const char* str = controlNode->Attribute( "target" );
-		if ( 0 == str )
-		{
-			cout << "INFO ... target attribute missing in controlNode - use default " << endl;
-		}
-		else
-		{
-			target = str;
-		}
-	}
-
-	this->controlTargetID = target;
-}
 
 void
 ZazenGraphics::loadCameraConfig( TiXmlElement* configNode )
@@ -589,18 +501,18 @@ ZazenGraphics::loadCameraConfig( TiXmlElement* configNode )
 		}
 	}
 
-	this->camera = new Viewer( WINDOW_WIDTH, WINDOW_HEIGHT );
+	this->m_camera = new Viewer( WINDOW_WIDTH, WINDOW_HEIGHT );
 
 	if ( mode == "PROJ" )
 	{
-		this->camera->setFov( 90 );
-		this->camera->setupPerspective();
+		this->m_camera->setFov( 90 );
+		this->m_camera->setupPerspective();
 	}
 	else if ( mode == "ORTHO" )
 	{
-		this->camera->setupOrtho();
+		this->m_camera->setupOrtho();
 	}
 
 
-	this->camera->set( pos, pitch, heading, roll );
+	this->m_camera->set( pos, pitch, heading, roll );
 }

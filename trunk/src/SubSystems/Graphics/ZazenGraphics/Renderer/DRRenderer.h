@@ -86,7 +86,7 @@
 class DRRenderer : public Renderer
 {
  public:
-	DRRenderer( Viewer* camera );
+	DRRenderer();
 	virtual ~DRRenderer();
 
 	virtual bool initialize();

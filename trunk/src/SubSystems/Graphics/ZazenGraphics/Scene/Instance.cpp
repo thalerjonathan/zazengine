@@ -1,13 +1,13 @@
 #include "Instance.h"
 
-Instance::Instance( GeomType* geom )
+Instance::Instance( )
 	: Orientation( m_modelMatrix )
 {
 	this->visible = true;
 	this->distance = 0;
 	this->lastFrame = 0;
 	
-	this->geom = geom;
+	this->geom = 0;
 }
 
 Instance::~Instance()
