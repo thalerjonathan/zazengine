@@ -32,10 +32,10 @@ Core::initalize()
 		cout << "***************** Initializing Core... *****************" << endl;
 		cout << "********************************************************" << endl;
 
-		Core::instance->gameObjectFactory = new ZazenGameObjectFactory();
-		Core::instance->subSystemFactory = new ZazenSubSystemFactory();
+		Core::instance->m_gameObjectFactory = new ZazenGameObjectFactory();
+		Core::instance->m_subSystemFactory = new ZazenSubSystemFactory();
 
-		Core::instance->eventManager = new EventManager();
+		Core::instance->m_eventManager = new EventManager();
 
 		if ( false == ScriptSystem::initialize() )
 		{
@@ -66,22 +66,22 @@ Core::shutdown()
 
 		list<ISubSystem*>::iterator iter;
 
-		iter = Core::instance->subSystems.begin();
-		while ( iter != Core::instance->subSystems.end() )
+		iter = Core::instance->m_subSystems.begin();
+		while ( iter != Core::instance->m_subSystems.end() )
 		{
 			ISubSystem* subSys = *iter++;
 			subSys->shutdown();
 			delete subSys;
 		}
 
-		if ( Core::instance->eventManager )
-			delete Core::instance->eventManager;
+		if ( Core::instance->m_eventManager )
+			delete Core::instance->m_eventManager;
 
-		if ( Core::instance->gameObjectFactory )
-			delete Core::instance->gameObjectFactory;
+		if ( Core::instance->m_gameObjectFactory )
+			delete Core::instance->m_gameObjectFactory;
 
-		if ( Core::instance->subSystemFactory )
-			delete Core::instance->subSystemFactory;
+		if ( Core::instance->m_subSystemFactory )
+			delete Core::instance->m_subSystemFactory;
 
 		ScriptSystem::shutdown();
 
@@ -95,9 +95,9 @@ Core::Core()
 {
 	Core::instance = this;
 
-	this->runCore = false;
+	this->m_runCore = false;
 
-	this->eventManager = 0;
+	this->m_eventManager = 0;
 }
 
 Core::~Core()
@@ -108,8 +108,8 @@ Core::~Core()
 void
 Core::start()
 {
-	list<ISubSystem*>::iterator subSysIter = this->subSystems.begin();
-	while ( subSysIter != this->subSystems.end() )
+	list<ISubSystem*>::iterator subSysIter = this->m_subSystems.begin();
+	while ( subSysIter != this->m_subSystems.end() )
 	{
 		ISubSystem* subSys = *subSysIter++;
 		if ( false == subSys->start() )
@@ -126,26 +126,26 @@ Core::start()
 	
 	cout << "Start processing" << endl;
 
-	this->runCore = true;
-	while ( this->runCore )
+	this->m_runCore = true;
+	while ( this->m_runCore )
 	{
 		gettimeofday( &t, NULL );
 		startTicks = t.tv_usec + 1000000 * t.tv_sec;
 		
-		this->eventManager->processQueue();
+		this->m_eventManager->processQueue();
 
 		if ( false == ScriptSystem::getInstance().callFunc( "beginFrame" ) )
 		{
-			this->runCore = false;
+			this->m_runCore = false;
 			break;
 		}
 
-		subSysIter = this->subSystems.begin();
-		while ( subSysIter != this->subSystems.end() )
+		subSysIter = this->m_subSystems.begin();
+		while ( subSysIter != this->m_subSystems.end() )
 		{
 			if ( false == (*subSysIter)->process( itFact ) )
 			{
-				this->runCore = false;
+				this->m_runCore = false;
 				break;
 			}
 
@@ -154,14 +154,14 @@ Core::start()
 
 		if ( false == ScriptSystem::getInstance().callFunc( "endFrame" ) )
 		{
-			this->runCore = false;
+			this->m_runCore = false;
 			break;
 		}
 
 		//sleep( 1 );
 
-		subSysIter = this->subSystems.begin();
-		while ( subSysIter != this->subSystems.end() )
+		subSysIter = this->m_subSystems.begin();
+		while ( subSysIter != this->m_subSystems.end() )
 		{
 			(*subSysIter)->finalizeProcess();
 			subSysIter++;
@@ -173,8 +173,8 @@ Core::start()
 		itFact = (double)(endTicks - startTicks) / (double) 1000;
 	};
 
-	subSysIter = this->subSystems.begin();
-	while ( subSysIter != this->subSystems.end() )
+	subSysIter = this->m_subSystems.begin();
+	while ( subSysIter != this->m_subSystems.end() )
 	{
 		(*subSysIter)->stop();
 		subSysIter++;
@@ -184,14 +184,14 @@ Core::start()
 void
 Core::stop()
 {
-	this->runCore = false;
+	this->m_runCore = false;
 }
 
 ISubSystem*
 Core::getSubSystemByType( const std::string& type )
 {
-	list<ISubSystem*>::iterator iter = this->subSystems.begin();
-	while ( iter != this->subSystems.end() )
+	list<ISubSystem*>::iterator iter = this->m_subSystems.begin();
+	while ( iter != this->m_subSystems.end() )
 	{
 		ISubSystem* subSys = *iter++;
 		if ( subSys->getType() == type )
@@ -267,7 +267,7 @@ Core::loadConfig()
 			{
 				ISubSystem* subSystem = this->loadSubSystem( str );
 				if ( subSystem )
-					this->subSystems.push_back( subSystem );
+					this->m_subSystems.push_back( subSystem );
 				else
 					return false;
 			}
@@ -289,15 +289,68 @@ Core::loadConfig()
 
 		if ( 0 == strcmp( str, "object" ) )
 		{
-			IGameObject* object = this->gameObjectFactory->createObject( "" );
+			IGameObject* object = this->m_gameObjectFactory->createObject( "" );
 			if ( object->initialize( objectNode ) )
-				this->gameObjects.push_back( object );
+				this->m_gameObjects.push_back( object );
 			else
 				delete object;
 		}
 	}
 
+	std::string target;
+
+	TiXmlElement* controlNode = rootNode->FirstChildElement( "control" );
+	if ( 0 == controlNode )
+	{
+		cout << "INFO ... no controlNode defined - using defaults" << endl;
+	}
+	else
+	{
+		const char* str = controlNode->Attribute( "target" );
+		if ( 0 == str )
+		{
+			cout << "INFO ... target attribute missing in controlNode - use default " << endl;
+		}
+		else
+		{
+			target = str;
+		}
+	}
+
+	if ( false == target.empty() )
+	{
+		IGameObject* inputTarget = getObjectByName( target );
+		if ( inputTarget )
+		{
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_RIGHT", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_LEFT", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_UP", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_DOWN", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_w", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_s", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_d", inputTarget );
+			Core::getInstance().getEventManager().registerForEvent( "SDLK_a", inputTarget );
+		}
+	}
+
 	return true;
+}
+
+IGameObject*
+Core::getObjectByName( const std::string& name )
+{
+	std::list<IGameObject*>::iterator iter = this->m_gameObjects.begin();
+	while ( iter != this->m_gameObjects.end() )
+	{
+		IGameObject* obj = *iter++;
+
+		if ( obj->getName() == name )
+		{
+			return obj;
+		}
+	}
+
+	return 0;
 }
 
 ISubSystem*
@@ -330,7 +383,7 @@ Core::loadSubSystem( const std::string& fileName )
 		subSystemType = str;
 	}
 
-	ISubSystem* subSystem = this->subSystemFactory->createSubSystem( subSystemType );
+	ISubSystem* subSystem = this->m_subSystemFactory->createSubSystem( subSystemType );
 	if ( 0 == subSystem )
 	{
 		return 0;

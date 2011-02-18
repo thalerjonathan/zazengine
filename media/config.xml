@@ -12,7 +12,17 @@
 		<subSystem file="media/input/config.xml"/>
 	</subSystemList>
 	
+	<control target="Camera"/>
+		
 	<objectList>
+		<object name="Camera">
+			<graphics>
+				<camera mode="PROJ" fov="45"/>
+				
+				<orientation x="0" y="-3" z="0" roll="0" heading="0" pitch="0"/>
+			</graphics>
+		</object>
+		
 		<object name="Floor">
 			<graphics>
 				<instance class="ClassFloorLarge"/>

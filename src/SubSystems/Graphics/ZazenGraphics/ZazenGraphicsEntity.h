@@ -9,8 +9,7 @@
 #define ZAZENGRAPHICSENTITY_H_
 
 #include "../../../Core/SubSystems/IFaces/IGraphicsEntity.h"
-
-#include "Scene/Scene.h"
+#include "../../../Core/Utils/Math/Orientation.h"
 
 class ZazenGraphicsEntity : public IGraphicsEntity
 {
@@ -20,16 +19,16 @@ class ZazenGraphicsEntity : public IGraphicsEntity
 		ZazenGraphicsEntity( IGameObject* p );
 		virtual ~ZazenGraphicsEntity();
 
-		const std::string& getType() const { return this->type; };
+		const std::string& getType() const { return this->m_type; };
 
 		virtual void setOrientation( const float* pos, const float* rot);
 
 		virtual bool sendEvent( Event& e );
 
 	private:
-		std::string type;
+		std::string m_type;
 
-		Scene::InstanceDefinition* instance;
+		Orientation* m_orientation;
 };
 
 #endif /* ZAZENGRAPHICSENTITY_H_ */

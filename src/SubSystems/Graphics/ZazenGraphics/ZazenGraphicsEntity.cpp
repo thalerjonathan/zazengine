@@ -9,22 +9,19 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-//#include "../../../Core/SubSystems/IFaces/IPhysicsEntity.h"
-
 #include <iostream>
 
 using namespace std;
 
 ZazenGraphicsEntity::ZazenGraphicsEntity( IGameObject* p )
 	: IGraphicsEntity( p ),
-	type( "graphics" )
+	m_type( "graphics" )
 {
-	this->instance = 0;
+	this->m_orientation = 0;
 }
 
 ZazenGraphicsEntity::~ZazenGraphicsEntity()
 {
-	delete this->instance;
 }
 
 bool
@@ -40,6 +37,38 @@ ZazenGraphicsEntity::sendEvent( Event& e )
 
 		return true;
 	}
+	else if  ( e == "SDLK_RIGHT" )
+	{
+		this->m_orientation->changeHeading( -0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_LEFT" )
+	{
+		this->m_orientation->changeHeading( 0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_UP" )
+	{
+		this->m_orientation->changePitch( -0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_DOWN" )
+	{
+		this->m_orientation->changePitch( 0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_w" )
+	{
+		this->m_orientation->strafeForward( -0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_s" )
+	{
+		this->m_orientation->strafeForward( 0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_d" )
+	{
+		this->m_orientation->changeRoll( -0.1 * this->lastItFact );
+	}
+	else if ( e == "SDLK_a" )
+	{
+		this->m_orientation->changeRoll( 0.1 * this->lastItFact );
+	}
 
 	return false;
 }
@@ -47,10 +76,7 @@ ZazenGraphicsEntity::sendEvent( Event& e )
 void
 ZazenGraphicsEntity::setOrientation( const float* pos, const float* rot)
 {
+	// do through m_orientation because need notification of matrix changed
 	memcpy( glm::value_ptr( this->instance->modelMatrix ), rot, 11 * sizeof( float ) );
 	memcpy( &glm::value_ptr( this->instance->modelMatrix )[12], pos, 3 * sizeof( float ) );
-
-	//cout << "Graphics: " << this->getParent()->getName() << " has position of (" << pos[0] << "/" << pos[1] << "/" << pos[2] << ")" << endl;
-	//cout << "Graphics: resulting matrix: " << endl;
-	//this->instance->transform->matrix.print();
 }

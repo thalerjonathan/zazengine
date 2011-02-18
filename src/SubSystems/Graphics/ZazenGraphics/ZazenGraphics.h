@@ -12,8 +12,10 @@
 
 #include "ZazenGraphicsEntity.h"
 
-#include "Scene/Scene.h"
 #include "Scene/Viewer.h"
+#include "Scene/Instance.h"
+
+#include "Renderer/Renderer.h"
 
 #include <SDL/SDL.h>
 
@@ -23,8 +25,8 @@ class ZazenGraphics : public IGraphics
 		ZazenGraphics();
 		virtual ~ZazenGraphics();
 
-		const std::string& getID() const { return this->id; };
-		const std::string& getType() const { return this->type; };
+		const std::string& getID() const { return this->m_id; };
+		const std::string& getType() const { return this->m_type; };
 
 		bool isAsync() const { return false; };
 
@@ -43,24 +45,22 @@ class ZazenGraphics : public IGraphics
 		ZazenGraphicsEntity* createEntity( TiXmlElement*, IGameObject* parent );
 
 	private:
-		std::string id;
-		std::string type;
-		std::string controlTargetID;
+		std::string m_id;
+		std::string m_type;
 
-		SDL_Surface* drawContext;
+		double m_lastItFact;
 
-		Orientation* m_controlTarget;
-		Viewer* camera;
-		Scene* activeScene;
-	
-		double lastItFact;
+		SDL_Surface* m_drawContext;
 
-		std::list<ZazenGraphicsEntity*> entities;
+		Viewer* m_camera;
+		Renderer* m_renderer;
+
+		std::list<Instance*> m_instances;
+		std::list<ZazenGraphicsEntity*> m_entities;
 
 		bool initSDL();
 		bool initGL();
 
-		void loadControlConfig( TiXmlElement* );
 		void loadCameraConfig( TiXmlElement* );
 		bool loadGeomClasses( TiXmlElement* );
 };

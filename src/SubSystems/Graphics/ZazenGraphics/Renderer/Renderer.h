@@ -54,8 +54,10 @@
 class Renderer
 {
  public:
-	Renderer( Viewer* camera );
+	Renderer();
 	virtual ~Renderer();
+
+	void setCamera( Viewer* cam ) { this->m_camera = cam; };
 
 	virtual bool initialize() = 0;
 	virtual bool shutdown() = 0;

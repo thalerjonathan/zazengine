@@ -18,8 +18,8 @@
 
 using namespace std;
 
-DRRenderer::DRRenderer( Viewer* camera )
-	: Renderer( camera )
+DRRenderer::DRRenderer()
+	: Renderer( )
 {
 	this->m_geometryStageFB = 0;
 	memset( this->m_colorBuffers, 0, sizeof( this->m_colorBuffers) );
