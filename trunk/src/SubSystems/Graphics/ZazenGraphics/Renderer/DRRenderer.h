@@ -21,7 +21,7 @@
 #include "../Material/UniformBlock.h"
 #include "../Material/Program.h"
 #include "../Material/Shader.h"
-#include "../Lighting/Light.h"
+
 
 /* Deferred Rendering
  * Geometry-Stage:
@@ -80,8 +80,13 @@
 /* TODO:
  * - Enhance Deferred Shadowing (reduce artifacts and implement soft-shadows )
  * - Introduce multiple lights: each light contributes ADDITIVELY to the framebuffe, solve this
- * - Material-Model: diffuse texturing, transparency, metal, SubSurfaceScattering!!!
- * - Reflections: would be nice to have reflections in this renderer too
+ * - Materials:
+ * 		-> diffuse texturing
+ * 		-> transparency
+ * 		-> metal (dynamic cube map reflections)
+ * 		-> SubSurfaceScattering
+ * 		-> micro-facet (torrance-sparrow)
+ * - Reflections: would be nice to have planar reflections in this renderer too
  */
 class DRRenderer : public Renderer
 {
@@ -93,7 +98,7 @@ class DRRenderer : public Renderer
 	virtual bool shutdown();
 
 	// renders this list of geominstances which must be in front-to-back order
-	bool renderFrame( std::list<Instance*>& instances );
+	bool renderFrame( std::list<Instance*>& instances, std::list<Light*>& lights );
 
  private:
 	// Multiple-Render-Targes & Framebuffer for Deferred Rendering
@@ -128,10 +133,6 @@ class DRRenderer : public Renderer
 	UniformBlock* m_lightDataBlock;
 	////////////////////////////////////////
 
-	// lighting and shadowing
-	std::vector<Light*> m_lights;
-	////////////////////////////////////////
-
 	// utils matrix
 	glm::mat4 m_unitCubeMatrix;
 
@@ -141,9 +142,9 @@ class DRRenderer : public Renderer
 	bool initShadowMapping();
 	bool initUniformBlocks();
 
-	bool renderShadowMap( std::list<Instance*>& instances );
-	bool renderGeometryStage( std::list<Instance*>& instances );
-	bool renderLightingStage( std::list<Instance*>& instances );
+	bool renderShadowMap( std::list<Instance*>& instances, std::list<Light*>& lights );
+	bool renderGeometryStage( std::list<Instance*>& instances, std::list<Light*>& lights );
+	bool renderLightingStage( std::list<Instance*>& instances, std::list<Light*>& lights );
 
 	bool renderInstances( Viewer* viewer, std::list<Instance*>& instances );
 	bool renderGeom( Viewer* viewer, Instance* parent, GeomType* geom );

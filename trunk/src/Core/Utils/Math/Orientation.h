@@ -49,8 +49,7 @@ class Orientation
 	void strafeUp( float );
 
 	void set( const glm::vec3& pos, float pitch, float heading, float roll );
-	void setRoationRaw( const float* data );
-	void setPositionRaw( const float* data );
+	void setRaw( const float* rotation, const float* position );
 
  protected:
 	// this method is called always when one of the upper methods is invoded

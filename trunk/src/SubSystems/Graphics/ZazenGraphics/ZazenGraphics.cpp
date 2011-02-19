@@ -138,7 +138,7 @@ ZazenGraphics::process( double iterationFactor )
 	}
 
 	this->m_lastItFact = iterationFactor;
-	flag = this->m_renderer->renderFrame( this->m_instances );
+	flag = this->m_renderer->renderFrame( this->m_instances, this->m_lights );
 
 	//cout << "ZazenGraphics::process leave" << endl;
 
@@ -321,7 +321,7 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 			pitch = atof( str );
 		}
 
-		entity->m_orientation->set( v, heading, roll, pitch );
+		entity->m_orientation->set( v, pitch, heading, roll );
 	}
 
 	this->m_entities.push_back( entity );

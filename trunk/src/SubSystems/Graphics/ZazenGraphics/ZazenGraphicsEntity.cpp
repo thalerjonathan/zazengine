@@ -78,6 +78,5 @@ ZazenGraphicsEntity::sendEvent( Event& e )
 void
 ZazenGraphicsEntity::setOrientation( const float* pos, const float* rot)
 {
-	this->m_orientation->setRoationRaw( rot );
-	this->m_orientation->setPositionRaw( pos );
+	this->m_orientation->setRaw( rot, pos );
 }

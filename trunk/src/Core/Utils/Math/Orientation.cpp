@@ -165,23 +165,30 @@ Orientation::strafeY( float units )
 }
 
 void
-Orientation::set( const glm::vec3& pos, float heading, float roll, float pitch )
+Orientation::set( const glm::vec3& pos, float pitch, float heading, float roll )
 {
-	// TODO: implement
+	float* data = glm::value_ptr( this->m_matrix );
+
+	this->m_matrix = glm::rotate( this->m_matrix, pitch, glm::vec3( 1, 0, 0 ) );
+
+	//this->m_matrix = glm::rotate( this->m_matrix, heading, glm::vec3( 0, 1, 0 ) );
+
+
+	//this->m_matrix = glm::rotate( this->m_matrix, roll, glm::vec3( 0, 0, 1 ) );
+
+	data[ 12 ] = pos[ 0 ];
+	data[ 13 ] = pos[ 1 ];
+	data[ 14 ] = pos[ 2 ];
 
 	this->matrixChanged();
 }
 
 void
-Orientation::setRoationRaw( const float* data )
+Orientation::setRaw( const float* rotation, const float* position )
 {
 	// do through m_orientation because need notification of matrix changed
-	memcpy( glm::value_ptr( this->m_matrix ), data, 11 * sizeof( float ) );
+	memcpy( glm::value_ptr( this->m_matrix ), rotation, 11 * sizeof( float ) );
+	memcpy( &glm::value_ptr( this->m_matrix )[12], position, 3 * sizeof( float ) );
 
-}
-
-void
-Orientation::setPositionRaw( const float* data )
-{
-	memcpy( &glm::value_ptr( this->m_matrix )[12], data, 3 * sizeof( float ) );
+	this->matrixChanged();
 }
