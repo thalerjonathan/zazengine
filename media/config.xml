@@ -19,7 +19,7 @@
 			<graphics>
 				<camera view="PROJ" fov="45"/>
 				
-				<orientation x="0" y="-3" z="0" roll="0" heading="0" pitch="0"/>
+				<orientation x="0" y="80" z="120" roll="0" heading="0" pitch="-30"/>
 			</graphics>
 		</object>
 		

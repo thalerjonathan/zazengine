@@ -15,8 +15,52 @@
 
 #include <iostream>
 #include <algorithm>
+#include <assert.h>
 
 using namespace std;
+
+#define CHECK_FRAMEBUFFER_STATUS( status ) \
+{\
+ status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT); \
+ switch(status) { \
+ case GL_FRAMEBUFFER_COMPLETE_EXT: \
+   break; \
+ case GL_FRAMEBUFFER_UNSUPPORTED_EXT: \
+   fprintf(stderr,"framebuffer GL_FRAMEBUFFER_UNSUPPORTED_EXT\n");\
+    /* you gotta choose different formats */ \
+   assert(0); \
+   break; \
+ case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT: \
+   fprintf(stderr,"framebuffer INCOMPLETE_ATTACHMENT\n");\
+   break; \
+ case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT: \
+   fprintf(stderr,"framebuffer FRAMEBUFFER_MISSING_ATTACHMENT\n");\
+   break; \
+ case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: \
+   fprintf(stderr,"framebuffer FRAMEBUFFER_DIMENSIONS\n");\
+   break; \
+  case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: \
+   fprintf(stderr,"framebuffer INCOMPLETE_FORMATS\n");\
+   break; \
+ case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT: \
+   fprintf(stderr,"framebuffer INCOMPLETE_DRAW_BUFFER\n");\
+   break; \
+ case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT: \
+   fprintf(stderr,"framebuffer INCOMPLETE_READ_BUFFER\n");\
+   break; \
+ case GL_FRAMEBUFFER_BINDING_EXT: \
+   fprintf(stderr,"framebuffer BINDING_EXT\n");\
+   break; \
+/*
+ case GL_FRAMEBUFFER_STATUS_ERROR_EXT: \
+   fprintf(stderr,"framebuffer STATUS_ERROR\n");\
+   break; \
+*/ \
+ default: \
+   /* programming error; will fail on all hardware */ \
+   assert(0); \
+ }\
+}
 
 DRRenderer::DRRenderer()
 	: Renderer( )
@@ -58,15 +102,15 @@ DRRenderer::~DRRenderer()
 }
 
 bool
-DRRenderer::renderFrame( std::list<Instance*>& instances )
+DRRenderer::renderFrame( std::list<Instance*>& instances, std::list<Light*>& lights )
 {
-	if ( false == this->renderShadowMap( instances ) )
+	if ( false == this->renderShadowMap( instances, lights ) )
 		return false;
 
-	if ( false == this->renderGeometryStage( instances ) )
+	if ( false == this->renderGeometryStage( instances, lights ) )
 		return false;
 
-	if ( false == this->renderLightingStage( instances ) )
+	if ( false == this->renderLightingStage( instances, lights ) )
 		return false;
 
 	if ( false == this->showTexture( this->m_geometryDepth, MRT_COUNT ) )
@@ -134,12 +178,6 @@ DRRenderer::shutdown()
 
 	if ( this->m_lightDataBlock )
 		delete this->m_lightDataBlock;
-
-	std::vector<Light*>::iterator iter = this->m_lights.begin();
-	while ( iter != this->m_lights.end() )
-	{
-		delete *iter++;
-	}
 
 	if ( this->m_shadowMappingFB )
 		glDeleteFramebuffers( 1, &this->m_shadowMappingFB );
@@ -453,18 +491,6 @@ DRRenderer::initLightingStage()
 {
 	cout << "Initializing Deferred Rendering Lighting-Stage..." << endl;
 
-	Light* light = Light::createSpoptLight( 90.0f, 800, 600 );
-	if ( 0 == light )
-	{
-		cout << "ERROR in DRRenderer::initLightingStage: coulnd't create light - exit" << endl;
-		return false;
-	}
-
-	light->setPosition( glm::vec3( 0, 80, 120 ) );
-	light->changePitch( -30 );
-
-	this->m_lights.push_back( light );
-
 	this->m_progLightingStage = Program::createProgram( );
 	if ( 0 == this->m_progLightingStage )
 	{
@@ -667,7 +693,7 @@ DRRenderer::initUniformBlocks()
 }
 
 bool
-DRRenderer::renderShadowMap( std::list<Instance*>& instances )
+DRRenderer::renderShadowMap( std::list<Instance*>& instances, std::list<Light*>& lights )
 {
 	GLenum status;
 
@@ -687,8 +713,8 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 	glReadBuffer( GL_NONE );
 
 	// render the depth-map for each light
-	std::vector<Light*>::iterator iter = this->m_lights.begin();
-	while ( iter != this->m_lights.end() )
+	std::list<Light*>::iterator iter = lights.begin();
+	while ( iter != lights.end() )
 	{
 		Light* light = *iter++;
 
@@ -720,7 +746,7 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances )
 }
 
 bool
-DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
+DRRenderer::renderGeometryStage( std::list<Instance*>& instances, std::list<Light*>& lights )
 {
 	GLenum status;
 
@@ -767,7 +793,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 		return false;
 
 	glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
-	glBindTexture( GL_TEXTURE_2D, this->m_lights[ 0 ]->getShadowMap() );
+	glBindTexture( GL_TEXTURE_2D, lights.front()->getShadowMap() );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
@@ -778,10 +804,10 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 	// multiplication with unit-cube is first because has to be carried out the last
 	// TODO: VERY IMPORTANT: IF LIGHT DOES NOT STICK TO CAMERA THEN THE LIGHTS MODELMATRIX MUST BE TRANSFORMED
 	// BY THE VIEWING-MATRIX OF THE LIGHT TO PLACE IT IN WORLD COORDINATES
-	glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * this->m_lights[ 0 ]->m_PVMatrix;
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( this->m_lights[ 0 ]->m_modelMatrix ), 0, 64) )
+	glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * lights.front()->m_PVMatrix;
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lights.front()->m_modelMatrix ), 0, 64) )
 		return false;
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( this->m_lights[ 0 ]->m_PVMatrix ), 64, 64) )
+	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lights.front()->m_PVMatrix ), 64, 64) )
 		return false;
 	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
 		return false;
@@ -801,7 +827,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances )
 }
 
 bool
-DRRenderer::renderLightingStage( std::list<Instance*>& instances )
+DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Light*>& lights )
 {
 	GLenum status;
 
@@ -861,8 +887,8 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances )
 		return false;
 
 	// render the contribution of each light to the scene
-	std::vector<Light*>::iterator iter = this->m_lights.begin();
-	while ( iter != this->m_lights.end() )
+	std::list<Light*>::iterator iter = lights.begin();
+	while ( iter != lights.end() )
 	{
 		Light* light = *iter++;
 
