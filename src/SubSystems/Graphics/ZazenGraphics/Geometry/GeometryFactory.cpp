@@ -158,41 +158,55 @@ using namespace std;
 map<string, GeomType*> GeometryFactory::meshes;
 
 GeomType*
-GeometryFactory::get(const std::string& id)
+GeometryFactory::get( const std::string& fileName )
 {
-	map<std::string, GeomType*>::iterator findIter = GeometryFactory::meshes.find(id);
-	if (findIter != GeometryFactory::meshes.end())
+	map<std::string, GeomType*>::iterator findIter = GeometryFactory::meshes.find( fileName );
+	if ( findIter != GeometryFactory::meshes.end() )
 		return findIter->second;
 
-	return 0;
-}
-
-void
-GeometryFactory::loadMesh(const std::string& id, const std::string& fileName)
-{
 	string ending;
 	unsigned long index = fileName.find_last_of('.');
 	if (index != string::npos)
 		ending = fileName.substr(index + 1, fileName.length() - index);
 
-	GeomType* GeometryFactory = 0;
+	GeomType* geomType = 0;
 
-	if (strcasecmp(ending.c_str(), "ply") == 0) {
-		GeometryFactory = GeometryFactory::loadPly(fileName);
-	} else if (strcasecmp(ending.c_str(), "ms3d") == 0) {
-		GeometryFactory = GeometryFactory::loadMs3D(fileName);
-	} else if (strcasecmp(ending.c_str(), "3ds") == 0) {
-		GeometryFactory = GeometryFactory::load3DS(fileName);
-	} else {
-		GeometryFactory = GeometryFactory::loadFolder(fileName);
+	if (strcasecmp(ending.c_str(), "ply") == 0)
+	{
+		geomType = GeometryFactory::loadPly(fileName);
+	}
+	else if (strcasecmp(ending.c_str(), "ms3d") == 0)
+	{
+		geomType = GeometryFactory::loadMs3D(fileName);
+	}
+	else if (strcasecmp(ending.c_str(), "3ds") == 0)
+	{
+		geomType = GeometryFactory::load3DS(fileName);
+	}
+	else
+	{
+		geomType = GeometryFactory::loadFolder(fileName);
 	}
 
-	if (GeometryFactory)
-		GeometryFactory::meshes[id] = GeometryFactory;
+	if ( geomType )
+		GeometryFactory::meshes[ fileName ] = geomType;
+
+	return geomType;
 }
+
 void
 GeometryFactory::freeAll()
 {
+	map<std::string, GeomType*>::iterator iter = GeometryFactory::meshes.begin();
+	while ( iter != GeometryFactory::meshes.end() )
+	{
+		GeomType* geom = iter->second;
+		delete geom;
+
+		iter++;
+	}
+
+	GeometryFactory::meshes.clear();
 }
 
 GeomType*

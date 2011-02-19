@@ -20,10 +20,7 @@
 class GeometryFactory
 {
  	 public:
-		 static GeomType* get( const std::string& );
-		 static void loadMesh( const std::string&, const std::string& );
-		 static void registerGeom( GeomType* t, const std::string& id ) { GeometryFactory::meshes[id] = t; };
-
+		 static GeomType* get( const std::string& fileName );
 		 static void freeAll();
  	 
  	 private:
