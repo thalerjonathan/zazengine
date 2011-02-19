@@ -15,6 +15,8 @@
 #include "Scene/Viewer.h"
 #include "Scene/Instance.h"
 
+#include "Lighting/Light.h"
+
 #include "Renderer/Renderer.h"
 
 #include <SDL/SDL.h>
@@ -55,14 +57,13 @@ class ZazenGraphics : public IGraphics
 		Viewer* m_camera;
 		Renderer* m_renderer;
 
+		std::list<Light*> m_lights;
 		std::list<Instance*> m_instances;
+
 		std::list<ZazenGraphicsEntity*> m_entities;
 
 		bool initSDL();
 		bool initGL();
-
-		void loadCameraConfig( TiXmlElement* );
-		bool loadGeomClasses( TiXmlElement* );
 };
 
 #endif /* ZAZENGRAPHICS_H_ */

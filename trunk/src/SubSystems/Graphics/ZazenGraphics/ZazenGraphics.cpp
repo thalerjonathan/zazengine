@@ -49,17 +49,8 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 		return false;
 	}
 	
+	// cannot initialize renderer now because camera not yet loaded
 	this->m_renderer = new DRRenderer();
-	if ( false == this->m_renderer->initialize() )
-	{
-		cout << "ERROR ... initializing renderer failed - exit" << endl;
-		return false;
-	}
-
-	if ( false == this->loadGeomClasses( configNode ) )
-	{
-		return false;
-	}
 
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	
@@ -82,12 +73,11 @@ ZazenGraphics::shutdown()
 
 	this->m_entities.clear();
 
-	SDL_Quit();
-
-	//Material::freeAll();
 	Texture::freeAll();
 	GeometryFactory::freeAll();
 	
+	SDL_Quit();
+
 	cout << "================ ZazenGraphics shutdown =================" << endl;
 
 	return true;
@@ -96,6 +86,19 @@ ZazenGraphics::shutdown()
 bool
 ZazenGraphics::start()
 {
+	if ( 0 == this->m_camera )
+	{
+		cout << "ERROR ... missing camera in ZazenGraphics - exit" << endl;
+		return false;
+	}
+
+	this->m_renderer->setCamera( this->m_camera );
+	if ( false == this->m_renderer->initialize() )
+	{
+		cout << "ERROR ... initializing renderer failed - exit" << endl;
+		return false;
+	}
+
 	return true;
 }
 
@@ -164,38 +167,161 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 	TiXmlElement* instanceNode = objectNode->FirstChildElement( "instance" );
 	if ( instanceNode )
 	{
-		glm::vec3 v;
-
 		Instance* instance = new Instance();
 
-		const char* str = instanceNode->Attribute( "class" );
+		const char* str = instanceNode->Attribute( "mesh" );
 		if ( 0 != str )
 		{
 			instance->geom = GeometryFactory::get( str );
 		}
 
-		str = instanceNode->Attribute( "x" );
+		entity->m_orientation = instance;
+
+		this->m_instances.push_back( instance );
+	}
+
+	if ( 0 == entity->m_orientation )
+	{
+		TiXmlElement* lightNode = objectNode->FirstChildElement( "light" );
+		if ( lightNode )
+		{
+			std::string lightType = "SPOT";
+
+			const char* str = lightNode->Attribute( "type" );
+			if ( 0 != str )
+			{
+				lightType = str;
+			}
+
+			Light* light = 0;
+
+			if ( lightType == "DIRECTIONAL" )
+			{
+				light = Light::createDirectionalLight( WINDOW_WIDTH, WINDOW_HEIGHT );
+
+			}
+			else if ( lightType == "POINT" )
+			{
+				light = Light::createPointLight( WINDOW_HEIGHT );
+			}
+			// default is spot
+			else
+			{
+				light = Light::createSpoptLight( 90, WINDOW_WIDTH, WINDOW_HEIGHT );
+			}
+
+			entity->m_orientation = light;
+			this->m_lights.push_back( light );
+		}
+	}
+
+	if ( 0 == entity->m_orientation )
+	{
+		TiXmlElement* cameraNode = objectNode->FirstChildElement( "camera" );
+		if ( cameraNode )
+		{
+			float fov = 90.0f;
+			std::string mode = "PROJ";
+
+			const char* str = cameraNode->Attribute( "fov" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... fov attribute missing in cameraNode - use default " << endl;
+			}
+			else
+			{
+				fov = atof( str );
+			}
+
+			str = cameraNode->Attribute( "view" );
+			if ( 0 == str )
+			{
+				cout << "INFO ... view attribute missing in cameraNode - use default " << endl;
+			}
+			else
+			{
+				mode = str;
+			}
+
+			Viewer* camera = new Viewer( WINDOW_WIDTH, WINDOW_HEIGHT );
+			if ( mode == "PROJ" )
+			{
+				camera->setFov( fov );
+				camera->setupPerspective();
+			}
+			else if ( mode == "ORTHO" )
+			{
+				camera->setupOrtho();
+			}
+
+			entity->m_orientation = camera;
+			this->m_camera = camera;
+		}
+	}
+
+	if ( 0 == entity->m_orientation )
+	{
+		cout << "No valid entity defined in ZazenGraphics for Object \"" << parent->getName() << "\" - error " << endl;
+		return 0;
+	}
+
+	TiXmlElement* orientationNode = objectNode->FirstChildElement( "orientation" );
+	if ( orientationNode )
+	{
+		glm::vec3 v;
+		float roll = 0.0f;
+		float pitch = 0.0f;
+		float heading = 0.0f;
+
+		const char* str = orientationNode->Attribute( "x" );
 		if ( 0 != str )
 		{
 			v[ 0 ] = atof( str );
 		}
 
-		str = instanceNode->Attribute( "y" );
+		str = orientationNode->Attribute( "y" );
 		if ( 0 != str )
 		{
 			v[ 1 ] = atof( str );
 		}
 
-		str = instanceNode->Attribute( "z" );
+		str = orientationNode->Attribute( "z" );
 		if ( 0 != str )
 		{
 			v[ 2 ] = atof( str );
 		}
 
-		instance->id = parent->getName();
-		instance->set( v, 0, 0, 0 );
+		str = orientationNode->Attribute( "heading" );
+		if ( 0 == str )
+		{
+			cout << "INFO ... heading attribute missing in orientation - use default " << endl;
+		}
+		else
+		{
+			heading = atof( str );
+		}
 
-		this->m_instances.push_back( instance );
+		str = orientationNode->Attribute( "roll" );
+		if ( 0 == str )
+		{
+			cout << "INFO ... roll attribute missing in orientation - use default " << endl;
+		}
+		else
+		{
+			roll = atof( str );
+		}
+
+		str = orientationNode->Attribute( "pitch" );
+		if ( 0 == str )
+		{
+			cout << "INFO ... pitch attribute missing in orientation - use default " << endl;
+		}
+		else
+		{
+			pitch = atof( str );
+		}
+
+		entity->m_orientation->set( v, heading, roll, pitch );
 	}
 
 	this->m_entities.push_back( entity );
@@ -276,243 +402,4 @@ ZazenGraphics::initGL()
 	}
 
 	return true;
-}
-
-bool
-ZazenGraphics::loadGeomClasses( TiXmlElement* configNode )
-{
-	TiXmlElement* geomClassesNode = configNode->FirstChildElement( "geomClasses" );
-	if ( 0 == geomClassesNode )
-	{
-		cout << "ERROR ... no geomClasses defined - exit" << endl;
-		return false;
-	}
-
-	for (TiXmlElement* classNode = geomClassesNode->FirstChildElement(); classNode != 0; classNode = classNode->NextSiblingElement())
-	{
-		const char* str = classNode->Value();
-		if ( 0 == str )
-			continue;
-
-		if ( 0 == strcmp( str, "class" ) )
-		{
-			string classID;
-			string modelType;
-
-			str = classNode->Attribute( "id" );
-			if ( 0 == str )
-			{
-				cout << "ERROR ... id attribute missing in geomClass - ignoring" << endl;
-				continue;
-			}
-			else
-			{
-				classID = str;
-			}
-
-			str = classNode->Attribute( "modelType" );
-			if ( 0 == str )
-			{
-				cout << "ERROR ... modelType attribute missing in geomClass - ignoring" << endl;
-				continue;
-			}
-			else
-			{
-				modelType = str;
-			}
-
-			if ( "BUILTIN" == modelType)
-			{
-				string geomType;
-				str = classNode->Attribute( "geomType" );
-				if ( 0 == str )
-				{
-					cout << "ERROR ... geomType attribute missing in geomClass - ignoring" << endl;
-					continue;
-				}
-				else
-				{
-					geomType = str;
-				}
-
-				if ( "SPHERE" == geomType )
-				{
-//					GeomSphere* sphere = new GeomSphere( 1 );
-//					GeometryFactory::registerGeom( sphere, entity.name );
-				}
-				else if ( "TEAPOT" == geomType )
-				{
-//					GeomTeapot* teapot = new GeomTeapot( 1 );
-//					GeometryFactory::registerGeom( teapot, entity.name );
-				}
-				else if ( "BOX" == geomType )
-				{
-//					GeomBox* box = new GeomBox( 1 );
-//					GeometryFactory::registerGeom( box, entity.name );
-				}
-				else if ( "PLANE" == geomType )
-				{
-					float length = 200;
-					float width = 400;
-
-					str = classNode->Attribute("length");
-					if (str != 0)
-						length = atof(str);
-
-					str = classNode->Attribute("width");
-					if (str != 0)
-						width = atof(str);
-
-//					GeomPlane* plane = new GeomPlane( length, width );
-//					GeometryFactory::registerGeom( plane, entity.name );
-				}
-			}
-			else if ( "MESH" == modelType)
-			{
-				std::string meshFile;
-
-				str = classNode->Attribute( "file" );
-				if ( 0 == str )
-				{
-					cout << "ERROR ... file attribute missing in geomClass - ignoring" << endl;
-					continue;
-				}
-				else
-				{
-					meshFile = str;
-				}
-
-				GeometryFactory::loadMesh( classID, meshFile );
-			}
-		}
-	}
-
-	return true;
-}
-
-
-void
-ZazenGraphics::loadCameraConfig( TiXmlElement* configNode )
-{
-	float fov = 90.0f;
-	std::string mode = "PROJ";
-	glm::vec3 pos;
-	float roll = 0.0f;
-	float pitch = 0.0f;
-	float heading = 0.0f;
-
-	TiXmlElement* cameraNode = configNode->FirstChildElement( "camera" );
-	if ( 0 == cameraNode )
-	{
-		cout << "INFO ... no cameraNode defined - using defaults" << endl;
-	}
-	else
-	{
-		TiXmlElement* viewingNode = cameraNode->FirstChildElement( "viewing" );
-		if ( 0 == viewingNode )
-		{
-			cout << "ERROR ... no viewingNode defined - using defaults" << endl;
-		}
-		else
-		{
-			const char* str = viewingNode->Attribute( "fov" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... fov attribute missing in viewingNode - use default " << endl;
-			}
-			else
-			{
-				fov = atof( str );
-			}
-		}
-
-		TiXmlElement* orientationNode = cameraNode->FirstChildElement( "orientation" );
-		if ( 0 == orientationNode )
-		{
-			cout << "ERROR ... no orientationNode defined - using defaults" << endl;
-		}
-		else
-		{
-			float x = 0.0f;
-			float y = 0.0f;
-			float z = 0.0f;
-
-			const char* str = orientationNode->Attribute( "x" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... x attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				x = atof( str );
-			}
-
-			str = orientationNode->Attribute( "y" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... y attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				y = atof( str );
-			}
-
-			str = orientationNode->Attribute( "z" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... z attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				z = atof( str );
-			}
-
-			str = orientationNode->Attribute( "heading" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... heading attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				heading = atof( str );
-			}
-
-			str = orientationNode->Attribute( "roll" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... roll attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				roll = atof( str );
-			}
-
-			str = orientationNode->Attribute( "pitch" );
-			if ( 0 == str )
-			{
-				cout << "INFO ... pitch attribute missing in orientation - use default " << endl;
-			}
-			else
-			{
-				pitch = atof( str );
-			}
-
-			pos = glm::vec3( x, y, z );
-		}
-	}
-
-	this->m_camera = new Viewer( WINDOW_WIDTH, WINDOW_HEIGHT );
-
-	if ( mode == "PROJ" )
-	{
-		this->m_camera->setFov( 90 );
-		this->m_camera->setupPerspective();
-	}
-	else if ( mode == "ORTHO" )
-	{
-		this->m_camera->setupOrtho();
-	}
-
-
-	this->m_camera->set( pos, pitch, heading, roll );
 }

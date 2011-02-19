@@ -36,12 +36,16 @@ class Core
 		void start();
 		void stop();
 
+		double getProcessingFactor() const { return this->m_processingFactor; };
+
 		ISubSystem* getSubSystemByType( const std::string& );
 
 		EventManager& getEventManager() const { return *this->m_eventManager; };
 
 	private:
 		static Core* instance;
+
+		double m_processingFactor;
 
 		bool m_runCore;
 

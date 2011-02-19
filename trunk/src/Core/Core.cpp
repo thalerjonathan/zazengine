@@ -95,6 +95,7 @@ Core::Core()
 {
 	Core::instance = this;
 
+	this->m_processingFactor = 0;
 	this->m_runCore = false;
 
 	this->m_eventManager = 0;
@@ -120,7 +121,6 @@ Core::start()
 	}
 
 	timeval t;
-	double itFact = 0;
 	long long startTicks = 0;
 	long long endTicks = 0;
 	
@@ -143,7 +143,7 @@ Core::start()
 		subSysIter = this->m_subSystems.begin();
 		while ( subSysIter != this->m_subSystems.end() )
 		{
-			if ( false == (*subSysIter)->process( itFact ) )
+			if ( false == (*subSysIter)->process( this->m_processingFactor ) )
 			{
 				this->m_runCore = false;
 				break;
@@ -170,7 +170,7 @@ Core::start()
 		gettimeofday( &t, NULL );
 		endTicks = t.tv_usec + 1000000 * t.tv_sec;
 		
-		itFact = (double)(endTicks - startTicks) / (double) 1000;
+		this->m_processingFactor = (double)(endTicks - startTicks) / (double) 1000;
 	};
 
 	subSysIter = this->m_subSystems.begin();

@@ -10,7 +10,6 @@ class Instance : public Orientation
 	Instance();
 	~Instance();
 
-	std::string id;
 	bool visible;
 	float distance;
 	long lastFrame;

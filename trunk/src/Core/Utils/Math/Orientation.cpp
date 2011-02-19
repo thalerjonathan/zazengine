@@ -7,6 +7,8 @@
 
 #include "Orientation.h"
 
+#include <string.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -168,4 +170,18 @@ Orientation::set( const glm::vec3& pos, float heading, float roll, float pitch )
 	// TODO: implement
 
 	this->matrixChanged();
+}
+
+void
+Orientation::setRoationRaw( const float* data )
+{
+	// do through m_orientation because need notification of matrix changed
+	memcpy( glm::value_ptr( this->m_matrix ), data, 11 * sizeof( float ) );
+
+}
+
+void
+Orientation::setPositionRaw( const float* data )
+{
+	memcpy( &glm::value_ptr( this->m_matrix )[12], data, 3 * sizeof( float ) );
 }

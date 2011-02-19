@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <subSystem type="graphics">
-	
-	<geomClasses>
-		<class id="ClassFloorLarge" modelType="MESH" file="media/graphics/models/basic_objects/floor_large.3DS"/>
-		<class id="ClassFloor" modelType="MESH" file="media/graphics/models/basic_objects/floor.3DS"/>
-		<class id="ClassGeoSphere" modelType="MESH" file="media/graphics/models/basic_objects/geoSphere.3DS"/>
-		<class id="ClassKnot" modelType="MESH" file="media/graphics/models/basic_objects/knot.3DS"/>
-		<class id="ClassTeapot" modelType="MESH" file="media/graphics/models/basic_objects/teapot.3DS"/>
-	</geomClasses>
 </subSystem>
