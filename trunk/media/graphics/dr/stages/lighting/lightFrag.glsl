@@ -10,14 +10,17 @@ uniform sampler2DShadow ShadowMap;
 
 layout(shared) uniform mvp_transform
 {
-	mat4 modelView_Matrix;
-	mat4 modelViewProjection_Matrix;
+	mat4 model_Matrix;					// 0
+	mat4 modelView_Matrix;				// 64
+	mat4 modelViewProjection_Matrix;	// 128
 	
-	mat4 normalsModelView_Matrix;
-	mat4 normalsModelViewProjection_Matrix;
+	mat4 normalsModelView_Matrix;		// 196
 	
-	mat4 projection_Matrix;
-	mat4 projectionInv_Matrix;
+	mat4 projection_Matrix;				// 254
+	mat4 viewing_Matrix;				// 320
+	
+	mat4 projectionInv_Matrix;			// 384
+	mat4 viewingInv_Matrix;				// 448
 };
 
 // contains light-direction in 8,9,10
@@ -28,13 +31,15 @@ layout(shared) uniform lightData
 	mat4 light_SpaceUnitMatrix;
 };
 
+/*
 float unpackFloatFromVec4i( const vec4 value )
 {
   const vec4 bitSh = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
   return ( dot( value, bitSh ) );
 }
+*/
 
-vec3 positionFromDepth( const vec2 screenCoord, const float depth )
+vec4 positionFromDepth( const vec2 screenCoord, const float depth )
 {
     // Get x/w and y/w (NDC) from the viewport position
     // after perspective division through w we are in the normaliced device coordinages 
@@ -45,10 +50,14 @@ vec3 positionFromDepth( const vec2 screenCoord, const float depth )
     vec4 vProjectedPos = vec4( ndcX, ndcY, depth, 1.0f );
     
     // Transform by the inverse projection matrix
+    // SOMETHING IS NOT RIGHT HERE MAYBE
     vec4 pos = projectionInv_Matrix * vProjectedPos;
     
     // Divide by w to get the view-space position
-    return pos.xyz / pos.w;  
+    vec4 modelSpace = pos / pos.w;
+    
+    // transform to model-space because it's the same in lighting-space too
+    return viewingInv_Matrix * modelSpace; 
 }
 
 float shadowLookup( const vec4 shadowCoord, const float offsetX, const float offsetY )
@@ -65,10 +74,11 @@ void main()
 	vec4 diffuseComp = texture( DiffuseMap, screenCoord );
 
 	// 3. get depth value
-    float depth = unpackFloatFromVec4i( texture( DepthMap, screenCoord ) );  
+    //float depth = unpackFloatFromVec4i( texture( DepthMap, screenCoord ) );  
+	float depth = texture( DepthMap, screenCoord ).r;
 	
 	// 4. get the position of fragment in world-space
-	vec4 fragWorldPos = vec4( positionFromDepth( screenCoord, depth ), 1.0 );
+	vec4 fragWorldPos = positionFromDepth( screenCoord, depth );
 
 	// 5. transform the fragment world-pos to its position in light-space unit-cube
 	// this means a transformation into the lightspace which is then in -1 to +1 in all directions (NDC)
@@ -83,7 +93,7 @@ void main()
 	if ( shadow != 1.0 )
 	{
 		// encode shadow as red
-		out_final = vec4( 1.0, 0.0, 0.0, 1.0 );
+		out_final = vec4( 0.0, 0.0, 1.0, 1.0 );
 	}
 	else
 	{

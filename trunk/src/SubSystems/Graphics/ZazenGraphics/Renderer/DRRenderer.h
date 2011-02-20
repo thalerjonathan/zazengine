@@ -40,6 +40,47 @@
  * The screen-space coordinate is transformed back into world-space (using the depth) and then transformed
  * into light-space. Furthermore the light-space coordinate is transformed into 0-1 to be able to access
  * the shadowmap like a texture ( using textureProj ).
+ * Deferred shadowing:
+ * first with the screen-coords x,y in the range 0-1 and the depth in the range 0-1 the frag-position
+ * can be optained: transform x and y back in NDC ( after clipping and perspective division ), values
+ * are in the range of -1 to +1. then the inverse PROJECTION matrix of the camera with which
+ * the g-buffer was rendered is applied. then a division by w must happen to bring it back from projective
+ * to the clipping space. finally the inverse viewin-matrix of the camera with which the g-buffer was
+ * rendered is applied to bring the fragment into model-space. the model-space is the same for lighting
+ * and thus we can start from this coordinate to apply the transformation into light-space.
+ * -> we asume that each light has a different viewing and projection than the camera. the projection and thus
+ *    the projection-matrix ( projection-space ) changes when setting a different FOV or viewport size or
+ *    near and far or having an orthogonal projectione ( e.g. directional light ).
+ *    the viewing-transformation is different too when the light should not stay with the camera. then
+ *    the viewing-matrix ( view-space) is different from the one of the camera too (it could be the same
+ *    but this is a special case and is handeled too with this approach ).
+ *    the model-space stays the same because the model-space is local to each model and places it in the
+ *    world which should be independent wheter it's being rendered from the point of view of a light or
+ *    a camera.
+ *    so clip-space (this is: model-view-projection space) is different between the camera and light.
+ *    as previously was shown that view and projection differ but the model-space stays the same, the
+ *    smallest denominator is the model-space. from there it must be possible to apply the projection-view
+ *    of the camera to come into camera-space and to apply the projection-view of the light to come into
+ *    the light-space.
+ *    when doing deferred rendering, we don't have the information about individual objects in the light-pass,
+ *    e.g. the model-matrix is no more available. so we cannot go back into object-space but rather in model-space.
+ *    to go back into object-space one must apply the inverse model-matrix on the modeling-coordinates but
+ *    that matrix is no more available - to be more precise, we operate in screen-space and so cannot know
+ *    which pixel applies to which object ( it should be of no importance anymore ).
+ *    what we can do is to get the model-space from screen-coordinates + depth as described above:
+ *    1. tansform point( screenX, screenY, depth ) (all values 0-1) to NDC ( -1 to +1 )
+ *    2. transform NDC to projection space: apply the inverse projection-matrix of the camera at the time of the g-buffer
+ *    3. transform the projection-space to clip-space: divide by w
+ *    4. transform the clip-space to model-space: apply inverse viewing-matrix of the camera at the time of the g-buffer
+ *
+ *    spaces (each stacks upon the previous):
+ *    -> object-space: the object-local coordinate system - no matrix applied
+ *    -> model-space: the object placed in the world - model-matix applied
+ *    -> view-space: the object seen from e.g. the camera or a light - viewing-matrix applied
+ *    -> clip-space: the object is transformed into the clipspace of the view-frustum - projection-matrix applied
+ *    -> normalized-device-coordinates NDC: the coordinates of the clipspace are projected by dividing by w
+ *    										coordinates between -1 and +1 in all axes, z is 0-1
+ *    -> viewport-space: coordinates are transformed into x and y dimensions of the screen, z stays 0-1
  *
  * Lighting
  * because this is a deferred renderer, lighting occurs in screen-space. for this the normals must be
