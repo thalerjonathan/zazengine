@@ -11,14 +11,17 @@ uniform sampler2DShadow ShadowMap;
 
 layout(shared) uniform mvp_transform
 {
-	mat4 modelView_Matrix;
-	mat4 modelViewProjection_Matrix;
+	mat4 model_Matrix;					// 0
+	mat4 modelView_Matrix;				// 64
+	mat4 modelViewProjection_Matrix;	// 128
 	
-	mat4 normalsModelView_Matrix;
-	mat4 normalsModelViewProjection_Matrix;
+	mat4 normalsModelView_Matrix;		// 196
 	
-	mat4 projection_Matrix;
-	mat4 projectionInv_Matrix;
+	mat4 projection_Matrix;				// 254
+	mat4 viewing_Matrix;				// 320
+	
+	mat4 projectionInv_Matrix;			// 384
+	mat4 viewingInv_Matrix;				// 448
 };
 
 // contains light-direction in 8,9,10
@@ -29,7 +32,7 @@ layout(shared) uniform lightData
 	mat4 light_SpaceUnitMatrix;
 };
 
-
+/*
 vec4 packFloatToVec4i( const float value )
 {
   const vec4 bitSh = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
@@ -38,6 +41,7 @@ vec4 packFloatToVec4i( const float value )
   res -= res.xxyz * bitMsk;
   return res;
 }
+*/
 
 float shadowLookup( const vec4 shadowCoord, const float offsetX, const float offsetY )
 {

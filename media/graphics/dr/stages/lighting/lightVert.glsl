@@ -4,14 +4,17 @@ in vec3 in_vertPos;
 
 layout(shared) uniform mvp_transform
 {
-	mat4 modelView_Matrix;
-	mat4 modelViewProjection_Matrix;
+	mat4 model_Matrix;					// 0
+	mat4 modelView_Matrix;				// 64
+	mat4 modelViewProjection_Matrix;	// 128
 	
-	mat4 normalsModelView_Matrix;
-	mat4 normalsModelViewProjection_Matrix;
+	mat4 normalsModelView_Matrix;		// 196
 	
-	mat4 projection_Matrix;
-	mat4 projectionInv_Matrix;
+	mat4 projection_Matrix;				// 254
+	mat4 viewing_Matrix;				// 320
+	
+	mat4 projectionInv_Matrix;			// 384
+	mat4 viewingInv_Matrix;				// 448
 };
 
 void main()
