@@ -3,7 +3,7 @@ describes the roadmap of ZaZENgine
 Development should happen under the motto: „First make it work, then make it look good and then make it work fast“. Don't waste too much time in small details, try to get a correct result as fast as possible, then make it beautiful both in code and visual appearance. Bevore the renderer is not finished, no big optimizations should happen.
 
 ALWAYS: find a good game-idea
-*full 3D with beautiful materials and lighting, no iso&2d
+* full 3D with beautiful materials and lighting, no iso&2d
 *playing, creating, experiencing, fascinating (PCEF)
 *should behave like a simulation, independent from the player
 *player can change the simulation by invoking actions
