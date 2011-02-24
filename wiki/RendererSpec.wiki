@@ -357,17 +357,17 @@ To bring it on screen we render in orthographic projection a screen-sized quad w
   # setup stencil that only pixels will be drawn where stencil is 0
   # render a full-screen quad with the lighting-stage output as texture. because of stencil, no overdrawing of the transparent object happens.
   # bind now the output of this steps which went to color-attachment0 to texture unit 0 instead of the output of the lighting-stage as in the beginning of this process. set the color-attachment4 of the FBO as the target to which we want to render. 
-  # continue with step 3 and render the next transparent object. this way transparency behind transparency becomes possible.
+  # continue with step 3 and render the next transparent object. this way transparency behind transparency becomes possible. 
 
   * 1st run:
-    * read from: color-attachment4 (result of lighting-stage)
-    * write to:  color-attachment0 (geometry-stage diffuse color, no more needed)
+    * read from: color-attachment4 (result of lighting-stage) - bind to texture unit 0
+    * write to:  color-attachment0 (geometry-stage diffuse color, no more needed) - tell program to write to color-attachment0
   * 2nd run:
-    * read from: color-attachment0 (result of 1st run)
-    * write to:  color-attachment4 (old result of lighting-stage)
+    * read from: color-attachment0 (result of 1st run) - bind to texture unit 0
+    * write to:  color-attachment4 (old result of lighting-stage) - tell program to write to color-attachment4
   * 3rd run:
-    * read from: color-attachment4 (result of 2nd run)
-    * write to:  color-attachment0 (old results from 1st run)
+    * read from: color-attachment4 (result of 2nd run) - bind to texture unit 0
+    * write to:  color-attachment0 (old results from 1st run) - tell program to write to color-attachment0
 ...
 
 To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 4 ) as texture.
