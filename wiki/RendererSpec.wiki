@@ -6,9 +6,7 @@ Color-Attachment layouts:
 3.Generic
 4.Generic
 
-=Heading1=
-Material System
-
+==Material System==
 Each material uses a special BRDF-model to simulate the lighting reflection.
 Each material can specify a RGB triple as base-color ( can be used as single color without texturing over the whole object or as an ambient term when applying textures).
 Each material can have applied none, one or up to four diffuse-color textures.
@@ -29,6 +27,7 @@ Materialproperties of an object which change over the object need to be encoded 
 
 Texture-Based Material Definition
 Some woody floor. It's lambertian because no specular highligh needed and wood is diffuse but we want the lambertian light-model applied. No base-color specified because using textures as diffuse color.
+{{{
 <material name='WoodFloor'>
 	<type='LAMBERTIAN'/>
 		<diffuseColor1 = 'path/woodFloorBase.tga'/>
@@ -36,8 +35,10 @@ Some woody floor. It's lambertian because no specular highligh needed and wood i
 		<normalMap = 'path/woodFloorNormals.tga'/>
 	</type>
 </material>
+}}}
 
 Some stone floor. It's phong because it has some specular sparkles in it. No base color specified because using textures as diffuse color.
+{{{
 <material name='StoneFloor'>
 	<type='PHONG'/>
 		<diffuseColor1 = 'path/stoneFloorBase.tga'/>
@@ -47,16 +48,20 @@ Some stone floor. It's phong because it has some specular sparkles in it. No bas
 		<normalMap = 'path/stoneFloorNormals.tga'/>
 	</type>
 </material>
+}}}
 
 Transparent Glass. 
+{{{
 <material name='ChurchGlass'>
 	<type='TRANSPARENT'/>
 		<diffuseColor1 = 'path/churchWindowColor.tga'/>
 		<normalMap = 'path/churchWindowNormals.tga'/>
 	</type>
 </material>
+}}}
 
 Phong BRDF. Doesn't use any texture but just a base-color.
+{{{
 <material name='BluePlastic'>
 	<type='PHONG'/>
 		<color r='0.0' g='0.0' b='1.0'/>
@@ -64,34 +69,43 @@ Phong BRDF. Doesn't use any texture but just a base-color.
 		TODO: add parameters of this BRDF
 	</type>
 </material>
+}}}
 
 Oren-Nayar BRDF
+{{{
 <material name=“MatePaper“>
 	<type=“ORENNAYAR“/>
 		TODO: add parameters of this BRDF
 	</type>
 </material>
+}}}
 
 Subsurface Scattering Approximation BRDF
+{{{
 <material name=“Jade“>
 	<type=“SSS“/>
 		TODO: add parameters of this BRDF
 	</type>
 </material>
+}}}
 
 Wards BRDF
+{{{
 <material name=“BrushedMetal“>
 	<type=“WARDS“/>
 		TODO: add parameters of this BRDF
 	</type>
 </material>
+}}}
 
 Torrance-Sparrow Microfacet BRDF
+{{{
 <material name=“SnowMetal“>
-	<type=“MICROFACET“/>
+	<type=“TORRANCESPARROW“/>
 		TODO: add parameters of this BRDF
 	</type>
 </material>
+}}}
 
 The following Material-Types are defined (transparency not rendered with this mechanism)
 DIFFUSE			0
@@ -100,12 +114,13 @@ PHONG			2
 ORENNAYAR		3
 SSS				4
 WARDS			5
-MICROFACET		6
+TORRANCESPARROW		6
 TRANSPARENT		99 (special-case, won't be handled with deferred rendering directly)
 
 The geometry-stage program could look like:
-
 Fragment-Shader
+
+{{{
 #define MAX_DIFFUSE_TEXT 4
 
 uniform block
@@ -169,6 +184,7 @@ void main()
 	out_generic1 = genericMaterialAttrib1;
 	out_generic2 = genericMaterialAttrib2;
 }
+}}}
 
 It is obvious that in this shader no distinction between the material type is done – no dynamic branching like if ( 0 == materialConfig.x ). This is because the configurations are set in a way that this is not necessary in the geometry-stage. 
 Transparency is completely ignored in the geometry-buffer because deferred rendering is inherent unable to render transparency directly. For this purpose an additional non-deferred rendering stage needs to be applied after the lighting-stage. See lighting&shadowing for discussion of this stage.
@@ -186,6 +202,7 @@ FieldOfView – Spotlight only (Pointlight is 90° in all 6 directions both shad
 Color
 
 Fragment-Shader of Light-Stage
+{{{
 uniform sampler diffuseMap;
 uniform sampler normalMap;
 uniform sampler depthMap;
@@ -311,6 +328,7 @@ void renderWardsBRDF()
 void renderMicrofacetBRDF()
 {
 }
+}}}
 
 The problem with transparent rendering are:
 correct visibility
@@ -327,25 +345,27 @@ To bring it on screen we render in orthographic projection a screen-sized quad w
 
 With this technique we don't have light applied to transparent objects and transparent objects behind  other transparent objects are not recognized within the perturbations in the transparent object in front.
 
+TODO: add opengl-steps and vertex&fragment shader for transparency-step
+
 // optimization: when the main framebuffer is used (color-attachments go to aux-buffers) then we don't need this additional indirection in transparency rendering.
 // is it possible to access the framebuffer in a shader?
 
-Modeling
+==Modeling==
 Supported model-formats
 3DS – 3D Studio
 MS3D – Milkshape 3D
 PLY -  Ply-Format (http://en.wikipedia.org/wiki/PLY_%28file_format%29)
 OBJ – Obj-Format (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
 
-Occlusion Culling
+==Occlusion Culling==
 View-Frustum culling – NDC culling of BoundingBoxes
 Dynamic occlusion culling with occlusion queries – CHC++. The depth buffer of the G-Stage can be utilized for the occlusion queries.
 
-Nice to have but not a must have
-Ambient Occlusion
+==Nice to have==
+SSAO
 Planar Reflections
 Dynamic Environment Reflections using cube-maps
 Parallax Mapping
 
-Animation
+==Animation==
 It is not planned to implement any kind of animations in this engine.
