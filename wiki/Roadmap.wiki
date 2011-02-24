@@ -1,0 +1,29 @@
+#describes the roadmap of ZaZENgine
+
+ALWAYS: find a good game-ida
+- full 3D with beautiful materials and lighting, no iso&2d
+- playing, creating, experiencing, fascinating (PCEF)
+- no destruction & hard working in the game (e.g. shooter )
+- music: ambient, so game must fit into this kind of music
+
+Finish Renderer
+- material-system
+- shadow-maping
+- multi-lights
+
+Overhaul Architecture
+- split into separate libs - clean separation into header files needed
+- loading of libs/modules at runtime
+
+Implement Scripting-Mechanism
+- depends on the kind of game
+
+Implement Sound
+- expand usage of fmod
+
+Implement AI
+- use existing open-source ai
+- use existing open-source pathfinding
+
+Implement Networking
+- use existing networking lib
