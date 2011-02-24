@@ -3,10 +3,10 @@ The renderer is implemented using the deferred rendering technique. See docs/pap
 For the G-Buffer four RGBA8 Color-Attachments and one 32Bit Floating Depth-Attachment are used to deliver the necessary properties to the Lighting-Stage.
 
 *Color-Attachment layouts*
-  * 1.DiffuseR, DiffuseG, DiffuseB, MaterialType
-  * 2.NormalX, NormalY, NormalZ, Specular-Component
+  * 0.DiffuseR, DiffuseG, DiffuseB, MaterialType
+  * 1.NormalX, NormalY, NormalZ, Specular-Component
+  * 2.Generic
   * 3.Generic
-  * 4.Generic
 
 ==Material System==
 Each material uses a special BRDF-model to simulate the lighting reflection.
@@ -203,6 +203,9 @@ Each light can be configured individually.
   * FieldOfView – Spotlight only (Pointlight is 90° in all 6 directions both shadow & light)
   * Color
 
+The FBO of the geometry-stage is bound during lighting-stage too to have depth-values at hand which become useful for later usage when working with light-boundaries.
+The lighting-stage renders into an additional Color-Attachment4 because we then need to apply transparency and though need the lighting-stage composition in a texture available.
+
 Fragment-Shader of Light-Stage
 {{{
 uniform sampler diffuseMap;
@@ -337,16 +340,15 @@ The problem with transparent rendering are:
   * normal mapping
   * bring on screen
 
-For correct visiblity we need to sort the transparent objects back to front and render them in this order. Visibility with the other objects in the scene needs to be considered too, so z-buffer needs to be utilized. For this the depth-map of the geometry-stage framebuffer can be used.
+For correct visiblity we need to sort the transparent objects back to front and render them after each other in this order. Visibility with the other objects in the scene needs to be considered too, so z-buffer needs to be utilized. For this the depth-map of the geometry-stage framebuffer can be used.
 Things get complicated when we want to do normal mapping, which means the transparent object perturbes the background behind it by the use of its normals. For this to be possible the background needs to be accessed as a texture where the normals are used to offset the texture-coordinates.
-For this to achieve we need the final composition of the lighting-stage in one texture, which can be achieved by rendering to an additional texture in the geometry-framebuffer (Color-Attachment 5).
+For this to achieve we need the final composition of the lighting-stage in one texture, which is already achieved by rendering to an additional texture in the FBO (Color-Attachment4).
 It sounds funny but the lighting-stage will use the geometry-stage framebuffer (it is bound during the lighting-stage) to apply bounding-geometry of each light to the scene.
-To bring the composition on screen we need another render-to-texture in the geometry-stage framebuffer because we bind the geometry-stage framebuffer for the depth-visibility of the transparent objects and so cannot write to the main framebuffer directly. For this purpose we can recycle an old buffer e.g. the diffuse color because it is needed no more and won't be accessed during rendering the final composition.
+To bring the composition on screen we need another render-to-texture in the geometry-stage framebuffer because we bind the geometry-stage framebuffer for the depth-visibility of the transparent objects and so cannot write to the main framebuffer directly. For this purpose we can recycle an old buffer e.g. the diffuse color (color-attachment0) because it is needed no more and won't be accessed during rendering the final composition.
 First all transparent objects are rendered in back-to-front with stencil turned on. The stenciling is necessary to prevent the filling of the rest of the scene to overdraw the transparent objects. Then with orthographic projection a screen-sized quad is drawn with the lighting-stage render-to-texture as texture. This will close the empty space around the transparent objects, where the stencil buffer will protect the already drawn transparent objects from overdraw.
 To bring it on screen we render in orthographic projection a screen-sized quad with the final composition as texture into the main framebuffer.
 
 *Transparency-rendering*
-TODO: add opengl-steps and vertex&fragment shader for transparency-step
   # ensure that the FBO of the geometry-stage is binded with its four color-attachments and depth-buffer. if a stencil-target hasn't yet been created, add this in the creation of the FBO. The depth-buffer is needed for correct visibility, and the stencil-buffer is needed to prevent overdraw for the final-composition with transparency included. Z-Buffer normally doesn't work with transparency but with deferred rendering we have at this point of the rendering-pipeline the background already at hand and can access it like a texture, so we can use the depth-buffer very conveniently for correct depth-visibility and then just need to access the background-texture for transparency effects.
   # bind the output of the lighting-stage (color attachment4) to texture unit 0
   # set the color-attachment 0 of the FBO as the target to which we want to render
@@ -357,15 +359,15 @@ TODO: add opengl-steps and vertex&fragment shader for transparency-step
   # bind now the output of this steps which went to color-attachment0 to texture unit 0 instead of the output of the lighting-stage as in the beginning of this process. set the color-attachment4 of the FBO as the target to which we want to render. 
   # continue with step 3 and render the next transparent object. this way transparency behind transparency becomes possible.
 
-1st run:
-read from: color-attachment4 (result of lighting-stage)
-write to:  color-attachment0 (geometry-stage diffuse color, no more needed)
-2nd run:
-read from: color-attachment0 (result of 1st run)
-write to:  color-attachment4 (old result of lighting-stage)
-3rd run:
-read from: color-attachment4 (result of 2nd run)
-write to:  color-attachment0 (old results from 1st run)
+  * 1st run:
+    * read from: color-attachment4 (result of lighting-stage)
+    * write to:  color-attachment0 (geometry-stage diffuse color, no more needed)
+  * 2nd run:
+    * read from: color-attachment0 (result of 1st run)
+    * write to:  color-attachment4 (old result of lighting-stage)
+  * 3rd run:
+    * read from: color-attachment4 (result of 2nd run)
+    * write to:  color-attachment0 (old results from 1st run)
 ...
 
 To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 4 ) as texture.
