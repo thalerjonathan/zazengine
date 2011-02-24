@@ -384,8 +384,10 @@ void main()
     vec3 lStageBgColor = texture( lStageBg, texCoord );
     vec3 transpAccColor = texture( transpAcc, texCoord );
 
-    // a is 1 when another transparency is already accumulated at this fragment, in this case lStageBgColor will not be added because of multiplication by 0 but the transparency accumulated will be used
-    // a is 0 when not transparency has been accumulated at this fragment, in this case lStageBgColor will be used because the content of transpAccColor is all 0
+    // a is 1 when another transparency is already accumulated at this fragment, 
+    // in this case lStageBgColor will not be added because of multiplication by 0 but the transparency accumulated will be used
+    // a is 0 when no transparency has been accumulated at this fragment, 
+    // in this case lStageBgColor will be used because the content of transpAccColor is all 0
     vec3 bgColor = lStageBgColor * ( 1.0 - transpAccColor.a ) + transpAccColor;
 
     // apply transparency-blending
