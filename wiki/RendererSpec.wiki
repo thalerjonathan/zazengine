@@ -303,7 +303,7 @@ void main()
 		// when in shadow, only the diffuse color is used for
 		// the final color output but darkened by its half
 		final_color.rgb = diffuse.rgb * 0.5;
-		final_color.a = 0.0;
+		final_color.a = 1.0;
 	}
 }
 
@@ -336,71 +336,65 @@ void renderMicrofacetBRDF()
 }
 }}}
 
-The problem with transparent rendering are:
-  * correct visibility
-  * normal mapping
-  * bring on screen
-
-For correct visiblity we need to sort the transparent objects back to front and render them after each other in this order. Visibility with the other objects in the scene needs to be considered too, so z-buffer needs to be utilized. For this the depth-map of the geometry-stage framebuffer can be used.
-Things get complicated when we want to do normal mapping, which means the transparent object perturbes the background behind it by the use of its normals. For this to be possible the background needs to be accessed as a texture where the normals are used to offset the texture-coordinates.
-For this to achieve we need the final composition of the lighting-stage in one texture, which is already achieved by rendering to an additional texture in the FBO (Color-Attachment4).
-It sounds funny but the lighting-stage will use the geometry-stage framebuffer (it is bound during the lighting-stage) to apply bounding-geometry of each light to the scene.
-To bring the composition on screen we need another render-to-texture in the geometry-stage framebuffer because we bind the geometry-stage framebuffer for the depth-visibility of the transparent objects and so cannot write to the main framebuffer directly. For this purpose we can recycle an old buffer e.g. the diffuse color (color-attachment0) because it is needed no more and won't be accessed during rendering the final composition.
-First all transparent objects are rendered in back-to-front with stencil turned on. The stenciling is necessary to prevent the filling of the rest of the scene to overdraw the transparent objects. Then with orthographic projection a screen-sized quad is drawn with the lighting-stage render-to-texture as texture. This will close the empty space around the transparent objects, where the stencil buffer will protect the already drawn transparent objects from overdraw.
-To bring it on screen we render in orthographic projection a screen-sized quad with the final composition as texture into the main framebuffer.
-
 *Transparency-rendering*
-  # ensure that the FBO of the geometry-stage is binded with its four color-attachments and depth-buffer. if a stencil-target hasn't yet been created, add this in the creation of the FBO. The depth-buffer is needed for correct visibility, and the stencil-buffer is needed to prevent overdraw for the final-composition with transparency included. Z-Buffer normally doesn't work with transparency but with deferred rendering we have at this point of the rendering-pipeline the background already at hand and can access it like a texture, so we can use the depth-buffer very conveniently for correct depth-visibility and then just need to access the background-texture for transparency effects.
-  # bind the output of the lighting-stage (color attachment4) to texture unit 0
-  # set the color-attachment 0 of the FBO as the target to which we want to render
-  # setup the stencil-buffer: when depth fails set to 0, otherwise to 1
-  # render the first transparent object with the program described below
-  # setup stencil that only pixels will be drawn where stencil is 0
-  # render a full-screen quad with the lighting-stage output as texture. because of stencil, no overdrawing of the transparent object happens.
-  # bind now the output of this steps which went to color-attachment0 to texture unit 0 instead of the output of the lighting-stage as in the beginning of this process. set the color-attachment4 of the FBO as the target to which we want to render. 
-  # continue with step 3 and render the next transparent object. this way transparency behind transparency becomes possible. 
+I've been working for about 1.5 months on a deferred renderer and now i'm making up my mind about transparency. As we all know it is not possible to directly render transparency with deferred shading and so it must be applied in a post-deferred-shading stage.
 
-  * 1st run:
-    * read from: color-attachment4 (result of lighting-stage) - bind to texture unit 0
-    * write to:  color-attachment0 (geometry-stage diffuse color, no more needed) - tell program to write to color-attachment0
-  * 2nd run:
-    * read from: color-attachment0 (result of 1st run) - bind to texture unit 0
-    * write to:  color-attachment4 (old result of lighting-stage) - tell program to write to color-attachment4
-  * 3rd run:
-    * read from: color-attachment4 (result of 2nd run) - bind to texture unit 0
-    * write to:  color-attachment0 (old results from 1st run) - tell program to write to color-attachment0
-...
+What i want to achieve is:
+  * layerd transparency (correct transparency behind other transparency)
+  * correct depth-visibility
+  * normal-maps for transparent objects
+
+The depth-buffer is needed for correct visibility but Z-Buffer doesn't work with transparency because it doesn't care about the alpha value but with deferred rendering we have a big advantage despise the bad news mentioned bevore.
+At this point of the rendering-pipeline we have the background already at hand and can access it like a texture, so we can use the depth-buffer very conveniently for correct depth-visibility and then just need to access the background-texture for transparency effects.
+
+The basic approach is to use the output of the lighting-stage which has been stored in a render-target as background-texture. The fragment-shader for transparent rendering does a texture-lookup into this background-texture and maybe perturb the texture-coordinates by using the normals or a normalmap. For correct depth-visibility the depth-buffer target of the geometry-stage can be used.
+
+Things get tricky when one wants to achieve correct layered transparency ( transparency behind transparency ).
+
+My solution is to accumulate the transparencies in two separate render-targets. We need two render-targets because we need to read from one and write the new transparency-accumulation into the other one.
+These render-targets don't have to be created additionally but can be recycled e.g. the diffuse-color and normal-map render-targets of the geometry-stage.
+
+The steps are then
+  # ensure that the FBO of the geometry-stage is binded with its color-attachments and depth-buffer. 
+  # clear colorattachment0 and colorattachment1
+  # bind color-attachment4 ( output of the lighting-stage ) to texture unit 0
+  # bind color-attachment0 (diffuse-color of geometry-stage) to texture unit 1
+  # set the color-attachment1 (normals of the geometry-stage) of the FBO as the target to which we want to render
+  # render the first transparent object with the program described below
+  # now only the transparent object is written to color-attachment1.
+  # now bind color-attachment1 to texture unit 1 and set color-attachment0 as the target to which we want to render - the targets have been flipped: color0 was previously read from and is now being written to, color1 was previously written to and is now read from.
+  # render the next transparent object
+  # flip the color-attachments again
+  # render the next transparent object
+  # and so on...
 
 Fragment-shader:
-
-To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 4 ) as texture.
-
-Other transparency rendering technique ( possibly more efficient )
-
-Fragment-shader for rendering transparency:
-
+Fragment-shader for rendering transparency
 {{{
-uniform sampler lightingStageBackground;
-uniform sampler transparentAccumulation;
+uniform sampler lStageBg;
+uniform sampler transpAcc;
 
-in vec2 ex_screenSpaceTexCoord;
 out vec4 out_color;
 
 void main()
 {
-    vec3 bgColor = texture( transparentAccumulation, ex_screenSpaceTexCoord );
+    // calculate texturecoordinate and do perturbation of texture coord
+    vec2 texCoord = ...;
 
-    // a is set to 0 when no transparency is accumulated at this fragment
-    if ( bgColor.a == 0.0 )
-    {
-       bgColor =  texture( lightingStageBackground, ex_screenSpaceTexCoord );
-    }
+    vec3 lStageBgColor = texture( lStageBg, texCoord );
+    vec3 transpAccColor = texture( transpAcc, texCoord );
 
-    // TODO: apply transparency-blending
+    // a is 1 when another transparency is already accumulated at this fragment, in this case lStageBgColor will not be added because of multiplication by 0 but the transparency accumulated will be used
+    // a is 0 when not transparency has been accumulated at this fragment, in this case lStageBgColor will be used because the content of transpAccColor is all 0
+    vec3 bgColor = lStageBgColor * ( 1.0 - transpAccColor.a ) + transpAccColor;
 
-    out_color = 0.0;
+    // apply transparency-blending
+
+    out_color.a = 1.0;
 }
 }}}
+
+To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 1 ) as texture.
 
 ==Modeling==
 Supported model-formats
