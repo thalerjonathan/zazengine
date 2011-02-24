@@ -1,3 +1,4 @@
+#labels v
 The renderer is implemented using the deferred rendering technique. See docs/papers/rendering/deferred rendering for much information about this technique.
 
 For the G-Buffer four RGBA8 Color-Attachments and one 32Bit Floating Depth-Attachment are used to deliver the necessary properties to the Lighting-Stage.
@@ -370,7 +371,36 @@ To bring it on screen we render in orthographic projection a screen-sized quad w
     * write to:  color-attachment0 (old results from 1st run) - tell program to write to color-attachment0
 ...
 
+Fragment-shader:
+
 To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 4 ) as texture.
+
+Other transparency rendering technique ( possibly more efficient )
+
+Fragment-shader for rendering transparency:
+
+{{{
+uniform sampler lightingStageBackground;
+uniform sampler transparentAccumulation;
+
+in vec2 ex_screenSpaceTexCoord;
+out vec4 out_color;
+
+void main()
+{
+    vec3 bgColor = texture( transparentAccumulation, ex_screenSpaceTexCoord );
+
+    // a is set to 0 when no transparency is accumulated at this fragment
+    if ( bgColor.a == 0.0 )
+    {
+       bgColor =  texture( lightingStageBackground, ex_screenSpaceTexCoord );
+    }
+
+    // TODO: apply transparency-blending
+
+    out_color = 0.0;
+}
+}}}
 
 ==Modeling==
 Supported model-formats
