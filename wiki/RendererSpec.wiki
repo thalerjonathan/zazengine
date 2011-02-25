@@ -445,6 +445,13 @@ void main()
 
 To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 1 ) as texture.
 
+*Optimizations*
+  * use bounding geometry for lights: sphere for pointlight, cone for spotlight, full-screen quad for directional light.
+  * do conditional rendering based upon occlusion query of the bounding geometry of the light
+  * do stenciling for light-pixels
+  * split lighting-stage fragment-shader into 3 distinct programs, one for each light-type to eliminate the dynamic-branchings (if they should become a bottleneck=
+  * faster screen-space to world-space transformation
+
 ==Modeling==
 Supported model-formats
   * 3DS – 3D Studio
