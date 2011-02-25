@@ -575,14 +575,14 @@ DRRenderer::initShadowMapping()
 		return false;
 	}
 
-	this->m_vertShadowMapping = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/geom/shadow/shadowVert.glsl" );
+	this->m_vertShadowMapping = Shader::createShader( Shader::VERTEX_SHADER, "media/graphics/dr/stages/shadowing/shadowVert.glsl" );
 	if ( 0 == this->m_vertShadowMapping )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create vertex shader - exit" << endl;
 		return false;
 	}
 
-	this->m_fragShadowMapping = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/geom/shadow/shadowFrag.glsl" );
+	this->m_fragShadowMapping = Shader::createShader( Shader::FRAGMENT_SHADER, "media/graphics/dr/stages/shadowing/shadowFrag.glsl" );
 	if ( 0 == this->m_fragShadowMapping )
 	{
 		cout << "ERROR in DRRenderer::initShadowMapping: coulnd't create fragment shader - exit" << endl;
