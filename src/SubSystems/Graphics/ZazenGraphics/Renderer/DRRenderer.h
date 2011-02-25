@@ -90,6 +90,8 @@
  * During the lighting-pass each light is transformed into its world-coordinates by multiplying its
  * modeling-matrix with the viewing matrix of the camera. If one doesn't do this, the light sticks with the
  * camera (maybe this is desired...)
+ *
+ * something not right yet with light-space calculations.
  */
 
 /* Errors:

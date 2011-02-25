@@ -20,7 +20,7 @@ map<string, Texture*> Texture::allTextures;
 Texture* Texture::load(const std::string& file)
 {
 	map<string, Texture*>::iterator findIter = Texture::allTextures.find(file);
-	if (findIter != Texture::allTextures.end())
+	if ( findIter != Texture::allTextures.end() )
 		return findIter->second;
 	
 	string fullFileName = "media/graphics/textures/" + file;
@@ -30,30 +30,38 @@ Texture* Texture::load(const std::string& file)
     GLenum textureFormat;
 	GLint nOfColors;
 
-	if (surface) { 
+	if ( surface )
+	{
 		// Check that the image's width is a power of 2
-		if ((surface->w & (surface->w - 1)) != 0) {
+		if ((surface->w & (surface->w - 1)) != 0)
+		{
 			cout << "WARNING ... " << fullFileName << " width is not a power of 2" << endl;
 		}
 		
 		// Also check if the height is a power of 2
-		if ((surface->h & (surface->h - 1)) != 0) {
+		if ((surface->h & (surface->h - 1)) != 0)
+		{
 			cout << "WARNING ... " << fullFileName << " height is not a power of 2" << endl;;
 		}
 		
         // get the number of channels in the SDL surface
         nOfColors = surface->format->BytesPerPixel;
-        if (nOfColors == 4) {
+        if (nOfColors == 4)
+        {
 			if (surface->format->Rmask == 0x000000ff)
 				textureFormat = GL_RGBA;
 			else
 				textureFormat = GL_BGRA;
-        } else if (nOfColors == 3) {
+        }
+        else if (nOfColors == 3)
+        {
 			if (surface->format->Rmask == 0x000000ff)
 				textureFormat = GL_RGB;
 			else
 				textureFormat = GL_BGR;
-        } else {
+        }
+        else
+        {
         	cout << "WARNING ... the image is not truecolor..  this will probably break" << endl;
         }
         
@@ -70,7 +78,9 @@ Texture* Texture::load(const std::string& file)
 		// unbind texture
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-	} else {
+	}
+	else
+	{
 		cout << "ERROR ... SDL could not load texture " << fullFileName << " - failed with " << SDL_GetError() << endl;
 		return 0;
 	}    
@@ -85,7 +95,8 @@ Texture* Texture::load(const std::string& file)
 void Texture::freeAll()
 {
 	map<string, Texture*>::iterator iter = Texture::allTextures.begin();
-	while(iter != Texture::allTextures.end()) {
+	while(iter != Texture::allTextures.end())
+	{
 		delete iter->second;
 		
 		iter++;
@@ -99,47 +110,50 @@ Texture::Texture(GLuint texID, SDL_Surface* surf)
 	this->textureID = texID;
 	this->surface = surf;
 
-	this->targetID = -1;
+	this->textureUnit = -1;
 }
 
 Texture::~Texture()
 {
-	glDeleteTextures(1, &this->textureID);
-	SDL_FreeSurface(this->surface);
+	glDeleteTextures( 1, &this->textureID );
+	SDL_FreeSurface( this->surface );
 }
 
-void Texture::activate(int targetID)
+void
+Texture::bind( int textureUnit )
 {
-	if (this->targetID != -1)
+	if ( this->textureUnit != - 1)
 		return;
 
-	this->targetID = targetID;
+	this->textureUnit = textureUnit;
 
-	glActiveTexture( GL_TEXTURE0 + this->targetID );
+	glActiveTexture( GL_TEXTURE0 + this->textureUnit );
 	glBindTexture(GL_TEXTURE_2D, this->textureID);
 }
 
-void Texture::deactivate()
+void Texture::unbind()
 {
-	if (this->targetID == -1)
+	if (this->textureUnit == -1)
 		return;
 
-	glActiveTexture(GL_TEXTURE0 + this->targetID);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture( GL_TEXTURE0 + this->textureUnit );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
-	this->targetID = -1;
+	this->textureUnit = -1;
 }
 
-SDL_Surface* Texture::loadImage(const std::string& filename) 
+SDL_Surface*
+Texture::loadImage(const std::string& filename)
 {
     SDL_Surface* loadedImage = NULL;
     SDL_Surface* optimizedImage = NULL;
     
     loadedImage = IMG_Load(filename.c_str());
 	
-    if(loadedImage != NULL) {
-        optimizedImage = SDL_DisplayFormat(loadedImage);
-        SDL_FreeSurface(loadedImage);
+    if( loadedImage != NULL )
+    {
+        optimizedImage = SDL_DisplayFormat( loadedImage );
+        SDL_FreeSurface( loadedImage );
     }
 
     return optimizedImage;

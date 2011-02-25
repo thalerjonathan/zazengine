@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Geometry/GeometryFactory.h"
-#include "Material/Texture.h"
+#include "Material/Material.h"
 
 #include "Renderer/DRRenderer.h"
 
@@ -51,6 +51,12 @@ ZazenGraphics::initialize( TiXmlElement* configNode )
 	
 	// cannot initialize renderer now because camera not yet loaded
 	this->m_renderer = new DRRenderer();
+
+	if ( false == Material::loadAll() )
+	{
+		cout << "Coulnd't load materials - exit" << endl;
+		return false;
+	}
 
 	cout << "================ ZazenGraphics initialized =================" << endl;
 	

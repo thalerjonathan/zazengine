@@ -23,14 +23,14 @@ class Texture
 	static Texture* load(const std::string&);
 	static void freeAll();
 	
-	void activate(int targetID = 0);
-	void deactivate();
+	void bind( int textureUnit );
+	void unbind();
 	
  private:
 	Texture(GLuint, SDL_Surface*);
 	~Texture();
 
-	int targetID;
+	int textureUnit;
 
 	GLuint textureID;
 	SDL_Surface* surface;
