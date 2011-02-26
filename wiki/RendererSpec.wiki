@@ -445,6 +445,8 @@ void main()
 
 To finally bring the result on screen, simply render a screen-sized quad and use the last written color-attachment ( 0 or 1 ) as texture.
 
+Can we apply Shadows & lighting to the transparent objects?
+
 *Optimizations*
   * use bounding geometry for lights: sphere for pointlight, cone for spotlight, full-screen quad for directional light.
   * do conditional rendering based upon occlusion query of the bounding geometry of the light
