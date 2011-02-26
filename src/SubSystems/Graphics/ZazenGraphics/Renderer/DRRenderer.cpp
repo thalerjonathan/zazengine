@@ -65,7 +65,7 @@ using namespace std;
 DRRenderer::DRRenderer()
 	: Renderer( )
 {
-	this->m_geometryStageFB = 0;
+	this->m_fbo = 0;
 	memset( this->m_colorBuffers, 0, sizeof( this->m_colorBuffers) );
 	memset( this->m_buffers, 0, sizeof( this->m_buffers) );
 
@@ -257,10 +257,10 @@ DRRenderer::shutdown()
 	}
 
 	// cleaning up framebuffer
-	if ( this->m_geometryStageFB )
+	if ( this->m_fbo )
 	{
-		glDeleteFramebuffers( 1, &this->m_geometryStageFB );
-		this->m_geometryStageFB = 0;
+		glDeleteFramebuffers( 1, &this->m_fbo );
+		this->m_fbo = 0;
 	}
 
 	if ( this->m_geometryDepth )
@@ -290,7 +290,7 @@ DRRenderer::initFBO()
 	GLenum status;
 
 	// generate the id of our
-	glGenFramebuffers( 1, &this->m_geometryStageFB );
+	glGenFramebuffers( 1, &this->m_fbo );
 	if ( GL_NO_ERROR != ( status = glGetError() )  )
 	{
 		cout << "ERROR in DRRenderer::initFBO: glGenFramebuffersEXT failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -333,7 +333,7 @@ DRRenderer::initFBO()
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
-	glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
+	glBindFramebuffer( GL_FRAMEBUFFER, this->m_fbo );
 	if ( GL_NO_ERROR != ( status = glGetError() )  )
 	{
 		cout << "ERROR in DRRenderer::initFBO: glBindFramebuffer for depth-buffer  failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -386,7 +386,7 @@ DRRenderer::initFBO()
 
 		glBindTexture( GL_TEXTURE_2D, 0 );
 
-		glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
+		glBindFramebuffer( GL_FRAMEBUFFER, this->m_fbo );
 		if ( GL_NO_ERROR != ( status = glGetError() )  )
 		{
 			cout << "ERROR in DRRenderer::initFBO: glBindFramebuffer failed with " << gluErrorString( status ) << " - exit" << endl;
@@ -787,7 +787,7 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances, std::list<Ligh
 	}
 
 	// bind the framebuffer of the geometry-stage
-	glBindFramebuffer( GL_FRAMEBUFFER, this->m_geometryStageFB );
+	glBindFramebuffer( GL_FRAMEBUFFER, this->m_fbo );
 	if ( GL_NO_ERROR != ( status = glGetError() ) )
 	{
 		cout << "ERROR in DRRenderer::renderGeometryStage: glBindFramebuffer failed with " << gluErrorString( status ) << endl;
@@ -869,42 +869,47 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 	// tell lighting program that diffusemap is bound to texture-unit 0
 	if ( false == this->m_progLightingStage->setUniformInt( "DiffuseMap", 0 ) )
 		return false;
+	/*
 	// tell lighting program that normalmap is bound to texture-unit 1
 	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
 		return false;
-	/*
 	// tell lighting program that generic map is bound to texture-unit 2
 	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap1", 2 ) )
 		return false;
 	// tell lighting program that generic map is bound to texture-unit 3
 	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap2", 3 ) )
 		return false;
-	*/
 	// tell lighting program that depth-map of scene is bound to texture-unit MRT_COUNT
 	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", MRT_COUNT ) )
 		return false;
-	// tell program that the shadowmap of each light will be available at texture unit MRT_COUNT + 1
+	// tell program that the shadowmap of spot/directional-light will be available at texture unit MRT_COUNT + 1
 	if ( false == this->m_progLightingStage->setUniformInt( "ShadowMap", MRT_COUNT + 1 ) )
 		return false;
+	// tell program that the cubic shadowmap of a point-light will be available at texture unit MRT_COUNT + 1
+	if ( false == this->m_progLightingStage->setUniformInt( "ShadowCubeMap", MRT_COUNT + 1 ) )
+		return false;
+	 */
 
 	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_projectionMatrix ) ), 384, 64) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_projectionMatrix ) ), 448, 64) )
 		return false;
 	// calculate the inverse viewing matrix - is needed for reconstructing world-position from screen-space
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_viewMatrix ) ), 448, 64) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_viewMatrix ) ), 512, 64) )
 		return false;
 
 	// change to ortho to render the screen quad
 	this->m_camera->setupOrtho();
 
 	// update projection-matrix because changed to orthogonal-projection
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
-		return false;
-	// update projection-matrix because changed to orthogonal-projection
 	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 320, 64 ) )
 		return false;
+
+	glm::vec4 lightConfig;
+	glm::vec4 lightPosition;
+	glm::vec4 lightDirection;
+	glm::mat4 lightSpaceUnit;
 
 	// render the contribution of each light to the scene
 	std::list<Light*>::iterator iter = lights.begin();
@@ -917,24 +922,55 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 
 		// bind the shadowmap of the light to texture unit MRT_COUNT + 1
 		glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
-		glBindTexture( GL_TEXTURE_2D, light->getShadowMap() );
-		if ( GL_NO_ERROR != ( status = glGetError() ) )
+
+		if ( Light::SPOT == light->getType() || Light::DIRECTIONAL == light->getType() )
 		{
-			cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
-			return false;
+			glBindTexture( GL_TEXTURE_2D, light->getShadowMap() );
+			if ( GL_NO_ERROR != ( status = glGetError() ) )
+			{
+				cout << "ERROR in DRRenderer::renderLightingStage: glBindTexture failed with " << gluErrorString( status ) << endl;
+				return false;
+			}
 		}
+		else if ( Light::POINT == light->getType() )
+		{
+			// TODO: bind shadow cubemap
+		}
+
+		lightConfig[ 0 ] = light->getType();
+		lightConfig[ 1 ] = light->getFalloff();
+		lightConfig[ 2 ] = light->isShadowCaster();
 
 		// TODO: VERY IMPORTANT: IF LIGHT DOES NOT STICK TO CAMERA THEN THE LIGHTS MODELMATRIX MUST BE TRANSFORMED
 		// BY THE VIEWING-MATRIX OF THE LIGHT TO PLACE IT IN WORLD COORDINATES.
 
+		// only spot and point have a position
+		if ( Light::SPOT == light->getType() || Light::POINT == light->getType() )
+		{
+			// position is in model-matrix translation-achsis
+			lightPosition = light->m_modelMatrix[ 3 ];
+		}
+
+		// only spot and directional have a direction
+		if ( Light::SPOT == light->getType() || Light::DIRECTIONAL == light->getType() )
+		{
+			// direction is in model-matrix z-achsis
+			lightDirection = light->m_modelMatrix[ 2 ];
+		}
+
 		// calculate the light-space projection matrix
 		// multiplication with unit-cube is first because has to be carried out the last
-		glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * light->m_PVMatrix;
-		if ( false == this->m_lightBlock->updateData( glm::value_ptr( light->m_modelMatrix ), 0, 64) )
+		lightSpaceUnit = this->m_unitCubeMatrix * light->m_PVMatrix;
+
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightConfig ), 0, 16 ) )
 			return false;
-		if ( false == this->m_lightBlock->updateData( glm::value_ptr( light->m_PVMatrix ), 64, 64) )
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightPosition ), 16, 16 ) )
 			return false;
-		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightDirection ), 32, 16 ) )
+			return false;
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( light->getColor() ), 48, 16 ) )
+			return false;
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightSpaceUnit ), 64, 64 ) )
 			return false;
 
 		// render quad
@@ -961,13 +997,13 @@ DRRenderer::renderTransparencyStage( std::list<Instance*>& instances, std::list<
 bool
 DRRenderer::renderInstances( Viewer* viewer, std::list<Instance*>& instances, bool applyMaterial, bool transparencyPass )
 {
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_projectionMatrix ), 256, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_projectionMatrix ), 320, 64 ) )
 		return false;
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_viewMatrix ), 320, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_viewMatrix ), 384, 64 ) )
 		return false;
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_projectionMatrix ) ), 384, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_projectionMatrix ) ), 448, 64 ) )
 		return false;
-	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_viewMatrix ) ), 448, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_viewMatrix ) ), 512, 64 ) )
 		return false;
 
 	list<Instance*>::iterator iter = instances.begin();
@@ -1033,6 +1069,7 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 						glm::value_ptr( normalMatrix )[ 14 ] = 0.0;
 						*/
 			glm::mat4 normalModelViewMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
+			glm::mat4 normalModelMatrix = glm::transpose( glm::inverse( modelMatrix ) );
 
 			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( modelMatrix ), 0, 64 ) )
 				return false;
@@ -1041,6 +1078,8 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 128, 64 ) )
 				return false;
 			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( normalModelViewMatrix ), 192, 64 ) )
+				return false;
+			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( normalModelMatrix ), 256, 64 ) )
 				return false;
 
 			// Don't need to update inverse, because its just needed in screen-space during lighting-stage

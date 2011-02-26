@@ -15,7 +15,7 @@ using namespace std;
 Light*
 Light::createSpoptLight( float fov, int width, int height )
 {
-	Light* light = new Light( width, height );
+	Light* light = new Light( width, height, Light::SPOT );
 	if ( false == light->createShadowMap( width, height ) )
 	{
 		delete light;
@@ -33,7 +33,7 @@ Light::createSpoptLight( float fov, int width, int height )
 Light*
 Light::createDirectionalLight( int width, int height )
 {
-	Light* light = new Light( width, height );
+	Light* light = new Light( width, height, Light::DIRECTIONAL );
 	if ( false == light->createShadowMap( width, height ) )
 	{
 		delete light;
@@ -50,8 +50,8 @@ Light::createDirectionalLight( int width, int height )
 Light*
 Light::createPointLight( int side )
 {
-	Light* light = new Light( side, side );
-	if ( false == light->createShadowCubeMap( side, side ) )
+	Light* light = new Light( side, side, Light::POINT );
+	if ( false == light->createShadowCubeMap( side ) )
 	{
 		delete light;
 		light = 0;
@@ -65,11 +65,16 @@ Light::createPointLight( int side )
 	return light;
 }
 
-Light::Light( int width, int height )
-	: Viewer( width, height )
+Light::Light( int width, int height, LightType type )
+	: Viewer( width, height ),
+	  m_type( type )
 {
 	this->m_shadowMap = 0;
 	memset( this->m_cubeShadowMap, 0, sizeof( this->m_cubeShadowMap ) );
+
+	this->m_shadowCaster = true;
+
+	this->m_falloff = 0.0f;
 }
 
 Light::~Light()
@@ -131,7 +136,7 @@ Light::createShadowMap( int width, int height )
 }
 
 bool
-Light::createShadowCubeMap( int width, int height )
+Light::createShadowCubeMap( int side )
 {
 	return false;
 }

@@ -28,7 +28,7 @@ Texture::load(const std::string& file)
 	
 	GLuint textureID;
     SDL_Surface* surface = Texture::loadImage(fullFileName);
-    GLenum textureFormat;
+    GLenum textureFormat = GL_RGBA;
 	GLint nOfColors;
 
 	if ( surface )

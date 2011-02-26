@@ -2,25 +2,25 @@
 
 <materials>
 	<material name="YellowPlastic">
-		<type id="PHONG">
+		<type id="LAMBERTIAN">
 			<color r="1.0" g="1.0" b="0.0"/>
 		</type>
 	</material>
 	
 	<material name="GreenPlastic">
-		<type id="PHONG">
+		<type id="LAMBERTIAN">
 			<color r="0.0" g="1.0" b="0.0"/>
 		</type>
 	</material>
 	
 	<material name="BluePlastic">
-		<type id="PHONG">
+		<type id="LAMBERTIAN">
 			<color r="0.0" g="0.0" b="1.0"/>
 		</type>
 	</material>
 	
 	<material name="WhitePlastic">
-		<type id="PHONG">
+		<type id="LAMBERTIAN">
 			<color r="1.0" g="1.0" b="1.0"/>
 		</type>
 	</material>
