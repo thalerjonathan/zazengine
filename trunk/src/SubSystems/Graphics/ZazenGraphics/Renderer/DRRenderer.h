@@ -108,6 +108,7 @@
  * 		    SPACE.
  * 		-> something wrong with normals transformation ( maybe they're not correctly loaded in geometryfactory )
  *		-> lights must be transformed by camera-viewingMatrix to world-coordinates otherwise they stick with camera
+ *		-> LIGHTING IS DONE IN WORLD-SPACE
  *
  * - Correct Deferred Shadowing:
  * 		-> something still wrong with the shadowing transformation in lighting Fragment-shader
@@ -125,12 +126,6 @@
 /* TODO:
  * - Enhance Deferred Shadowing (reduce artifacts and implement soft-shadows )
  * - Introduce multiple lights: each light contributes ADDITIVELY to the framebuffe, solve this
- * - Materials:
- * 		-> diffuse texturing
- * 		-> transparency
- * 		-> metal (dynamic cube map reflections)
- * 		-> SubSurfaceScattering
- * 		-> micro-facet (torrance-sparrow)
  * - Reflections: would be nice to have planar reflections in this renderer too
  */
 class DRRenderer : public Renderer
@@ -147,7 +142,7 @@ class DRRenderer : public Renderer
 
  private:
 	// Multiple-Render-Targes & Framebuffer for Deferred Rendering
-	GLuint m_geometryStageFB;
+	GLuint m_fbo;
 	GLuint m_geometryDepth;						// the id of the depth-buffer
 	GLuint m_colorBuffers[ MRT_COUNT ];			// the generic color attachments for MRTs
 	GLenum m_buffers[ MRT_COUNT ];
