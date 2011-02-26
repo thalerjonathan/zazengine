@@ -1,71 +1,53 @@
 #version 330 core
 
-in vec4 ex_shadowCoord;
-//in vec4 ex_depth;
+#define MAX_DIFFUSE_TEXT 4
+
+in vec2 ex_textureCoord;
 in vec4 ex_normal;
 
 out vec4 out_diffuse;
 out vec4 out_normal;
+out vec4 out_generic1;
+out vec4 out_generic2;
 
-uniform sampler2DShadow ShadowMap;
-
-layout(shared) uniform mvp_transform
+layout(shared) uniform material
 {
-	mat4 model_Matrix;					// 0
-	mat4 modelView_Matrix;				// 64
-	mat4 modelViewProjection_Matrix;	// 128
-	
-	mat4 normalsModelView_Matrix;		// 196
-	
-	mat4 projection_Matrix;				// 254
-	mat4 viewing_Matrix;				// 320
-	
-	mat4 projectionInv_Matrix;			// 384
-	mat4 viewingInv_Matrix;				// 448
+	vec4 materialConfig; 			// x=materialtype, y=diffuseTextureCounter, z=normal map 0/1, w=specular map0/1
+	vec4 genericMaterialAttrib1;    // written to ColorAttachment 2
+	vec4 genericMaterialAttrib2;    // written to ColorAttachment 3
+
+	vec4 materialColor;     		// base-color of material
 };
 
-// contains light-direction in 8,9,10
-layout(shared) uniform lightData
-{
-	mat4 light_ModelMatrix;
-	mat4 light_SpaceMatrix;
-	mat4 light_SpaceUnitMatrix;
-};
-
-/*
-vec4 packFloatToVec4i( const float value )
-{
-  const vec4 bitSh = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
-  const vec4 bitMsk = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
-  vec4 res = fract( value * bitSh );
-  res -= res.xxyz * bitMsk;
-  return res;
-}
-*/
-
-float shadowLookup( const vec4 shadowCoord, const float offsetX, const float offsetY )
-{
-	return textureProj( ShadowMap, shadowCoord + vec4( offsetX, offsetY, 0.005, 0.0 ) );
-}
+uniform sampler2D diffuseTexture;
+uniform sampler2D normalMap;
 
 void main()
-{	
-	float shadow = shadowLookup( ex_shadowCoord, 0.0, 0.0 );
-	// this fragment is in shadow
-	if ( shadow != 1.0 )
+{
+	// store materialtype in diffuse-component alpha-channel
+	out_diffuse.a = materialConfig.x;
+
+	// store base-color of material
+	out_diffuse.rgb = materialColor.rgb;
+
+	if ( 1.0 == materialConfig.y )
 	{
-		// encode shadow as red
-		out_diffuse = vec4( 1.0, 0.0, 0.0, 1.0 );
+		out_diffuse.rgb += texture( diffuseTexture, ex_textureCoord ).rgb;
+	}
+
+    // normal-mapping enabled – fetch from texture
+	if ( 1.0 == materialConfig.z )
+	{
+		out_normal.xyz = texture( normalMap, ex_textureCoord ).xyz;
 	}
 	else
 	{
-		// we need to transform the lights direction too when it should not stay with the camera
-		// the problem with this approach is, that normalsModelView_Matrix is the matrix transforming
-		// normals for the currently rendering object and this will not match the lights transforms
-		vec3 lightDir = vec4( normalsModelView_Matrix * vec4( 0.0, 0.0, 1.0, 0.0 ) ).xyz;
-		out_diffuse = vec4( 1.0, 1.0, 1.0, 1.0 ) * dot( ex_normal.xyz, lightDir );
+		out_normal.xyz = ex_normal.xyz;
 	}
-	
-	//out_depth = packFloatToVec4i( ex_depth.x / ex_depth.y );
-	out_normal = ex_normal;
+
+    // set alpha component of normal to 0
+	out_normal.a = 0.0;
+
+    out_generic1 = genericMaterialAttrib1;
+    out_generic2 = genericMaterialAttrib2;
 }

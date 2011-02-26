@@ -2,7 +2,7 @@
 
 in vec3 in_vertPos;
 
-layout(shared) uniform mvp_transform
+layout(shared) uniform transforms
 {
 	mat4 model_Matrix;					// 0
 	mat4 modelView_Matrix;				// 64

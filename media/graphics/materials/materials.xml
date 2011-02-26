@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <materials>
+	<material name="YellowPlastic">
+		<type id="PHONG">
+			<color r="1.0" g="1.0" b="0.0"/>
+		</type>
+	</material>
+	
+	<material name="GreenPlastic">
+		<type id="PHONG">
+			<color r="0.0" g="1.0" b="0.0"/>
+		</type>
+	</material>
+	
+	<material name="BluePlastic">
+		<type id="PHONG">
+			<color r="0.0" g="0.0" b="1.0"/>
+		</type>
+	</material>
+	
+	<material name="WhitePlastic">
+		<type id="PHONG">
+			<color r="1.0" g="1.0" b="1.0"/>
+		</type>
+	</material>
+	
+	<!-- EXAMPLES
 	<material name="WoodFloor">
 		<type id="LAMBERTIAN">
 			<diffuseColor1 file="media/graphics/textures/woodFloorBase.tga"/>
@@ -50,4 +75,5 @@
 		<type id="TORRANCESPARROW">
 		</type>
 	</material>
+	-->
 </materials>

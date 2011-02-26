@@ -85,8 +85,9 @@ DRRenderer::DRRenderer()
 
 	this->m_shadowMappingFB = 0;
 
-	this->m_mvpTransformBlock = 0;
-	this->m_lightDataBlock = 0;
+	this->m_transformsBlock = 0;
+	this->m_lightBlock = 0;
+	this->m_materialBlock = 0;
 
 	float unitCube[] = {
 			0.5, 0.0, 0.0, 0.0,
@@ -113,14 +114,15 @@ DRRenderer::renderFrame( std::list<Instance*>& instances, std::list<Light*>& lig
 	if ( false == this->renderLightingStage( instances, lights ) )
 		return false;
 
-	if ( false == this->showTexture( this->m_geometryDepth, MRT_COUNT ) )
+	if ( false == this->renderTransparencyStage( instances, lights ) )
 		return false;
 
-	for ( int i = 0; i <  MRT_COUNT; i++ )
-	{
-		if ( false == this->showTexture( this->m_colorBuffers[ i ], i ) )
-			return false;
-	}
+	if ( false == this->showTexture( this->m_colorBuffers[ 0 ], 0 ) )
+		return false;
+	if ( false == this->showTexture( this->m_colorBuffers[ 1 ], 1 ) )
+		return false;
+	if ( false == this->showTexture( this->m_geometryDepth, 2 ) )
+		return false;
 
 	// swap buffers
 	SDL_GL_SwapBuffers();
@@ -173,11 +175,14 @@ DRRenderer::shutdown()
 	cout << "Shutting down Deferred Renderer..." << endl;
 
 	// cleaning up uniform blocks
-	if ( this->m_mvpTransformBlock )
-		delete this->m_mvpTransformBlock;
+	if ( this->m_transformsBlock )
+		delete this->m_transformsBlock;
 
-	if ( this->m_lightDataBlock )
-		delete this->m_lightDataBlock;
+	if ( this->m_lightBlock )
+		delete this->m_lightBlock;
+
+	if ( this->m_materialBlock )
+		delete this->m_materialBlock;
 
 	if ( this->m_shadowMappingFB )
 		glDeleteFramebuffers( 1, &this->m_shadowMappingFB );
@@ -463,6 +468,16 @@ DRRenderer::initGeomStage()
 		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
 		return false;
 	}
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 2, "out_generic1" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
+		return false;
+	}
+	if ( false == this->m_progGeomStage->bindFragDataLocation( 3, "out_generic2" ) )
+	{
+		cout << "ERROR in DRRenderer::initGeomStage: binding fragment-data location failed - exit" << endl;
+		return false;
+	}
 
 	if ( false == this->m_progGeomStage->bindAttribLocation( 0, "in_vertPos" ) )
 	{
@@ -633,61 +648,74 @@ DRRenderer::initShadowMapping()
 bool
 DRRenderer::initUniformBlocks()
 {
-	this->m_mvpTransformBlock = UniformBlock::createBlock( "mvp_transform" );
-	if ( 0 == this->m_mvpTransformBlock )
+	this->m_transformsBlock = UniformBlock::createBlock( "transforms" );
+	if ( 0 == this->m_transformsBlock )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
 		return false;
 	}
 
-	this->m_lightDataBlock = UniformBlock::createBlock( "lightData" );
-	if ( 0 == this->m_lightDataBlock )
+	this->m_lightBlock = UniformBlock::createBlock( "light" );
+	if ( 0 == this->m_lightBlock )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
+		return false;
+	}
+
+	this->m_materialBlock = UniformBlock::createBlock( "material" );
+	if ( 0 == this->m_materialBlock )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: creating uniform block failed - exit" << endl;
 		return false;
 	}
 
 	// bind uniform blocks
-	if ( false == this->m_mvpTransformBlock->bind() )
+	if ( false == this->m_transformsBlock->bind() )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
 	}
-	if ( false == this->m_lightDataBlock->bind() )
+	if ( false == this->m_lightBlock->bind() )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
+		return false;
+	}
+	if ( false == this->m_materialBlock->bind() )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: binding transform uniform-block failed - exit" << endl;
 		return false;
 	}
 
 	// bind mvp-transformation to all programs
-	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_mvpTransformBlock ) )
+	if ( false == this->m_progShadowMapping->bindUniformBlock( this->m_transformsBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
-	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_mvpTransformBlock ) )
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_transformsBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
-	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_mvpTransformBlock ) )
+	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_transformsBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
 
 	// lighting data just to lighting stage program
-	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightDataBlock ) )
-	{
-		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
-		return false;
-	}
-	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_lightDataBlock ) )
+	if ( false == this->m_progLightingStage->bindUniformBlock( this->m_lightBlock ) )
 	{
 		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
 		return false;
 	}
 
+	// material data just go to geometry-stage program
+	if ( false == this->m_progGeomStage->bindUniformBlock( this->m_materialBlock ) )
+	{
+		cout << "ERROR in DRRenderer::initUniformBlocks: failed binding uniform block - exit" << endl;
+		return false;
+	}
 
 	return true;
 }
@@ -730,7 +758,8 @@ DRRenderer::renderShadowMap( std::list<Instance*>& instances, std::list<Light*>&
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-		if ( false == this->renderInstances( light, instances ) )
+		// render scene from view of camera - don't apply material, don't render transparency
+		if ( false == this->renderInstances( light, instances, false, false ) )
 			return false;
 	}
 
@@ -788,32 +817,8 @@ DRRenderer::renderGeometryStage( std::list<Instance*>& instances, std::list<Ligh
 	// clear the colorbuffers AND our depth-buffer ( m_geometryDepth );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	// tell program that the uniform sampler2D called ShadowMap points now to texture-unit MRT_COUNT + 1
-	if ( false == this->m_progGeomStage->setUniformInt( "ShadowMap", MRT_COUNT + 1 ) )
-		return false;
-
-	glActiveTexture( GL_TEXTURE0 + MRT_COUNT + 1 );
-	glBindTexture( GL_TEXTURE_2D, lights.front()->getShadowMap() );
-	if ( GL_NO_ERROR != ( status = glGetError() ) )
-	{
-		cout << "ERROR in DRRenderer::renderGeometryStage: glBindTexture failed with " << gluErrorString( status ) << endl;
-		return false;
-	}
-
-	// calculate the light-space projection matrix
-	// multiplication with unit-cube is first because has to be carried out the last
-	// TODO: VERY IMPORTANT: IF LIGHT DOES NOT STICK TO CAMERA THEN THE LIGHTS MODELMATRIX MUST BE TRANSFORMED
-	// BY THE VIEWING-MATRIX OF THE LIGHT TO PLACE IT IN WORLD COORDINATES
-	glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * lights.front()->m_PVMatrix;
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lights.front()->m_modelMatrix ), 0, 64) )
-		return false;
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lights.front()->m_PVMatrix ), 64, 64) )
-		return false;
-	if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
-		return false;
-
-	// draw all geometry
-	if ( false == this->renderInstances( this->m_camera, instances ) )
+	// draw all geometry - apply materials but don't render transparency
+	if ( false == this->renderInstances( this->m_camera, instances, true, false ) )
 		return false;
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -867,7 +872,15 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 	// tell lighting program that normalmap is bound to texture-unit 1
 	if ( false == this->m_progLightingStage->setUniformInt( "NormalMap", 1 ) )
 		return false;
-	// tell lighting program that depth-map is bound to texture-unit 2
+	/*
+	// tell lighting program that generic map is bound to texture-unit 2
+	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap1", 2 ) )
+		return false;
+	// tell lighting program that generic map is bound to texture-unit 3
+	if ( false == this->m_progLightingStage->setUniformInt( "GenericMap2", 3 ) )
+		return false;
+	*/
+	// tell lighting program that depth-map of scene is bound to texture-unit MRT_COUNT
 	if ( false == this->m_progLightingStage->setUniformInt( "DepthMap", MRT_COUNT ) )
 		return false;
 	// tell program that the shadowmap of each light will be available at texture unit MRT_COUNT + 1
@@ -876,21 +889,21 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 
 	// calculate the inverse projection matrix - is needed for reconstructing world-position from screen-space
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_projectionMatrix ) ), 384, 64) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_projectionMatrix ) ), 384, 64) )
 		return false;
 	// calculate the inverse viewing matrix - is needed for reconstructing world-position from screen-space
 	// update the inverse projection ( could also be carried out on the GPU but we calculate it once on the cpu )
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_viewMatrix ) ), 448, 64) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr(  glm::inverse( this->m_camera->m_viewMatrix ) ), 448, 64) )
 		return false;
 
 	// change to ortho to render the screen quad
 	this->m_camera->setupOrtho();
 
 	// update projection-matrix because changed to orthogonal-projection
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 256, 64 ) )
 		return false;
 	// update projection-matrix because changed to orthogonal-projection
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 320, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( this->m_camera->m_projectionMatrix ), 320, 64 ) )
 		return false;
 
 	// render the contribution of each light to the scene
@@ -917,11 +930,11 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 		// calculate the light-space projection matrix
 		// multiplication with unit-cube is first because has to be carried out the last
 		glm::mat4 lightSpaceUnit = this->m_unitCubeMatrix * light->m_PVMatrix;
-		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( light->m_modelMatrix ), 0, 64) )
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( light->m_modelMatrix ), 0, 64) )
 			return false;
-		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( light->m_PVMatrix ), 64, 64) )
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( light->m_PVMatrix ), 64, 64) )
 			return false;
-		if ( false == this->m_lightDataBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
+		if ( false == this->m_lightBlock->updateData( glm::value_ptr( lightSpaceUnit ), 128, 64) )
 			return false;
 
 		// render quad
@@ -940,21 +953,44 @@ DRRenderer::renderLightingStage( std::list<Instance*>& instances, std::list<Ligh
 }
 
 bool
-DRRenderer::renderInstances( Viewer* viewer, std::list<Instance*>& instances )
+DRRenderer::renderTransparencyStage( std::list<Instance*>& instances, std::list<Light*>& lights )
 {
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( viewer->m_projectionMatrix ), 256, 64 ) )
+	return true;
+}
+
+bool
+DRRenderer::renderInstances( Viewer* viewer, std::list<Instance*>& instances, bool applyMaterial, bool transparencyPass )
+{
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_projectionMatrix ), 256, 64 ) )
 		return false;
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( viewer->m_viewMatrix ), 320, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( viewer->m_viewMatrix ), 320, 64 ) )
 		return false;
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_projectionMatrix ) ), 384, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_projectionMatrix ) ), 384, 64 ) )
 		return false;
-	if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_viewMatrix ) ), 448, 64 ) )
+	if ( false == this->m_transformsBlock->updateData( glm::value_ptr( glm::inverse( viewer->m_viewMatrix ) ), 448, 64 ) )
 		return false;
 
 	list<Instance*>::iterator iter = instances.begin();
 	while ( iter != instances.end() )
 	{
 		Instance* instance = *iter++;
+
+		if ( instance->material && applyMaterial )
+		{
+			if ( transparencyPass )
+			{
+				if ( instance->material->getType() != Material::TRANSPARENT )
+					continue;
+			}
+			else
+			{
+				if ( instance->material->getType() == Material::TRANSPARENT )
+					continue;
+			}
+
+			if ( false == instance->material->activate( this->m_materialBlock ) )
+				return false;
+		}
 
 		if ( false == this->renderGeom( viewer, instance, instance->geom ) )
 			return false;
@@ -998,13 +1034,13 @@ DRRenderer::renderGeom( Viewer* viewer, Instance* parent, GeomType* geom )
 						*/
 			glm::mat4 normalModelViewMatrix = glm::transpose( glm::inverse( modelViewMatrix ) );
 
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelMatrix ), 0, 64 ) )
+			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( modelMatrix ), 0, 64 ) )
 				return false;
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewMatrix ), 64, 64 ) )
+			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( modelViewMatrix ), 64, 64 ) )
 				return false;
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 128, 64 ) )
+			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( modelViewProjectionMatrix ), 128, 64 ) )
 				return false;
-			if ( false == this->m_mvpTransformBlock->updateData( glm::value_ptr( normalModelViewMatrix ), 192, 64 ) )
+			if ( false == this->m_transformsBlock->updateData( glm::value_ptr( normalModelViewMatrix ), 192, 64 ) )
 				return false;
 
 			// Don't need to update inverse, because its just needed in screen-space during lighting-stage

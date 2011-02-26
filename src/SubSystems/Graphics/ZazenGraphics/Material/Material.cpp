@@ -7,6 +7,8 @@
 
 #include "Material.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 
 #include "../../../../Core/Utils/XML/tinyxml.h"
@@ -44,7 +46,8 @@ Material::loadAll()
 		if ( 0 == strcmp(str, "material") )
 		{
 			std::string name;
-			std::string type;
+			std::string typeID;
+			Material::MaterialType materialType = Material::DIFFUSE;
 
 			str = materialNode->Attribute( "name" );
 			if ( 0 == str )
@@ -64,7 +67,7 @@ Material::loadAll()
 				return false;
 			}
 
-			str = materialNode->Attribute( "id" );
+			str = materialTypeNode->Attribute( "id" );
 			if ( 0 == str )
 			{
 				cout << "No name for material - will be ignored" << endl;
@@ -72,10 +75,39 @@ Material::loadAll()
 			}
 			else
 			{
-				type = str;
+				typeID = str;
 			}
 
-			Material* material = new Material( name, type );
+			if ( "LAMBERTIAN" == typeID )
+			{
+				materialType = Material::LAMBERTIAN;
+			}
+			else if ( "PHONG" == typeID )
+			{
+				materialType = Material::PHONG;
+			}
+			else if ( "ORENNAYAR" == typeID )
+			{
+				materialType = Material::ORENNAYAR;
+			}
+			else if ( "SSS" == typeID )
+			{
+				materialType = Material::SSS;
+			}
+			else if ( "WARDS" == typeID )
+			{
+				materialType = Material::WARDS;
+			}
+			else if ( "TORRANCESPARROW" == typeID )
+			{
+				materialType = Material::TORRANCESPARROW;
+			}
+			else if ( "TRANSPARENT" == typeID )
+			{
+				materialType = Material::TRANSPARENT;
+			}
+
+			Material* material = new Material( name, materialType );
 
 			for (TiXmlElement* materialCfgNode = materialTypeNode->FirstChildElement(); materialCfgNode != 0; materialCfgNode = materialCfgNode->NextSiblingElement())
 			{
@@ -83,69 +115,39 @@ Material::loadAll()
 				if (str == 0)
 					continue;
 
-				if ( 0 != strcmp(str, "diffuseColor1") )
+				if ( 0 == strcmp( str, "diffuseColor" ) )
 				{
-					str = materialCfgNode->Attribute( "file" );
-					if ( 0 != str )
+					if ( 0 == material->m_diffuseTexture )
 					{
-						Texture* texture = Texture::load( str );
-						if ( texture )
+						str = materialCfgNode->Attribute( "file" );
+						if ( 0 != str )
 						{
-							material->m_diffuseTextures[ 0 ] = texture;
+							Texture* texture = Texture::load( str );
+							if ( texture )
+							{
+								material->m_diffuseTexture = texture;
+							}
 						}
 					}
 				}
-				else if ( 0 != strcmp(str, "diffuseColor2") )
+				else if ( 0 == strcmp( str, "normalMap" ) )
 				{
-					str = materialCfgNode->Attribute( "file" );
-					if ( 0 != str )
+					if ( 0 == material->m_normalMap )
 					{
-						Texture* texture = Texture::load( str );
-						if ( texture )
+						str = materialCfgNode->Attribute( "file" );
+						if ( 0 != str )
 						{
-							material->m_diffuseTextures[ 1 ] = texture;
+							Texture* texture = Texture::load( str );
+							if ( texture )
+							{
+								material->m_normalMap = texture;
+							}
 						}
 					}
 				}
-				else if ( 0 != strcmp(str, "diffuseColor3") )
+				else if ( 0 == strcmp( str, "color" ) )
 				{
-					str = materialCfgNode->Attribute( "file" );
-					if ( 0 != str )
-					{
-						Texture* texture = Texture::load( str );
-						if ( texture )
-						{
-							material->m_diffuseTextures[ 2 ] = texture;
-						}
-					}
-				}
-				else if ( 0 != strcmp(str, "diffuseColor4") )
-				{
-					str = materialCfgNode->Attribute( "file" );
-					if ( 0 != str )
-					{
-						Texture* texture = Texture::load( str );
-						if ( texture )
-						{
-							material->m_diffuseTextures[ 3 ] = texture;
-						}
-					}
-				}
-				else if ( 0 != strcmp(str, "normalMap") )
-				{
-					str = materialCfgNode->Attribute( "file" );
-					if ( 0 != str )
-					{
-						Texture* texture = Texture::load( str );
-						if ( texture )
-						{
-							material->m_normalMap = texture;
-						}
-					}
-				}
-				else if ( 0 != strcmp(str, "color") )
-				{
-					glm::vec3 color;
+					glm::vec4 color;
 
 					str = materialCfgNode->Attribute( "r" );
 					if ( 0 != str )
@@ -167,13 +169,26 @@ Material::loadAll()
 
 					material->m_color = color;
 				}
-
-				Material::allMaterials.insert( make_pair( material->m_name, material ) );
 			}
+
+			Material::allMaterials.insert( make_pair( material->m_name, material ) );
 		}
 	}
 
 	return true;
+}
+
+void
+Material::freeAll()
+{
+	map<string, Material*>::iterator iter = Material::allMaterials.begin();
+	while(iter != Material::allMaterials.end())
+	{
+		delete iter->second;
+		iter++;
+	}
+
+	Material::allMaterials.clear();
 }
 
 Material*
@@ -187,34 +202,40 @@ Material::get( const std::string& name )
 }
 
 bool
-Material::activate()
+Material::activate( UniformBlock* materialUniforms )
 {
-	// bind diffuse textures to tex-units 0 - N
-
-	for ( int i = 0; i < MAX_DIFFUSE_TEXTURES; i++ )
-	{
-		Texture* texture = this->m_diffuseTextures[ i ];
-
-		if ( texture )
-			texture->bind( i );
-	}
+	if ( this->m_diffuseTexture )
+		this->m_diffuseTexture->bind( 0 );
 
 	if ( this->m_normalMap )
-		this->m_normalMap->bind( MAX_DIFFUSE_TEXTURES );
+		this->m_normalMap->bind( 1 );
+
+	glm::vec4 materialCfg;
+	materialCfg[ 0 ] = this->m_type;
+	materialCfg[ 1 ] = this->m_diffuseTexture == 0 ? 0 : 1;
+	materialCfg[ 2 ] = this->m_normalMap == 0 ? 0 : 1;
+
+	if ( false == materialUniforms->updateData( glm::value_ptr( materialCfg ), 0, 16 ) )
+		return false;
+
+	if ( false == materialUniforms->updateData( glm::value_ptr( this->m_genericParams1 ), 16, 16 ) )
+		return false;
+
+	if ( false == materialUniforms->updateData( glm::value_ptr( this->m_genericParams1 ), 32, 16 ) )
+		return false;
+
+	if ( false == materialUniforms->updateData( glm::value_ptr( this->m_color ), 48, 16 ) )
+		return false;
 
 	return true;
 }
 
-Material::Material( const std::string& name, const std::string& type )
+Material::Material( const std::string& name, MaterialType type )
 	: m_name( name ),
 	  m_type( type )
 {
 	this->m_normalMap = 0;
-
-	for ( int i = 0; i < MAX_DIFFUSE_TEXTURES; i++ )
-	{
-		this->m_diffuseTextures.push_back( 0 );
-	}
+	this->m_diffuseTexture = 0;
 }
 
 Material::~Material()

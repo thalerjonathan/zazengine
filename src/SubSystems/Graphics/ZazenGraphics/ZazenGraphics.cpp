@@ -79,6 +79,7 @@ ZazenGraphics::shutdown()
 
 	this->m_entities.clear();
 
+	Material::freeAll();
 	Texture::freeAll();
 	GeometryFactory::freeAll();
 	
@@ -179,6 +180,12 @@ ZazenGraphics::createEntity( TiXmlElement* objectNode, IGameObject* parent )
 		if ( 0 != str )
 		{
 			instance->geom = GeometryFactory::get( str );
+		}
+
+		str = instanceNode->Attribute( "material" );
+		if ( 0 != str )
+		{
+			instance->material = Material::get( str );
 		}
 
 		entity->m_orientation = instance;

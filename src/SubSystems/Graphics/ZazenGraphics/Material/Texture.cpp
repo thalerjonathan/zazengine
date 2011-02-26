@@ -17,7 +17,8 @@ using namespace std;
 
 map<string, Texture*> Texture::allTextures;
 
-Texture* Texture::load(const std::string& file)
+Texture*
+Texture::load(const std::string& file)
 {
 	map<string, Texture*>::iterator findIter = Texture::allTextures.find(file);
 	if ( findIter != Texture::allTextures.end() )
@@ -92,7 +93,8 @@ Texture* Texture::load(const std::string& file)
 	return newTexture;
 }
 
-void Texture::freeAll()
+void
+Texture::freeAll()
 {
 	map<string, Texture*>::iterator iter = Texture::allTextures.begin();
 	while(iter != Texture::allTextures.end())
