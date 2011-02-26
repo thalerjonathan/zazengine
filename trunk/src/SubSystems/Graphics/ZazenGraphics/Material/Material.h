@@ -8,6 +8,7 @@
 #ifndef MATERIAL_H_
 #define MATERIAL_H_
 
+#include "UniformBlock.h"
 #include "Texture.h"
 
 #include <glm/glm.hpp>
@@ -16,32 +17,47 @@
 #include <map>
 #include <vector>
 
-#define MAX_DIFFUSE_TEXTURES 4
-
 class Material
 {
  public:
+	enum MaterialType
+	{
+		DIFFUSE = 0,
+		LAMBERTIAN,
+		PHONG,
+		ORENNAYAR,
+		SSS,
+		WARDS,
+		TORRANCESPARROW,
+		TRANSPARENT = 99
+	};
+
 	static bool loadAll();
+	static void freeAll();
+
 	static Material* get( const std::string& );
 
 	~Material();
 
 	const std::string& getName() const { return this->m_name; };
-	const std::string& getType() const { return this->m_type; };
+	MaterialType getType() const { return this->m_type; };
 
-	bool activate();
+	bool activate( UniformBlock* );
 
  private:
 	static std::map<std::string, Material*> allMaterials;
 
-	Material( const std::string&, const std::string& );
+	Material( const std::string&, MaterialType );
 
 	const std::string m_name;
-	const std::string m_type;
+	const MaterialType m_type;
 
-	glm::vec3 m_color;
+	glm::vec4 m_color;
+	glm::vec4 m_genericParams1;
+	glm::vec4 m_genericParams2;
+
 	Texture* m_normalMap;
-	std::vector<Texture*> m_diffuseTextures;
+	Texture* m_diffuseTexture;
 };
 
 #endif /* MATERIAL_H_ */

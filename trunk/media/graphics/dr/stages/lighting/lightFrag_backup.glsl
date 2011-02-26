@@ -5,8 +5,6 @@ out vec4 out_final;
 uniform sampler2D DiffuseMap;
 uniform sampler2D DepthMap;
 uniform sampler2D NormalMap;
-uniform sampler2D GenericMap1;
-uniform sampler2D GenericMap2;
 
 uniform sampler2DShadow ShadowMap;
 

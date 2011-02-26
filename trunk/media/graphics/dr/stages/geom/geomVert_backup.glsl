@@ -2,8 +2,9 @@
 
 in vec3 in_vertPos;
 in vec3 in_vertNorm;
-in vec2 in_textureCoord;
 
+out vec4 ex_shadowCoord;
+//out vec4 ex_depth;
 out vec4 ex_normal;
 
 layout(shared) uniform transforms
@@ -21,9 +22,24 @@ layout(shared) uniform transforms
 	mat4 viewingInv_Matrix;				// 448
 };
 
+// contains light-direction in 8,9,10
+layout(shared) uniform light
+{
+	mat4 light_ModelMatrix;
+	mat4 light_SpaceMatrix;
+	mat4 light_SpaceUnitMatrix;
+};
+
+
 void main()
 {
-	// TODO: handle texture-coordinates
+	//gl_Position = projection_Matrix * viewing_Matrix * model_Matrix * vec4( in_vertPos, 1.0 );
 	gl_Position = modelViewProjection_Matrix * vec4( in_vertPos, 1.0 );
+	
+	//ex_depth.xy = gl_Position.zw;
+	
 	ex_normal = normalsModelView_Matrix * vec4( in_vertNorm, 0.0 );
+	
+	ex_shadowCoord = light_SpaceUnitMatrix * vec4( in_vertPos, 1.0 );
+	//ex_shadowCoord = light_SpaceUnitMatrix * model_Matrix * vec4( in_vertPos, 1.0 );
 }

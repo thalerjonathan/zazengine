@@ -25,7 +25,7 @@
 		
 		<object name="Floor">
 			<graphics>
-				<instance mesh="media/graphics/models/basic_objects/floor_large.3DS"/>
+				<instance mesh="media/graphics/models/basic_objects/floor_large.3DS" material="WhitePlastic"/>
 				
 				<orientation x="0" y="-3" z="0" roll="0" heading="0" pitch="0"/>
 			</graphics>
@@ -33,7 +33,7 @@
 		
 		<object name="Teapot">
 			<graphics>
-				<instance mesh="media/graphics/models/basic_objects/teapot.3DS"/>
+				<instance mesh="media/graphics/models/basic_objects/teapot.3DS" material="BluePlastic"/>
 				
 				<orientation x="0" y="3" z="0" roll="0" heading="0" pitch="0"/>
 			</graphics>
@@ -41,7 +41,7 @@
 		
 		<object name="GeoSphere">
 			<graphics>
-				<instance mesh="media/graphics/models/basic_objects/geoSphere.3DS"/>
+				<instance mesh="media/graphics/models/basic_objects/geoSphere.3DS" material="YellowPlastic"/>
 				
 				<orientation x="-30" y="13" z="-30" roll="0" heading="0" pitch="0"/>
 			</graphics>
@@ -49,7 +49,7 @@
 		
 		<object name="Knot">
 			<graphics>
-				<instance mesh="media/graphics/models/basic_objects/knot.3DS"/>
+				<instance mesh="media/graphics/models/basic_objects/knot.3DS" material="GreenPlastic"/>
 				
 				<orientation x="30" y="15" z="30" roll="0" heading="0" pitch="0"/>
 			</graphics>

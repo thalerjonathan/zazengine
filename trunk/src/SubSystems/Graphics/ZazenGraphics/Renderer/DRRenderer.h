@@ -11,7 +11,9 @@
 // number of generic color-attachment rendering targets for deferred renderer
 // 1st = diffuse color
 // 2nd = normals
-#define MRT_COUNT 2
+// 3rd = genericParams 1
+// 4th = genericParams 2
+#define MRT_COUNT 4
 
 #define SHADOW_MAP_WIDTH 	800
 #define SHADOW_MAP_HEIGHT	600
@@ -172,8 +174,9 @@ class DRRenderer : public Renderer
 	////////////////////////////////////////
 
 	// Uniform-Blocks
-	UniformBlock* m_mvpTransformBlock;
-	UniformBlock* m_lightDataBlock;
+	UniformBlock* m_transformsBlock;
+	UniformBlock* m_lightBlock;
+	UniformBlock* m_materialBlock;
 	////////////////////////////////////////
 
 	// utils matrix
@@ -188,8 +191,9 @@ class DRRenderer : public Renderer
 	bool renderShadowMap( std::list<Instance*>& instances, std::list<Light*>& lights );
 	bool renderGeometryStage( std::list<Instance*>& instances, std::list<Light*>& lights );
 	bool renderLightingStage( std::list<Instance*>& instances, std::list<Light*>& lights );
+	bool renderTransparencyStage( std::list<Instance*>& instances, std::list<Light*>& lights );
 
-	bool renderInstances( Viewer* viewer, std::list<Instance*>& instances );
+	bool renderInstances( Viewer* viewer, std::list<Instance*>& instances, bool, bool );
 	bool renderGeom( Viewer* viewer, Instance* parent, GeomType* geom );
 
 	bool showTexture( GLuint texID, int quarter );

@@ -8,6 +8,7 @@ Instance::Instance( )
 	this->lastFrame = 0;
 	
 	this->geom = 0;
+	this->material = 0;
 }
 
 Instance::~Instance()
