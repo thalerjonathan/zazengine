@@ -1,0 +1,9 @@
+Libraries:
+ * Integrate Boost: needed for LUA. useful for concurrency, low-level networking, reflection
+ * if possible find and add some high-level networking library
+ * maybe integrate qt for higher level networking, GUI and metaobject system. but most probably too heavy weight for just those things
+
+Refactor:
+ * remove system stuff ( semaphore ) : use boost instead
+ * remove memory allocators: use boost instead
+ * make a real component based system: subsystems compile into library and are loaded at runtime. this mechanism can be used to easily extend the engine.
