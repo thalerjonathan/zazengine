@@ -1,7 +1,7 @@
 Libraries:
- * Integrate Boost: needed for LUA. useful for concurrency, low-level networking, reflection
+ * Integrate Boost: needed for LUA. useful for concurrency, low-level networking, reflection.
  * if possible find and add some high-level networking library
- * maybe integrate qt for higher level networking, GUI and metaobject system. but most probably too heavy weight for just those things
+ * Qt too heavyweight, Boost should suffice.
 
 Refactor:
  * remove system stuff ( semaphore ) : use boost instead
