@@ -1,4 +1,4 @@
-#This Page describes the first steps and ideas to implement
+This Page describes the first steps and ideas to implement
 
 = Introduction =
 
@@ -7,18 +7,17 @@ The basic idea is to implement a vehicle like in wipeout but with more complex a
 
 Physics & Game-Mechanics
  * rear jet-stream
- * anti-gravity pads ( vertical floating )
  * bottom jet-stream
- * acceleration of both jetstreams
+ * anti-gravity pads ( vertical floating )
+ * acceleration of both jet streams
  * jet-streams able to turn on/off
- * simple steering: no roll, just left-right
- * fuel consuption
- * no damage-model yet from jet-streams
- * joystick
+ * simple steering: no roll, no up, just left-right
+ * fuel consumption
+ * basic joystick input
 
 Graphics & Effects
- * front lights: spot & shadowcasting
- * jet streams: point lights & shadowcasting
+ * front lights: spot & shadow casting
+ * jet streams: point lights & shadow casting
  * jet-streams: fire/particles
  * interesting ship-model with high poly count
  * texture ship
