@@ -1,5 +1,10 @@
 Overall rule is to write as less code by myself. Use as much libraries as possible. Boost has a wide range of libraries which cover stuff i tried to reinvent in a better and much better tested way. Switch over to Boost as central library. It is needed for LUA-bind, provides platform independent abstraction for threading, networking, reflection and lots of other useful stuff.
 
+Finally make it a real component based system:
+ * subsystems compile into library and are loaded at runtime. this mechanism can be used to easily extend the engine.
+
+Design a dynamic Game-Object system which allows to code Game-Object basics in C++ and load them dynamically during runtime - little like the subsystem-stuff.
+
 Boost libraries interesting for zazengine together with a short description of idea where and how it could prove to be useful:
  * Any - Safe, generic container for single values of different value types. For carrying around data with the event-system.
  * Asio - very good networking library.
@@ -30,10 +35,3 @@ Boost libraries interesting for zazengine together with a short description of i
  * Type Traits - Templates for fundamental properties of types.
  * Typeof - Typeof operator emulation.
  * Variant - Safe, generic, stack-based discriminated union container.
-
-Those things can be removed when switching to Boost:
- * remove system stuff ( semaphore ) : use boost instead
- * remove memory allocators: use boost instead
-
-Finally make it a real component based system:
- * subsystems compile into library and are loaded at runtime. this mechanism can be used to easily extend the engine.
