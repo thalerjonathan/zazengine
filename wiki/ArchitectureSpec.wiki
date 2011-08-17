@@ -1,3 +1,6 @@
+!!! TOTALLY OUTDATED !!!
+!!! THIS PAGE EXISTS FOR HISTORICAL REASONS !!!
+
 Architectural Design-Issues and Goals for the Zazengine
 
 The overal goal of this project is to develop an architecture for “parallel discrete realtime agent-based event simulation”. This kind of architecture allows the development of games, crowd-simulations,... and is completely different from standard GUI-based apps. These are user-input driven while these simulation apps run completely without user-inputs.
